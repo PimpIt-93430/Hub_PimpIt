@@ -20,6 +20,16 @@ const SECTIONS: { titre: string | null; liens: { href: string; label: string }[]
       { href: '/recommandations', label: 'Recommandations' },
     ],
   },
+  {
+    titre: 'Pimp It (app)',
+    liens: [
+      { href: '/planning', label: 'Planning' },
+      { href: '/equipe', label: 'Équipe' },
+      { href: '/ventes', label: 'Ventes' },
+      { href: '/stock', label: 'Stock pop-up' },
+      { href: '/pop-ups', label: 'Pop-ups' },
+    ],
+  },
 ];
 
 export default async function HubLayout({ children }: { children: React.ReactNode }) {
