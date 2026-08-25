@@ -5,7 +5,13 @@ import { DeconnexionBouton } from './deconnexion-bouton';
 
 const SECTIONS: { titre: string | null; liens: { href: string; label: string }[] }[] = [
   { titre: null, liens: [{ href: '/', label: 'Tableau de bord' }] },
-  { titre: 'Shopify', liens: [{ href: '/produits', label: 'Produits' }] },
+  {
+    titre: 'Shopify',
+    liens: [
+      { href: '/produits', label: 'Produits' },
+      { href: '/pins-unite', label: "Pin's à l'unité" },
+    ],
+  },
   {
     titre: 'Airtable',
     liens: [
