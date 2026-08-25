@@ -36,6 +36,11 @@ export async function creerProduitComplementaire(formData: FormData) {
     prix: champNombre(formData, 'prix'),
     actif: champBooleen(formData, 'actif'),
     description: champTexte(formData, 'description'),
+    lien1: champTexte(formData, 'lien1'),
+    titre_lien1: champTexte(formData, 'titre_lien1'),
+    lien2: champTexte(formData, 'lien2'),
+    titre_lien2: champTexte(formData, 'titre_lien2'),
+    variantes: champTexte(formData, 'variantes'),
   });
   if (error) throw new Error(error.message);
 
@@ -53,6 +58,11 @@ export async function modifierProduitComplementaire(airtableId: string, formData
       prix: champNombre(formData, 'prix'),
       actif: champBooleen(formData, 'actif'),
       description: champTexte(formData, 'description'),
+      lien1: champTexte(formData, 'lien1'),
+      titre_lien1: champTexte(formData, 'titre_lien1'),
+      lien2: champTexte(formData, 'lien2'),
+      titre_lien2: champTexte(formData, 'titre_lien2'),
+      variantes: champTexte(formData, 'variantes'),
       synced_at: new Date().toISOString(),
     })
     .eq('airtable_id', airtableId);

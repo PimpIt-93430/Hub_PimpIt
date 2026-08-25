@@ -12,6 +12,11 @@ interface HubProduitComplementaire {
   actif: boolean | null;
   description: string | null;
   synced_at: string | null;
+  lien1: string | null;
+  titre_lien1: string | null;
+  lien2: string | null;
+  titre_lien2: string | null;
+  variantes: string | null;
 }
 
 const champ = 'w-full rounded-lg border border-slate-200 px-2 py-1 text-sm focus:border-slate-400 focus:outline-none';
@@ -78,6 +83,26 @@ export function ProduitComplementaireRow({ produit }: { produit: HubProduitCompl
               />
               Actif
             </label>
+            <input name="lien1" defaultValue={produit.lien1 ?? ''} placeholder="Lien 1 (URL)" className={champ} />
+            <input
+              name="titre_lien1"
+              defaultValue={produit.titre_lien1 ?? ''}
+              placeholder="Titre lien 1"
+              className={champ}
+            />
+            <input name="lien2" defaultValue={produit.lien2 ?? ''} placeholder="Lien 2 (URL)" className={champ} />
+            <input
+              name="titre_lien2"
+              defaultValue={produit.titre_lien2 ?? ''}
+              placeholder="Titre lien 2"
+              className={champ}
+            />
+            <input
+              name="variantes"
+              defaultValue={produit.variantes ?? ''}
+              placeholder="Variantes"
+              className={`${champ} col-span-2 sm:col-span-2`}
+            />
             <textarea
               name="description"
               defaultValue={produit.description ?? ''}

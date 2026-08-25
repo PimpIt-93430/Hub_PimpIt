@@ -47,6 +47,23 @@ export function NouveauPinForm() {
       <input name="boite" placeholder="Boîte (ex A,4)" className={champ} />
       <input name="stock" type="number" placeholder="Stock" className={champ} />
       <input name="seuil_cible" type="number" placeholder="Seuil cible" className={champ} />
+      <input name="poids_unitaire" type="number" step="0.01" placeholder="Poids unité x10" className={champ} />
+      <input name="poids_total" type="number" step="0.01" placeholder="Poids total" className={champ} />
+      <input name="image_url" placeholder="URL image" className={`${champ} col-span-2 sm:col-span-2`} />
+      <label className="flex items-center gap-2 text-sm text-slate-600">
+        <input name="custom" type="checkbox" className="h-4 w-4 rounded border-slate-300" />
+        Custom
+      </label>
+      <label className="flex items-center gap-2 text-sm text-slate-600">
+        <input name="pas_dans_unite" type="checkbox" className="h-4 w-4 rounded border-slate-300" />
+        Pas dans pin&apos;s unité
+      </label>
+      <textarea
+        name="description"
+        placeholder="Description"
+        rows={2}
+        className={`${champ} col-span-2 sm:col-span-4`}
+      />
 
       <div className="col-span-2 flex items-center gap-2 sm:col-span-4">
         <button

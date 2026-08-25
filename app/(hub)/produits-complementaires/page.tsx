@@ -10,6 +10,11 @@ interface HubProduitComplementaire {
   actif: boolean | null;
   description: string | null;
   synced_at: string | null;
+  lien1: string | null;
+  titre_lien1: string | null;
+  lien2: string | null;
+  titre_lien2: string | null;
+  variantes: string | null;
 }
 
 /** Gestion complète sur Supabase (hub_produits_complementaires) — Supabase est désormais la base

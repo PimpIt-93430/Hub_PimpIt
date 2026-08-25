@@ -1,7 +1,9 @@
 // Port TypeScript de Shopify Pimp IT/admin/lib/shopify.js (fichier original non touché) — mêmes
 // identifiants (SHOPIFY_STORE/CLIENT_ID/CLIENT_SECRET), même flux OAuth client-credentials avec
-// cache de token 24h. Lecture seule utilisée pour l'instant côté Hub (cf. plan) ; shopifyFetch en
-// écriture reste disponible mais volontairement pas encore appelé.
+// cache de token 24h. shopifyFetch en écriture est désormais utilisé par les créations de
+// produits (packs, sabots personnalisés) qui répliquent exactement le comportement de l'ancien
+// site — ces appels créent de vrais produits, live, sur la boutique Shopify (confirmé par
+// l'utilisateur).
 const STORE = process.env.SHOPIFY_STORE!;
 const CLIENT_ID = process.env.SHOPIFY_CLIENT_ID!;
 const CLIENT_SECRET = process.env.SHOPIFY_CLIENT_SECRET!;
@@ -59,6 +61,56 @@ export async function shopifyGraphQL<T = unknown>(query: string, variables: Reco
   const json = await res.json();
   if (json.errors?.length) throw new Error(json.errors[0].message);
   return json.data;
+}
+
+const HS_CODE = '64029990';
+
+/** Code douanier standard appliqué à tous les produits Pimp It — même valeur que l'ancien site. */
+export async function setHsCode(inventoryItemId: number | string): Promise<void> {
+  try {
+    await shopifyFetch(`/inventory_items/${inventoryItemId}.json`, 'PUT', {
+      inventory_item: { id: inventoryItemId, harmonized_system_code: HS_CODE },
+    });
+  } catch (e) {
+    console.warn(`HS code error ${inventoryItemId}:`, e instanceof Error ? e.message : e);
+  }
+}
+
+let cachedLeversProfileId: string | null = null;
+
+async function getLeversProfileId(): Promise<string | null> {
+  if (cachedLeversProfileId) return cachedLeversProfileId;
+  const data = await shopifyGraphQL<{
+    deliveryProfiles?: { edges?: { node: { id: string; name: string } }[] };
+  }>(`query { deliveryProfiles(first:30) { edges { node { id name } } } }`);
+  const found = (data.deliveryProfiles?.edges ?? []).find((e) => /l[ée]ger/i.test(e.node.name));
+  if (found) cachedLeversProfileId = found.node.id;
+  return cachedLeversProfileId;
+}
+
+/** Assigne le produit au profil d'expédition "Produits légers" — même logique que l'ancien site
+ * (recherche par nom insensible à la casse/accents, échoue silencieusement si absent). */
+export async function assignToLeversProfile(productId: number | string): Promise<void> {
+  const profileId = await getLeversProfileId();
+  if (!profileId) {
+    console.warn('Profil "Produits légers" introuvable');
+    return;
+  }
+  try {
+    await shopifyGraphQL(
+      `
+      mutation deliveryProfileUpdate($id: ID!, $profile: DeliveryProfileInput!) {
+        deliveryProfileUpdate(id: $id, profile: $profile) {
+          profile { id }
+          userErrors { field message }
+        }
+      }
+    `,
+      { id: profileId, profile: { productsToAssociate: [`gid://shopify/Product/${productId}`] } },
+    );
+  } catch (e) {
+    console.warn('Shipping profile assign error:', e instanceof Error ? e.message : e);
+  }
 }
 
 export async function shopifyFetchAll<T = unknown>(endpoint: string, key: string): Promise<T[]> {

@@ -9,17 +9,28 @@ const champ = 'rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border
 export function NouveauPackForm() {
   const [ouvert, setOuvert] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
+  const [urlCreee, setUrlCreee] = useState<string | null>(null);
   const [enCours, demarrer] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
 
   if (!ouvert) {
     return (
-      <button
-        onClick={() => setOuvert(true)}
-        className="mb-4 rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
-      >
-        + Nouveau pack
-      </button>
+      <div className="mb-4">
+        <button
+          onClick={() => setOuvert(true)}
+          className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
+        >
+          + Nouveau pack
+        </button>
+        {urlCreee && (
+          <p className="mt-2 text-sm text-emerald-700">
+            Pack créé — produit Shopify :{' '}
+            <a href={urlCreee} target="_blank" rel="noreferrer" className="underline">
+              voir sur Shopify
+            </a>
+          </p>
+        )}
+      </div>
     );
   }
 
@@ -30,9 +41,10 @@ export function NouveauPackForm() {
         setErreur(null);
         demarrer(async () => {
           try {
-            await creerPack(formData);
+            const { shopifyUrl } = await creerPack(formData);
             formRef.current?.reset();
             setOuvert(false);
+            setUrlCreee(shopifyUrl);
           } catch (e) {
             setErreur(e instanceof Error ? e.message : 'Erreur inconnue');
           }
@@ -45,7 +57,7 @@ export function NouveauPackForm() {
       <input name="photo_url" placeholder="URL photo" className={champ} />
       <input name="stock_max" type="number" placeholder="Stock max" className={champ} />
 
-      <div className="col-span-2 flex items-center gap-2 sm:col-span-4">
+      <div className="col-span-2 flex flex-wrap items-center gap-2 sm:col-span-4">
         <label className="flex items-center gap-1.5 text-sm text-slate-600">
           <input name="probleme" type="checkbox" className="h-4 w-4 rounded border-slate-300" />
           Problème
@@ -65,6 +77,10 @@ export function NouveauPackForm() {
           Annuler
         </button>
         {erreur && <span className="text-sm text-red-600">{erreur}</span>}
+        <p className="w-full text-xs text-slate-400">
+          Avec un SKU renseigné, un vrai produit Shopify (2g, code douanier, expédition légère) est
+          créé en même temps — comme sur l&apos;ancien site.
+        </p>
       </div>
     </form>
   );

@@ -17,6 +17,10 @@ function champNombre(formData: FormData, cle: string): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+function champBooleen(formData: FormData, cle: string): boolean {
+  return formData.get(cle) === 'on';
+}
+
 /** Supabase est désormais la base d'origine du Hub : un pin créé ici n'existe que dans Supabase
  * (pas de write-back vers Airtable). Les pins synchronisés depuis Airtable ont un airtable_id qui
  * commence par "rec" ; les pins créés depuis le Hub ont un id synthétique préfixé "hub_" pour
@@ -34,6 +38,12 @@ export async function creerPin(formData: FormData) {
     seuil_cible: champNombre(formData, 'seuil_cible'),
     fournisseur: champTexte(formData, 'fournisseur'),
     boite: champTexte(formData, 'boite'),
+    poids_unitaire: champNombre(formData, 'poids_unitaire'),
+    poids_total: champNombre(formData, 'poids_total'),
+    custom: champBooleen(formData, 'custom'),
+    pas_dans_unite: champBooleen(formData, 'pas_dans_unite'),
+    description: champTexte(formData, 'description'),
+    image_url: champTexte(formData, 'image_url'),
   });
   if (error) throw new Error(error.message);
 
@@ -53,6 +63,12 @@ export async function modifierPin(airtableId: string, formData: FormData) {
       seuil_cible: champNombre(formData, 'seuil_cible'),
       fournisseur: champTexte(formData, 'fournisseur'),
       boite: champTexte(formData, 'boite'),
+      poids_unitaire: champNombre(formData, 'poids_unitaire'),
+      poids_total: champNombre(formData, 'poids_total'),
+      custom: champBooleen(formData, 'custom'),
+      pas_dans_unite: champBooleen(formData, 'pas_dans_unite'),
+      description: champTexte(formData, 'description'),
+      image_url: champTexte(formData, 'image_url'),
       synced_at: new Date().toISOString(),
     })
     .eq('airtable_id', airtableId);

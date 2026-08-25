@@ -47,6 +47,11 @@ export function NouveauProduitComplementaireForm() {
         <input name="actif" type="checkbox" defaultChecked className="h-4 w-4 rounded border-slate-300" />
         Actif
       </label>
+      <input name="lien1" placeholder="Lien 1 (URL)" className={champ} />
+      <input name="titre_lien1" placeholder="Titre lien 1" className={champ} />
+      <input name="lien2" placeholder="Lien 2 (URL)" className={champ} />
+      <input name="titre_lien2" placeholder="Titre lien 2" className={champ} />
+      <input name="variantes" placeholder="Variantes" className={`${champ} col-span-2 sm:col-span-2`} />
       <textarea
         name="description"
         placeholder="Description"

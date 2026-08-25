@@ -11,6 +11,12 @@ interface HubPin {
   seuil_cible: number | null;
   fournisseur: string | null;
   boite: string | null;
+  poids_unitaire: number | null;
+  poids_total: number | null;
+  custom: boolean | null;
+  pas_dans_unite: boolean | null;
+  description: string | null;
+  image_url: string | null;
 }
 
 /** Gestion complète sur Supabase (hub_pins) — Supabase est désormais la base d'origine du Hub :

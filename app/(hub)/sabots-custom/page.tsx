@@ -17,7 +17,10 @@ interface HubSabotCustom {
  * Les sabots personnalisés déjà synchronisés depuis Airtable restent affichés normalement. */
 export default async function SabotsCustomPage() {
   const supabase = await creerClientSupabaseServeur();
-  const { data } = await supabase.from('hub_sabots_custom').select('*').order('nom');
+  const [{ data }, { data: pins }] = await Promise.all([
+    supabase.from('hub_sabots_custom').select('*').order('nom'),
+    supabase.from('hub_pins').select('airtable_id, name').order('name'),
+  ]);
   const sabotsCustom = (data ?? []) as HubSabotCustom[];
 
   return (
@@ -27,7 +30,7 @@ export default async function SabotsCustomPage() {
         {sabotsCustom.length} sabots personnalisés — géré depuis Supabase.
       </p>
 
-      <NouveauSabotCustomForm />
+      <NouveauSabotCustomForm pins={pins ?? []} />
 
       <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
         <table className="w-full text-left text-sm">
