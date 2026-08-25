@@ -33,6 +33,7 @@ const SECTIONS: { titre: string | null; liens: { href: string; label: string }[]
       { href: '/equipe', label: 'Équipe' },
       { href: '/ventes', label: 'Ventes' },
       { href: '/stock', label: 'Stock pop-up' },
+      { href: '/stock-cible', label: 'Stock cible' },
       { href: '/pop-ups', label: 'Pop-ups' },
     ],
   },
