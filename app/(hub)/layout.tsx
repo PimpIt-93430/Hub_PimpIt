@@ -3,11 +3,23 @@ import Link from 'next/link';
 import { creerClientSupabaseServeur } from '@/lib/supabase/server';
 import { DeconnexionBouton } from './deconnexion-bouton';
 
-const LIENS = [
-  { href: '/', label: 'Tableau de bord' },
-  { href: '/pins', label: "Pin's" },
-  { href: '/commandes', label: 'Commandes fournisseurs' },
-  { href: '/produits', label: 'Produits Shopify' },
+const SECTIONS: { titre: string | null; liens: { href: string; label: string }[] }[] = [
+  { titre: null, liens: [{ href: '/', label: 'Tableau de bord' }] },
+  { titre: 'Shopify', liens: [{ href: '/produits', label: 'Produits' }] },
+  {
+    titre: 'Airtable',
+    liens: [
+      { href: '/pins', label: "Pin's" },
+      { href: '/commandes', label: 'Commandes fournisseurs' },
+      { href: '/packs', label: "Packs de pin's" },
+      { href: '/sabots', label: 'Sabots' },
+      { href: '/sabots-custom', label: 'Sabots personnalisés' },
+      { href: '/produits-complementaires', label: 'Produits complémentaires' },
+      { href: '/clients', label: 'Clients' },
+      { href: '/taches', label: 'Tâches' },
+      { href: '/recommandations', label: 'Recommandations' },
+    ],
+  },
 ];
 
 export default async function HubLayout({ children }: { children: React.ReactNode }) {
@@ -30,15 +42,24 @@ export default async function HubLayout({ children }: { children: React.ReactNod
           <p className="text-xs text-slate-400">{nomAffiche}</p>
         </div>
 
-        <nav className="flex flex-1 flex-col gap-1">
-          {LIENS.map((lien) => (
-            <Link
-              key={lien.href}
-              href={lien.href}
-              className="rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-            >
-              {lien.label}
-            </Link>
+        <nav className="flex flex-1 flex-col gap-4 overflow-y-auto">
+          {SECTIONS.map((section, i) => (
+            <div key={i} className="flex flex-col gap-1">
+              {section.titre && (
+                <p className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                  {section.titre}
+                </p>
+              )}
+              {section.liens.map((lien) => (
+                <Link
+                  key={lien.href}
+                  href={lien.href}
+                  className="rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                >
+                  {lien.label}
+                </Link>
+              ))}
+            </div>
           ))}
         </nav>
 
