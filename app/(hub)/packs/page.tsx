@@ -1,69 +1,37 @@
-import { atGet, TABLES } from '@/lib/airtable';
+import { creerClientSupabaseServeur } from '@/lib/supabase/server';
 
-interface AirtableThumbnail {
-  url: string;
-  width: number;
-  height: number;
+interface HubPack {
+  airtable_id: string;
+  nom_du_pack: string | null;
+  sku_shopify: string | null;
+  photo_url: string | null;
+  stock_max: number | null;
+  probleme: boolean | null;
+  qtes_pins: Record<string, number> | null;
+  pins_inclus_count: number | null;
+  synced_at: string | null;
 }
 
-interface AirtableAttachment {
-  id: string;
-  url: string;
-  filename: string;
-  thumbnails?: {
-    small?: AirtableThumbnail;
-    large?: AirtableThumbnail;
-    full?: AirtableThumbnail;
-  };
+/** `qtes_pins` est un objet jsonb, ex. {"recXXX": 2, "recYYY": 1} — une quantité par pin lié
+ * (contrairement à `Articles` sur les commandes fournisseurs, qui est un tableau). On lit
+ * défensivement pour ne pas faire échouer tout l'affichage sur un format inattendu. */
+function quantiteTotalePins(qtesPins: Record<string, number> | null): number | null {
+  if (!qtesPins || typeof qtesPins !== 'object' || Array.isArray(qtesPins)) return null;
+  return Object.values(qtesPins).reduce((s, q) => s + (typeof q === 'number' ? q : 0), 0);
 }
 
-interface PackFields {
-  'Nom du pack'?: string;
-  Photo?: AirtableAttachment[];
-  'SKU Shopify'?: string;
-  'Pins inclus'?: string[];
-  'Stock max'?: number;
-  'Qtes pins'?: string;
-  Probleme?: boolean;
-}
-
-/** `Qtes pins` est un objet JSON encodé dans un champ texte, ex. {"recXXX": 2, "recYYY": 1} —
- * une quantité par pin lié (contrairement à `Articles` sur les commandes fournisseurs, qui est un
- * tableau). On parse défensivement pour ne pas faire échouer tout l'affichage sur un format
- * inattendu. */
-function quantiteTotalePins(qtesPins: string | undefined): number | null {
-  if (!qtesPins) return null;
-  try {
-    const parsed = JSON.parse(qtesPins);
-    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-      return Object.values(parsed as Record<string, number>).reduce(
-        (s, q) => s + (typeof q === 'number' ? q : 0),
-        0,
-      );
-    }
-  } catch {
-    // Champ vide ou format inattendu : on retombe sur "inconnu" plutôt que de faire échouer tout
-    // l'affichage.
-  }
-  return null;
-}
-
-/** Lecture seule pour l'instant (cf. plan) — même table Airtable que Shopify Pimp IT/admin
- * (packs de pin's), rien n'est créé/modifié ici. */
+/** Lit le miroir Supabase (hub_packs), synchronisé depuis Airtable T_PACKS — plus d'appel direct à
+ * Airtable ici (cf. script de synchronisation dans Pimp It Hub/scripts). */
 export default async function PacksPage() {
-  const packs = await atGet<PackFields>(TABLES.PACKS, {
-    fields: ['Nom du pack', 'Photo', 'SKU Shopify', 'Pins inclus', 'Stock max', 'Qtes pins', 'Probleme'],
-  });
-
-  const tries = [...packs].sort((a, b) =>
-    (a.fields['Nom du pack'] ?? '').localeCompare(b.fields['Nom du pack'] ?? ''),
-  );
+  const supabase = await creerClientSupabaseServeur();
+  const { data } = await supabase.from('hub_packs').select('*').order('nom_du_pack');
+  const packs = (data ?? []) as HubPack[];
 
   return (
     <div>
       <h1 className="mb-1 text-2xl font-bold text-slate-900">Packs de pin&apos;s</h1>
       <p className="mb-6 text-sm text-slate-400">
-        {packs.length} packs — depuis Airtable, lecture seule pour l&apos;instant.
+        {packs.length} packs — depuis Supabase (synchronisé depuis Airtable).
       </p>
 
       <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -80,13 +48,13 @@ export default async function PacksPage() {
             </tr>
           </thead>
           <tbody>
-            {tries.map((p) => {
-              const thumb = p.fields.Photo?.[0]?.thumbnails?.small?.url;
-              const nbPins = p.fields['Pins inclus']?.length ?? 0;
-              const qteTotale = quantiteTotalePins(p.fields['Qtes pins']);
-              const probleme = Boolean(p.fields.Probleme);
+            {packs.map((p) => {
+              const thumb = p.photo_url;
+              const nbPins = p.pins_inclus_count ?? 0;
+              const qteTotale = quantiteTotalePins(p.qtes_pins);
+              const probleme = Boolean(p.probleme);
               return (
-                <tr key={p.id} className="border-b border-slate-50 last:border-0">
+                <tr key={p.airtable_id} className="border-b border-slate-50 last:border-0">
                   <td className="px-4 py-2.5">
                     {thumb ? (
                       // eslint-disable-next-line @next/next/no-img-element
@@ -95,11 +63,11 @@ export default async function PacksPage() {
                       <span className="text-slate-300">—</span>
                     )}
                   </td>
-                  <td className="px-4 py-2.5 font-semibold text-slate-800">{p.fields['Nom du pack'] ?? '—'}</td>
-                  <td className="px-4 py-2.5 text-slate-500">{p.fields['SKU Shopify'] ?? '—'}</td>
+                  <td className="px-4 py-2.5 font-semibold text-slate-800">{p.nom_du_pack ?? '—'}</td>
+                  <td className="px-4 py-2.5 text-slate-500">{p.sku_shopify ?? '—'}</td>
                   <td className="px-4 py-2.5 text-right text-slate-700">{nbPins || '—'}</td>
                   <td className="px-4 py-2.5 text-right text-slate-500">{qteTotale ?? '—'}</td>
-                  <td className="px-4 py-2.5 text-right text-slate-700">{p.fields['Stock max'] ?? '—'}</td>
+                  <td className="px-4 py-2.5 text-right text-slate-700">{p.stock_max ?? '—'}</td>
                   <td className="px-4 py-2.5">
                     {probleme ? (
                       <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-red-700">

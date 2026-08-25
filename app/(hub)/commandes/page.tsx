@@ -8,8 +8,9 @@ function libelleFournisseur(code: string): string {
   return FOURNISSEURS[code]?.label ?? code ?? '—';
 }
 
-/** Lecture seule pour l'instant (cf. plan) — même table Airtable que Shopify Pimp IT/admin
- * (commandes fournisseurs pin's), rien n'est créé/modifié ici. */
+/** Lecture seule pour l'instant (cf. plan) — lit le miroir Supabase hub_purchase_orders,
+ * synchronisé depuis Airtable. Synchronisation initiale partielle : les grosses commandes de
+ * réassort (100+ articles) restent à ajouter dans une prochaine synchronisation. */
 export default async function CommandesPage() {
   const commandes = await chargerCommandes();
 
@@ -17,7 +18,7 @@ export default async function CommandesPage() {
     <div>
       <h1 className="mb-1 text-2xl font-bold text-slate-900">Commandes fournisseurs</h1>
       <p className="mb-6 text-sm text-slate-400">
-        {commandes.length} commandes — depuis Airtable, lecture seule pour l&apos;instant.
+        {commandes.length} commandes — depuis Supabase (synchronisé depuis Airtable, synchronisation partielle pour l&apos;instant).
       </p>
 
       <div className="flex flex-col gap-2">

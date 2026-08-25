@@ -1,29 +1,28 @@
-import { atGet, TABLES } from '@/lib/airtable';
+import { creerClientSupabaseServeur } from '@/lib/supabase/server';
 
-interface PinFields {
-  Name?: string;
-  'SKU Pimpit'?: string;
-  'SKU Fournisseur'?: string;
-  Stock?: number;
-  'Seuil cible'?: number;
-  Fournisseur?: string;
-  Boite?: string;
+interface HubPin {
+  airtable_id: string;
+  name: string | null;
+  sku_pimpit: string | null;
+  sku_fournisseur: string | null;
+  stock: number | null;
+  seuil_cible: number | null;
+  fournisseur: string | null;
+  boite: string | null;
 }
 
-/** Lecture seule pour l'instant (cf. plan) — même table Airtable que Shopify Pimp IT/admin
- * (T_PINS), rien n'est modifié ici. */
+/** Lit le miroir Supabase (hub_pins), synchronisé depuis Airtable T_PINS — plus d'appel direct à
+ * Airtable ici (cf. script de synchronisation dans Pimp It Hub/scripts). */
 export default async function PinsPage() {
-  const pins = await atGet<PinFields>(TABLES.PINS, {
-    fields: ['Name', 'SKU Pimpit', 'SKU Fournisseur', 'Stock', 'Seuil cible', 'Fournisseur', 'Boite'],
-  });
-
-  const tries = [...pins].sort((a, b) => (a.fields.Name ?? '').localeCompare(b.fields.Name ?? ''));
+  const supabase = await creerClientSupabaseServeur();
+  const { data } = await supabase.from('hub_pins').select('*').order('name');
+  const pins = (data ?? []) as HubPin[];
 
   return (
     <div>
       <h1 className="mb-1 text-2xl font-bold text-slate-900">Pin&apos;s</h1>
       <p className="mb-6 text-sm text-slate-400">
-        {pins.length} pin&apos;s — depuis Airtable, lecture seule pour l&apos;instant.
+        {pins.length} pin&apos;s — depuis Supabase (synchronisé depuis Airtable).
       </p>
 
       <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -40,19 +39,19 @@ export default async function PinsPage() {
             </tr>
           </thead>
           <tbody>
-            {tries.map((p) => {
-              const sousLeSeuil = (p.fields.Stock ?? 0) < (p.fields['Seuil cible'] ?? 0);
+            {pins.map((p) => {
+              const sousLeSeuil = (p.stock ?? 0) < (p.seuil_cible ?? 0);
               return (
-                <tr key={p.id} className="border-b border-slate-50 last:border-0">
-                  <td className="px-4 py-2.5 font-semibold text-slate-800">{p.fields.Name ?? '—'}</td>
-                  <td className="px-4 py-2.5 text-slate-500">{p.fields['SKU Pimpit'] ?? '—'}</td>
-                  <td className="px-4 py-2.5 text-slate-500">{p.fields['SKU Fournisseur'] ?? '—'}</td>
-                  <td className="px-4 py-2.5 text-slate-500">{p.fields.Fournisseur ?? '—'}</td>
-                  <td className="px-4 py-2.5 text-slate-500">{p.fields.Boite ?? '—'}</td>
+                <tr key={p.airtable_id} className="border-b border-slate-50 last:border-0">
+                  <td className="px-4 py-2.5 font-semibold text-slate-800">{p.name ?? '—'}</td>
+                  <td className="px-4 py-2.5 text-slate-500">{p.sku_pimpit ?? '—'}</td>
+                  <td className="px-4 py-2.5 text-slate-500">{p.sku_fournisseur ?? '—'}</td>
+                  <td className="px-4 py-2.5 text-slate-500">{p.fournisseur ?? '—'}</td>
+                  <td className="px-4 py-2.5 text-slate-500">{p.boite ?? '—'}</td>
                   <td className={`px-4 py-2.5 text-right font-semibold ${sousLeSeuil ? 'text-amber-600' : 'text-slate-700'}`}>
-                    {p.fields.Stock ?? 0}
+                    {p.stock ?? 0}
                   </td>
-                  <td className="px-4 py-2.5 text-right text-slate-500">{p.fields['Seuil cible'] ?? '—'}</td>
+                  <td className="px-4 py-2.5 text-right text-slate-500">{p.seuil_cible ?? '—'}</td>
                 </tr>
               );
             })}

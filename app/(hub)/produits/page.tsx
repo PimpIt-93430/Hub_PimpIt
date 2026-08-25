@@ -1,26 +1,29 @@
-import { shopifyFetchAll } from '@/lib/shopify';
+import { creerClientSupabaseServeur } from '@/lib/supabase/server';
 
-interface ProduitShopify {
-  id: number;
-  title: string;
-  status: string;
-  variants: { price: string; inventory_quantity: number }[];
+interface HubProduitShopify {
+  shopify_id: string;
+  titre: string | null;
+  statut: string | null;
+  prix: number | null;
+  stock: number | null;
 }
 
-function formatPrix(prix: string): string {
-  return `${Number(prix).toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €`;
+function formatPrix(prix: number): string {
+  return `${prix.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €`;
 }
 
-/** Lecture seule pour l'instant (cf. plan) — appelle directement l'API Admin Shopify avec les
- * mêmes identifiants que Shopify Pimp IT/admin, sans toucher à ce serveur ni au thème. */
+/** Lit le miroir Supabase (hub_produits_shopify), synchronisé depuis Shopify — plus d'appel
+ * direct à l'API Admin Shopify ici (cf. script de synchronisation dans Pimp It Hub/scripts). */
 export default async function ProduitsPage() {
-  const produits = await shopifyFetchAll<ProduitShopify>('/products.json?limit=250', 'products');
+  const supabase = await creerClientSupabaseServeur();
+  const { data } = await supabase.from('hub_produits_shopify').select('*').order('titre');
+  const produits = (data ?? []) as HubProduitShopify[];
 
   return (
     <div>
       <h1 className="mb-1 text-2xl font-bold text-slate-900">Produits Shopify</h1>
       <p className="mb-6 text-sm text-slate-400">
-        {produits.length} produits — depuis Shopify, lecture seule pour l&apos;instant.
+        {produits.length} produits — depuis Supabase (synchronisé depuis Shopify).
       </p>
 
       <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -34,21 +37,16 @@ export default async function ProduitsPage() {
             </tr>
           </thead>
           <tbody>
-            {produits.map((p) => {
-              const variante = p.variants?.[0];
-              return (
-                <tr key={p.id} className="border-b border-slate-50 last:border-0">
-                  <td className="px-4 py-2.5 font-semibold text-slate-800">{p.title}</td>
-                  <td className="px-4 py-2.5 text-slate-500">{p.status === 'active' ? 'Actif' : p.status}</td>
-                  <td className="px-4 py-2.5 text-right text-slate-700">
-                    {variante ? formatPrix(variante.price) : '—'}
-                  </td>
-                  <td className="px-4 py-2.5 text-right text-slate-700">
-                    {variante ? variante.inventory_quantity : '—'}
-                  </td>
-                </tr>
-              );
-            })}
+            {produits.map((p) => (
+              <tr key={p.shopify_id} className="border-b border-slate-50 last:border-0">
+                <td className="px-4 py-2.5 font-semibold text-slate-800">{p.titre}</td>
+                <td className="px-4 py-2.5 text-slate-500">{p.statut === 'active' ? 'Actif' : p.statut}</td>
+                <td className="px-4 py-2.5 text-right text-slate-700">
+                  {p.prix != null ? formatPrix(p.prix) : '—'}
+                </td>
+                <td className="px-4 py-2.5 text-right text-slate-700">{p.stock ?? '—'}</td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>

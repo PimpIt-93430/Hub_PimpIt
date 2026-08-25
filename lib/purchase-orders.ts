@@ -1,8 +1,9 @@
-// Port TypeScript en lecture seule de la logique de parsing de
-// Shopify Pimp IT/admin/lib/purchase-orders.js (fichier original non touché) — mêmes noms de
-// champs Airtable, même format `Articles` (JSON encodé dans un champ texte). Pas encore de
-// création/modification de commande depuis le Hub (cf. plan, phase suivante).
-import { atGet, TABLES } from './airtable';
+// Lit le miroir Supabase (hub_purchase_orders), synchronisé depuis Airtable (commandes
+// fournisseurs pin's) — les champs y sont déjà parsés (plus besoin de décoder le JSON `Articles`
+// à la volée). Note : la synchronisation initiale est partielle (7 commandes sur 32 au
+// 2026-08-25) — les commandes les plus volumineuses (gros réassorts avec 100+ articles) seront
+// ajoutées dans une prochaine synchronisation.
+import { creerClientSupabaseServeur } from './supabase/server';
 
 export const FOURNISSEURS: Record<string, { label: string; codes: string[] }> = {
   J: { label: 'Fournisseur J', codes: ['J', 'JO'] },
@@ -31,38 +32,23 @@ export interface CommandeFournisseur {
   quantiteTotale: number;
 }
 
-function parseRecord(r: { id: string; fields: Record<string, unknown> }): CommandeFournisseur {
-  const f = r.fields as Record<string, string | undefined>;
-  let items: ArticleCommande[] = [];
-  let refFromArticles = '';
-  try {
-    const parsed = JSON.parse((f['Articles'] as string) || '[]');
-    if (Array.isArray(parsed)) {
-      items = parsed;
-    } else {
-      items = parsed.items ?? [];
-      refFromArticles = parsed.ref ?? '';
-    }
-  } catch {
-    // Champ vide ou format inattendu : on retombe sur une commande sans article plutôt que de
-    // faire échouer tout l'affichage.
-  }
-
-  return {
-    id: r.id,
-    ref: refFromArticles || f['Référence'] || f['Reference'] || '',
-    createdAt: f['Date'] || new Date().toISOString(),
-    supplier: f['Fournisseur'] || '',
-    label: f['Label'] || '',
-    status: f['Statut'] === 'recu' ? 'received' : 'pending',
-    receivedAt: f['Date réception'] ?? null,
-    items,
-    nbArticles: items.length,
-    quantiteTotale: items.reduce((s, i) => s + (i.qty ?? 0), 0),
-  };
-}
-
 export async function chargerCommandes(): Promise<CommandeFournisseur[]> {
-  const rows = await atGet(TABLES.PURCHASE_ORDERS, {});
-  return rows.map(parseRecord).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  const supabase = await creerClientSupabaseServeur();
+  const { data } = await supabase
+    .from('hub_purchase_orders')
+    .select('*')
+    .order('date_creation', { ascending: false });
+
+  return (data ?? []).map((r) => ({
+    id: r.airtable_id as string,
+    ref: (r.ref as string) ?? '',
+    createdAt: (r.date_creation as string) ?? new Date().toISOString(),
+    supplier: (r.supplier as string) ?? '',
+    label: (r.label as string) ?? '',
+    status: r.statut === 'recu' ? 'received' : 'pending',
+    receivedAt: (r.date_reception as string) ?? null,
+    items: (r.items as ArticleCommande[]) ?? [],
+    nbArticles: (r.nb_articles as number) ?? 0,
+    quantiteTotale: (r.quantite_totale as number) ?? 0,
+  }));
 }

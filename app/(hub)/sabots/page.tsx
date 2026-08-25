@@ -1,31 +1,27 @@
-import { atGet, TABLES } from '@/lib/airtable';
+import { creerClientSupabaseServeur } from '@/lib/supabase/server';
 
-interface SabotFields {
-  Couleur?: string;
-  Taille?: string;
-  Stock?: number;
-  SKU?: string;
-  'Inventory Item ID'?: string | number;
+interface HubSabot {
+  airtable_id: string;
+  couleur: string | null;
+  taille: string | null;
+  stock: number | null;
+  sku: string | null;
+  inventory_item_id: string | null;
+  synced_at: string | null;
 }
 
-/** Lecture seule pour l'instant (cf. plan) — même table Airtable que Shopify Pimp IT/admin
- * (T_SABOTS), rien n'est modifié ici. */
+/** Lit le miroir Supabase (hub_sabots), synchronisé depuis Airtable T_SABOTS — plus d'appel direct
+ * à Airtable ici (cf. script de synchronisation dans Pimp It Hub/scripts). */
 export default async function SabotsPage() {
-  const sabots = await atGet<SabotFields>(TABLES.SABOTS, {
-    fields: ['Couleur', 'Taille', 'Stock', 'SKU', 'Inventory Item ID'],
-  });
-
-  const tries = [...sabots].sort((a, b) => {
-    const couleur = (a.fields.Couleur ?? '').localeCompare(b.fields.Couleur ?? '');
-    if (couleur !== 0) return couleur;
-    return (a.fields.Taille ?? '').localeCompare(b.fields.Taille ?? '');
-  });
+  const supabase = await creerClientSupabaseServeur();
+  const { data } = await supabase.from('hub_sabots').select('*').order('couleur').order('taille');
+  const sabots = (data ?? []) as HubSabot[];
 
   return (
     <div>
       <h1 className="mb-1 text-2xl font-bold text-slate-900">Sabots</h1>
       <p className="mb-6 text-sm text-slate-400">
-        {sabots.length} sabots — depuis Airtable, lecture seule pour l&apos;instant.
+        {sabots.length} sabots — depuis Supabase (synchronisé depuis Airtable).
       </p>
 
       <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -39,12 +35,12 @@ export default async function SabotsPage() {
             </tr>
           </thead>
           <tbody>
-            {tries.map((s) => (
-              <tr key={s.id} className="border-b border-slate-50 last:border-0">
-                <td className="px-4 py-2.5 font-semibold text-slate-800">{s.fields.Couleur ?? '—'}</td>
-                <td className="px-4 py-2.5 text-slate-500">{s.fields.Taille ?? '—'}</td>
-                <td className="px-4 py-2.5 text-slate-500">{s.fields.SKU ?? '—'}</td>
-                <td className="px-4 py-2.5 text-right font-semibold text-slate-700">{s.fields.Stock ?? 0}</td>
+            {sabots.map((s) => (
+              <tr key={s.airtable_id} className="border-b border-slate-50 last:border-0">
+                <td className="px-4 py-2.5 font-semibold text-slate-800">{s.couleur ?? '—'}</td>
+                <td className="px-4 py-2.5 text-slate-500">{s.taille ?? '—'}</td>
+                <td className="px-4 py-2.5 text-slate-500">{s.sku ?? '—'}</td>
+                <td className="px-4 py-2.5 text-right font-semibold text-slate-700">{s.stock ?? 0}</td>
               </tr>
             ))}
           </tbody>
