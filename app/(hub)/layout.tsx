@@ -27,7 +27,7 @@ const SECTIONS: { titre: string | null; liens: { href: string; label: string }[]
     ],
   },
   {
-    titre: 'Pimp It (app)',
+    titre: 'Application',
     liens: [
       { href: '/planning', label: 'Planning' },
       { href: '/equipe', label: 'Équipe' },
