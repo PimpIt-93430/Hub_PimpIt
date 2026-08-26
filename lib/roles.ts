@@ -69,13 +69,18 @@ export async function determinerRoleHub(): Promise<{
 
   if (profilEffectif.role === 'admin') return { role: 'admin', profil: profilEffectif, enApercu, profilReel };
 
-  const { data: attributionLocal } = await supabase
-    .from('profil_pop_ups')
-    .select('pop_up_id, pop_ups!inner(est_local)')
-    .eq('profile_id', profilEffectif.id)
-    .eq('pop_ups.est_local', true)
-    .maybeSingle();
-  if (attributionLocal) return { role: 'local', profil: profilEffectif, enApercu, profilReel };
+  // En deux requêtes simples plutôt qu'un filtre sur ressource imbriquée (pop_ups.est_local) —
+  // plus facile à vérifier/déboguer, et pop_ups est une toute petite table (4 lignes).
+  const { data: popUpLocal } = await supabase.from('pop_ups').select('id').eq('est_local', true).maybeSingle();
+  if (popUpLocal) {
+    const { data: attribution } = await supabase
+      .from('profil_pop_ups')
+      .select('pop_up_id')
+      .eq('profile_id', profilEffectif.id)
+      .eq('pop_up_id', popUpLocal.id)
+      .maybeSingle();
+    if (attribution) return { role: 'local', profil: profilEffectif, enApercu, profilReel };
+  }
 
   return { role: 'inconnu', profil: profilEffectif, enApercu, profilReel };
 }
