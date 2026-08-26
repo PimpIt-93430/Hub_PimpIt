@@ -1,4 +1,8 @@
+import { cookies } from 'next/headers';
+
+import { COOKIE_APERCU_PROFIL } from '@/lib/roles';
 import { creerClientSupabaseServeur } from '@/lib/supabase/server';
+import { ApercuProfilSelect } from './ApercuProfilSelect';
 import { InviterBouton } from './InviterBouton';
 
 const LIBELLE_ROLE: Record<string, string> = {
@@ -6,9 +10,10 @@ const LIBELLE_ROLE: Record<string, string> = {
   employe: 'Employé',
 };
 
-/** Petite page "Profil" pour le Hub — contexte admin uniquement (pas de bascule multi-profils, pas
- * de calendrier d'école ni de SumUp : ce sont des concepts propres à l'app mobile, cf. App PIMP
- * IT/app/(app)/profil.tsx pris comme référence visuelle pour l'avatar/nom/email/rôle). */
+/** Petite page "Profil" pour le Hub — infos de l'admin connecté, invitation, et "Se connecter en
+ * tant que" (cf. ApercuProfilSelect) pour prévisualiser le Hub avec les yeux d'un autre profil,
+ * notamment pour vérifier les espaces réservés aux rôles non-admin (ex. /local) sans avoir besoin
+ * de leurs identifiants. */
 export default async function ProfilPage() {
   const supabase = await creerClientSupabaseServeur();
   const {
@@ -22,6 +27,18 @@ export default async function ProfilPage() {
   const email = profil?.email ?? user?.email ?? '';
   const initiale = (profil?.nom_complet || email || '?').slice(0, 1).toUpperCase();
   const couleur = profil?.couleur ?? '#6366F1';
+
+  const jar = await cookies();
+  const apercuActuelId = jar.get(COOKIE_APERCU_PROFIL)?.value ?? null;
+
+  const { data: autresProfils } = user
+    ? await supabase
+        .from('profiles')
+        .select('id, nom_complet, email, type_contrat')
+        .eq('actif', true)
+        .neq('id', user.id)
+        .order('nom_complet')
+    : { data: null };
 
   return (
     <div className="max-w-md">
@@ -45,6 +62,8 @@ export default async function ProfilPage() {
       <div className="mt-6">
         <InviterBouton />
       </div>
+
+      <ApercuProfilSelect profils={autresProfils ?? []} apercuActuelId={apercuActuelId} />
     </div>
   );
 }

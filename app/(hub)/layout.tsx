@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 
 import { DeconnexionBouton } from '@/components/DeconnexionBouton';
 import { determinerRoleHub } from '@/lib/roles';
+import { definirApercuProfil } from './profil/actions';
 
 const SECTIONS: { titre: string | null; liens: { href: string; label: string }[] }[] = [
   { titre: null, liens: [{ href: '/', label: 'Tableau de bord' }, { href: '/pins', label: "Pin's" }] },
@@ -42,46 +43,58 @@ const SECTIONS: { titre: string | null; liens: { href: string; label: string }[]
  * le monde. Une personne connectée non-admin est renvoyée vers son espace (/local pour l'instant,
  * d'autres à venir), pas vers une page d'erreur — elle a un compte valide, juste pas ici. */
 export default async function HubLayout({ children }: { children: React.ReactNode }) {
-  const { role, profil } = await determinerRoleHub();
+  const { role, profil, enApercu } = await determinerRoleHub();
   if (role !== 'admin') redirect('/local');
 
   const nomAffiche = profil?.nom_complet ?? profil?.email ?? '';
 
   return (
-    <div className="flex min-h-screen">
-      <aside className="flex w-64 shrink-0 flex-col border-r border-slate-200 bg-white px-4 py-6">
-        <div className="mb-8 px-2">
-          <p className="text-lg font-bold text-slate-900">Pimp It Hub</p>
-          <p className="text-xs text-slate-400">{nomAffiche}</p>
+    <div className="flex min-h-screen flex-col">
+      {enApercu && (
+        <div className="flex items-center justify-center gap-2 border-b border-amber-200 bg-amber-50 px-6 py-2 text-xs font-semibold text-amber-800">
+          Tu vois le Hub comme {nomAffiche} le verrait
+          <form action={definirApercuProfil.bind(null, null)}>
+            <button type="submit" className="underline">
+              Revenir à mon compte
+            </button>
+          </form>
         </div>
+      )}
+      <div className="flex flex-1">
+        <aside className="flex w-64 shrink-0 flex-col border-r border-slate-200 bg-white px-4 py-6">
+          <div className="mb-8 px-2">
+            <p className="text-lg font-bold text-slate-900">Pimp It Hub</p>
+            <p className="text-xs text-slate-400">{nomAffiche}</p>
+          </div>
 
-        <nav className="flex flex-1 flex-col gap-4 overflow-y-auto">
-          {SECTIONS.map((section, i) => (
-            <div key={i} className="flex flex-col gap-0.5">
-              {section.titre && (
-                <p className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-wide text-text2">
-                  {section.titre}
-                </p>
-              )}
-              {section.liens.map((lien) => (
-                <Link
-                  key={lien.href}
-                  href={lien.href}
-                  className="rounded-lg px-3 py-2.5 text-sm font-medium text-text2 transition-colors hover:bg-bg hover:text-gray-900"
-                >
-                  {lien.label}
-                </Link>
-              ))}
-            </div>
-          ))}
-        </nav>
+          <nav className="flex flex-1 flex-col gap-4 overflow-y-auto">
+            {SECTIONS.map((section, i) => (
+              <div key={i} className="flex flex-col gap-0.5">
+                {section.titre && (
+                  <p className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-wide text-text2">
+                    {section.titre}
+                  </p>
+                )}
+                {section.liens.map((lien) => (
+                  <Link
+                    key={lien.href}
+                    href={lien.href}
+                    className="rounded-lg px-3 py-2.5 text-sm font-medium text-text2 transition-colors hover:bg-bg hover:text-gray-900"
+                  >
+                    {lien.label}
+                  </Link>
+                ))}
+              </div>
+            ))}
+          </nav>
 
-        <DeconnexionBouton />
-      </aside>
+          <DeconnexionBouton />
+        </aside>
 
-      <main className="flex-1 px-8 py-8">
-        <div className="mx-auto max-w-[1200px]">{children}</div>
-      </main>
+        <main className="flex-1 px-8 py-8">
+          <div className="mx-auto max-w-[1200px]">{children}</div>
+        </main>
+      </div>
     </div>
   );
 }
