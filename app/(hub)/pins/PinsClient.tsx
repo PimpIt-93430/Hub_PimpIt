@@ -132,8 +132,8 @@ export function PinsClient({ pinsInitiaux }: { pinsInitiaux: HubPin[] }) {
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <table className="w-full text-left text-sm">
+      <div className="inline-block max-w-full overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <table className="text-left text-sm">
           <thead className="border-b border-slate-100 text-xs font-semibold uppercase tracking-wide text-slate-400">
             <tr>
               <th className="px-4 py-3" />
