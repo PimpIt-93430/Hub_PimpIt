@@ -153,6 +153,22 @@ function EtapeCreer({
   const [erreur, setErreur] = useState<string | null>(null);
   const [enCours, demarrer] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
+  // Réplique unite-ia-section de l'ancien site : Description/SEO/Tags/Collections restent
+  // repliés tant qu'on n'a pas cliqué le bouton — sur l'ancien site ce bouton appelait un service
+  // IA payant pour pré-remplir ces champs ; ici, sans backend IA, il se contente de les révéler
+  // vides pour un remplissage manuel (le reste du comportement — ordre des champs, repli par
+  // défaut, bouton "Créer sur Shopify" toujours accessible sans avoir à déplier — est identique).
+  const [detailsDepliés, setDetailsDepliés] = useState(false);
+  const [collectionsCochees, setCollectionsCochees] = useState<Set<string>>(new Set());
+
+  function basculerCollection(id: string) {
+    setCollectionsCochees((s) => {
+      const copie = new Set(s);
+      if (copie.has(id)) copie.delete(id);
+      else copie.add(id);
+      return copie;
+    });
+  }
 
   return (
     <form
@@ -170,43 +186,77 @@ function EtapeCreer({
       }}
       className="flex flex-col gap-4 px-6 py-6"
     >
+      <input type="hidden" name="collection_ids" value={JSON.stringify([...collectionsCochees])} />
+
       <button type="button" onClick={onRetour} className="w-fit text-xs font-semibold text-slate-500 hover:text-slate-900">
         ← Retour
       </button>
 
-      <div>
-        <p className={champLabel}>Pin&apos;s à rajouter</p>
-        <PinsUniteSelector pinsARajouter={pinsARajouter} autresPins={autresPins} collections={collections} />
-      </div>
+      <PinsUniteSelector pinsARajouter={pinsARajouter} autresPins={autresPins} />
 
       <div>
         <p className={champLabel}>Nom du produit</p>
         <input name="titre" defaultValue={TITRE_DEFAUT} required className={champInput} />
       </div>
 
-      <div>
-        <p className={champLabel}>Description</p>
-        <textarea name="description" rows={4} className={`${champInput} resize-y`} />
+      <div className="flex justify-end">
+        <button
+          type="button"
+          onClick={() => setDetailsDepliés(true)}
+          disabled={detailsDepliés}
+          className="rounded-lg border border-indigo-200 px-3.5 py-1.5 text-sm font-medium text-indigo-600 hover:bg-indigo-50 disabled:opacity-50"
+        >
+          + Description, SEO, tags, collections
+        </button>
       </div>
 
-      <div>
-        <p className={champLabel}>
-          Balise SEO titre <span className="font-normal normal-case text-slate-400">(50-60 car.)</span>
-        </p>
-        <input name="meta_titre" defaultValue={TITRE_DEFAUT} className={champInput} />
-      </div>
+      {detailsDepliés && (
+        <>
+          <div>
+            <p className={champLabel}>Description</p>
+            <textarea name="description" rows={4} className={`${champInput} resize-y`} />
+          </div>
 
-      <div>
-        <p className={champLabel}>
-          Balise SEO description <span className="font-normal normal-case text-slate-400">(150-160 car.)</span>
-        </p>
-        <textarea name="meta_description" rows={2} className={`${champInput} resize-y`} />
-      </div>
+          <div>
+            <p className={champLabel}>
+              Balise SEO titre <span className="font-normal normal-case text-slate-400">(50-60 car.)</span>
+            </p>
+            <input name="meta_titre" defaultValue={TITRE_DEFAUT} className={champInput} />
+          </div>
 
-      <div>
-        <p className={champLabel}>Tags</p>
-        <input name="tags" placeholder="tag1, tag2…" className={champInput} />
-      </div>
+          <div>
+            <p className={champLabel}>
+              Balise SEO description <span className="font-normal normal-case text-slate-400">(150-160 car.)</span>
+            </p>
+            <textarea name="meta_description" rows={2} className={`${champInput} resize-y`} />
+          </div>
+
+          <div>
+            <p className={champLabel}>Tags</p>
+            <input name="tags" placeholder="tag1, tag2…" className={champInput} />
+          </div>
+
+          {collections.length > 0 && (
+            <div>
+              <p className={champLabel}>Collections</p>
+              <div className="flex max-h-40 flex-wrap gap-x-4 gap-y-2 overflow-y-auto rounded-lg border border-slate-200 p-2.5">
+                {collections.map((c) => (
+                  <label key={c.id} className="flex items-center gap-1.5 whitespace-nowrap text-xs text-slate-600">
+                    <input
+                      type="checkbox"
+                      disabled={c.handle === 'tous-les-pins'}
+                      checked={c.handle === 'tous-les-pins' || collectionsCochees.has(c.id)}
+                      onChange={() => basculerCollection(c.id)}
+                      className="h-3.5 w-3.5 rounded border-slate-300"
+                    />
+                    {c.title}
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
+      )}
 
       {erreur && <p className="text-sm text-red-600">{erreur}</p>}
 

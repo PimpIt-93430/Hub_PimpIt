@@ -8,29 +8,16 @@ interface PinOption {
   sku_pimpit: string | null;
   image_url: string | null;
 }
-interface CollectionOption {
-  id: string;
-  title: string;
-  handle: string;
-}
 
 /** Réplique le sélecteur de pin's du tiroir "Créer un nouveau produit" de l'ancien admin
  * (unite-create-list) : par défaut, seuls les pin's pas encore dans un produit (`pinsARajouter`)
  * sont proposés — un bouton "+ Ajouter des pin's déjà dans des produits en ligne" révèle le reste
  * sous un séparateur, exactement comme loadAllPinsForCreate()/renderCreateList() côté ancien site.
- * Plus le choix des collections à cocher. */
-export function PinsUniteSelector({
-  pinsARajouter,
-  autresPins,
-  collections,
-}: {
-  pinsARajouter: PinOption[];
-  autresPins: PinOption[];
-  collections: CollectionOption[];
-}) {
+ * Ne gère plus les collections (déplacées dans le parent, pour respecter le même ordre de champs
+ * que l'ancien tiroir — collections positionnées bien plus bas, après description/SEO/tags). */
+export function PinsUniteSelector({ pinsARajouter, autresPins }: { pinsARajouter: PinOption[]; autresPins: PinOption[] }) {
   const [recherche, setRecherche] = useState('');
   const [selectionnes, setSelectionnes] = useState<Set<string>>(new Set());
-  const [collectionsCochees, setCollectionsCochees] = useState<Set<string>>(new Set());
   const [autresPinsCharges, setAutresPinsCharges] = useState(false);
 
   const q = recherche.trim().toLowerCase();
@@ -43,22 +30,8 @@ export function PinsUniteSelector({
     [autresPins, autresPinsCharges, q],
   );
 
-  const tousLesPins = useMemo(() => [...pinsARajouter, ...autresPins], [pinsARajouter, autresPins]);
-  const nomParId = useMemo(
-    () => Object.fromEntries(tousLesPins.map((p) => [p.airtable_id, p.name ?? p.airtable_id])),
-    [tousLesPins],
-  );
-
   function basculer(id: string) {
     setSelectionnes((s) => {
-      const copie = new Set(s);
-      if (copie.has(id)) copie.delete(id);
-      else copie.add(id);
-      return copie;
-    });
-  }
-  function basculerCollection(id: string) {
-    setCollectionsCochees((s) => {
       const copie = new Set(s);
       if (copie.has(id)) copie.delete(id);
       else copie.add(id);
@@ -95,18 +68,18 @@ export function PinsUniteSelector({
   return (
     <div>
       <input type="hidden" name="pin_ids" value={JSON.stringify([...selectionnes])} />
-      <input type="hidden" name="collection_ids" value={JSON.stringify([...collectionsCochees])} />
 
-      <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-400">
-        Pin&apos;s inclus ({selectionnes.size} sélectionné{selectionnes.size > 1 ? 's' : ''})
-      </p>
+      <div className="mb-1.5 flex items-center justify-between">
+        <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Pin&apos;s à rajouter</p>
+        <p className="text-xs text-slate-400">{selectionnes.size} sélectionné{selectionnes.size > 1 ? 's' : ''}</p>
+      </div>
       <input
         value={recherche}
         onChange={(e) => setRecherche(e.target.value)}
         placeholder="Rechercher..."
         className="mb-1.5 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-400"
       />
-      <div className="max-h-[340px] overflow-y-auto rounded-lg border border-slate-200 p-1">
+      <div className="max-h-[220px] overflow-y-auto rounded-lg border border-slate-200 p-1">
         {principaux.length === 0 && secondaires.length === 0 ? (
           <p className="px-3 py-4 text-center text-sm text-slate-400">Aucun pin trouvé</p>
         ) : (
@@ -130,39 +103,6 @@ export function PinsUniteSelector({
         >
           + Ajouter des pin&apos;s déjà dans des produits en ligne
         </button>
-      )}
-
-      {selectionnes.size > 0 && (
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          {[...selectionnes].map((id) => (
-            <span key={id} className="flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">
-              {nomParId[id] ?? id}
-              <button type="button" onClick={() => basculer(id)} className="text-slate-400 hover:text-slate-900">
-                ×
-              </button>
-            </span>
-          ))}
-        </div>
-      )}
-
-      {collections.length > 0 && (
-        <div className="mt-4">
-          <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-400">Collections</p>
-          <div className="flex max-h-32 flex-wrap gap-3 overflow-y-auto rounded-lg border border-slate-200 p-2.5">
-            {collections.map((c) => (
-              <label key={c.id} className="flex items-center gap-1.5 whitespace-nowrap text-xs text-slate-600">
-                <input
-                  type="checkbox"
-                  disabled={c.handle === 'tous-les-pins'}
-                  checked={c.handle === 'tous-les-pins' || collectionsCochees.has(c.id)}
-                  onChange={() => basculerCollection(c.id)}
-                  className="h-3.5 w-3.5 rounded border-slate-300"
-                />
-                {c.title}
-              </label>
-            ))}
-          </div>
-        </div>
       )}
     </div>
   );
