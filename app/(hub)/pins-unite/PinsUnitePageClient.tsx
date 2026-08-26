@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 
-import { NouveauProduitUniteModal } from './NouveauProduitUniteModal';
+import { PinsUniteModal } from './PinsUniteModal';
 
 interface PinARajouter {
   airtable_id: string;
@@ -48,7 +48,7 @@ export function PinsUnitePageClient({
       </div>
 
       <div className="mb-4">
-        <NouveauProduitUniteModal
+        <PinsUniteModal
           pinsARajouter={pinsARajouter}
           autresPins={autresPins}
           collections={collections}
