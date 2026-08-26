@@ -1,60 +1,45 @@
 import { creerClientSupabaseServeur } from '@/lib/supabase/server';
-import { NouveauPinForm } from './NouveauPinForm';
-import { PinRow } from './PinRow';
+import { PinsClient } from './PinsClient';
+import type { HubPin } from './types';
 
-interface HubPin {
+interface HubPinBrute {
   airtable_id: string;
   name: string | null;
   sku_pimpit: string | null;
   sku_fournisseur: string | null;
-  stock: number | null;
-  seuil_cible: number | null;
+  stock: number | string | null;
+  seuil_cible: number | string | null;
   fournisseur: string | null;
   boite: string | null;
-  poids_unitaire: number | null;
-  poids_total: number | null;
+  poids_unitaire: number | string | null;
+  poids_total: number | string | null;
   custom: boolean | null;
   pas_dans_unite: boolean | null;
   description: string | null;
   image_url: string | null;
 }
 
-/** Gestion complète sur Supabase (hub_pins) — Supabase est désormais la base d'origine du Hub :
- * créer/modifier/supprimer ici n'écrit que dans Supabase, pas dans Airtable (cf. actions.ts). Les
- * pins déjà synchronisés depuis Airtable restent affichés normalement. */
+/** `numeric` côté Postgres revient en string selon le client PostgREST — on normalise ici plutôt
+ * que de faire confiance au typage brut de Supabase (même piège que StockCibleClient/Chaussures). */
+function versNombre(v: number | string | null): number | null {
+  if (v === null) return null;
+  const n = typeof v === 'string' ? Number(v) : v;
+  return Number.isFinite(n) ? n : null;
+}
+
+/** Réplique l'écran "Database Pin's" de l'ancien admin Shopify (premier écran de l'ancien site,
+ * juste après le tableau de bord ici) — gestion complète sur Supabase (hub_pins), plus de
+ * write-back vers Airtable : Supabase est désormais la base d'origine du Hub. */
 export default async function PinsPage() {
   const supabase = await creerClientSupabaseServeur();
   const { data } = await supabase.from('hub_pins').select('*').order('name');
-  const pins = (data ?? []) as HubPin[];
+  const pins: HubPin[] = ((data ?? []) as HubPinBrute[]).map((p) => ({
+    ...p,
+    stock: versNombre(p.stock),
+    seuil_cible: versNombre(p.seuil_cible),
+    poids_unitaire: versNombre(p.poids_unitaire),
+    poids_total: versNombre(p.poids_total),
+  }));
 
-  return (
-    <div>
-      <h1 className="mb-1 text-2xl font-bold text-slate-900">Pin&apos;s</h1>
-      <p className="mb-6 text-sm text-slate-400">{pins.length} pin&apos;s — géré depuis Supabase.</p>
-
-      <NouveauPinForm />
-
-      <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <table className="w-full text-left text-sm">
-          <thead className="border-b border-slate-100 text-xs font-semibold uppercase tracking-wide text-slate-400">
-            <tr>
-              <th className="px-4 py-3">Nom</th>
-              <th className="px-4 py-3">SKU Pimp It</th>
-              <th className="px-4 py-3">SKU Fournisseur</th>
-              <th className="px-4 py-3">Fournisseur</th>
-              <th className="px-4 py-3">Boîte</th>
-              <th className="px-4 py-3 text-right">Stock</th>
-              <th className="px-4 py-3 text-right">Seuil cible</th>
-              <th className="px-4 py-3" />
-            </tr>
-          </thead>
-          <tbody>
-            {pins.map((p) => (
-              <PinRow key={p.airtable_id} pin={p} />
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
+  return <PinsClient pinsInitiaux={pins} />;
 }

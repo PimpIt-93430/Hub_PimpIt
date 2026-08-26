@@ -4,80 +4,95 @@ import { revalidatePath } from 'next/cache';
 
 import { creerClientSupabaseServeur } from '@/lib/supabase/server';
 
-function champTexte(formData: FormData, cle: string): string | null {
-  const v = formData.get(cle);
-  if (typeof v !== 'string' || v.trim() === '') return null;
-  return v.trim();
+/** Réplique l'écran "Database Pin's" de l'ancien admin Shopify (public/index.html + server.js
+ * `/api/pins*`) — mêmes champs, même logique (SKU Pimpit auto-assigné et jamais modifiable, pas
+ * de suppression exposée dans l'ancien site). Écrit uniquement dans Supabase (hub_pins) : la base
+ * d'origine du Hub n'est plus Airtable. */
+
+export interface PinParams {
+  name: string;
+  skuFournisseur: string | null;
+  fournisseur: string | null;
+  boite: string | null;
+  stock: number | null;
+  seuilCible: number | null;
+  poidsUnitaire: number | null;
+  poidsTotal: number | null;
+  description: string | null;
+  imageUrl: string | null;
+  custom: boolean;
+  pasDansUnite: boolean;
 }
 
-function champNombre(formData: FormData, cle: string): number | null {
-  const v = formData.get(cle);
-  if (typeof v !== 'string' || v.trim() === '') return null;
-  const n = Number(v);
-  return Number.isFinite(n) ? n : null;
+/** Prochain SKU Pimpit disponible (max + 1) — même principe que GET /api/pins/next-sku de
+ * l'ancien admin, recalculé côté Supabase puisqu'il n'y a plus d'Airtable à interroger. */
+export async function chargerProchainSku(): Promise<number> {
+  const supabase = await creerClientSupabaseServeur();
+  const { data, error } = await supabase.from('hub_pins').select('sku_pimpit');
+  if (error) throw new Error(error.message);
+  let max = 0;
+  for (const row of data ?? []) {
+    const n = Number(row.sku_pimpit);
+    if (Number.isFinite(n) && n > max) max = n;
+  }
+  return max + 1;
 }
 
-function champBooleen(formData: FormData, cle: string): boolean {
-  return formData.get(cle) === 'on';
-}
-
-/** Supabase est désormais la base d'origine du Hub : un pin créé ici n'existe que dans Supabase
- * (pas de write-back vers Airtable). Les pins synchronisés depuis Airtable ont un airtable_id qui
- * commence par "rec" ; les pins créés depuis le Hub ont un id synthétique préfixé "hub_" pour
- * qu'on puisse toujours les distinguer plus tard si besoin. */
-export async function creerPin(formData: FormData) {
+export async function creerPin(params: PinParams): Promise<void> {
   const supabase = await creerClientSupabaseServeur();
   const nouvelId = `hub_${crypto.randomUUID()}`;
+  const nextSku = await chargerProchainSku();
 
   const { error } = await supabase.from('hub_pins').insert({
     airtable_id: nouvelId,
-    name: champTexte(formData, 'name'),
-    sku_pimpit: champTexte(formData, 'sku_pimpit'),
-    sku_fournisseur: champTexte(formData, 'sku_fournisseur'),
-    stock: champNombre(formData, 'stock'),
-    seuil_cible: champNombre(formData, 'seuil_cible'),
-    fournisseur: champTexte(formData, 'fournisseur'),
-    boite: champTexte(formData, 'boite'),
-    poids_unitaire: champNombre(formData, 'poids_unitaire'),
-    poids_total: champNombre(formData, 'poids_total'),
-    custom: champBooleen(formData, 'custom'),
-    pas_dans_unite: champBooleen(formData, 'pas_dans_unite'),
-    description: champTexte(formData, 'description'),
-    image_url: champTexte(formData, 'image_url'),
+    name: params.name,
+    sku_pimpit: String(nextSku),
+    sku_fournisseur: params.skuFournisseur,
+    stock: params.stock,
+    seuil_cible: params.seuilCible,
+    fournisseur: params.fournisseur,
+    boite: params.boite,
+    poids_unitaire: params.poidsUnitaire,
+    poids_total: params.poidsTotal,
+    custom: params.custom,
+    pas_dans_unite: params.pasDansUnite,
+    description: params.description,
+    image_url: params.imageUrl,
   });
   if (error) throw new Error(error.message);
 
   revalidatePath('/pins');
 }
 
-export async function modifierPin(airtableId: string, formData: FormData) {
+export async function modifierPin(airtableId: string, params: PinParams): Promise<void> {
   const supabase = await creerClientSupabaseServeur();
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('hub_pins')
     .update({
-      name: champTexte(formData, 'name'),
-      sku_pimpit: champTexte(formData, 'sku_pimpit'),
-      sku_fournisseur: champTexte(formData, 'sku_fournisseur'),
-      stock: champNombre(formData, 'stock'),
-      seuil_cible: champNombre(formData, 'seuil_cible'),
-      fournisseur: champTexte(formData, 'fournisseur'),
-      boite: champTexte(formData, 'boite'),
-      poids_unitaire: champNombre(formData, 'poids_unitaire'),
-      poids_total: champNombre(formData, 'poids_total'),
-      custom: champBooleen(formData, 'custom'),
-      pas_dans_unite: champBooleen(formData, 'pas_dans_unite'),
-      description: champTexte(formData, 'description'),
-      image_url: champTexte(formData, 'image_url'),
+      name: params.name,
+      sku_fournisseur: params.skuFournisseur,
+      stock: params.stock,
+      seuil_cible: params.seuilCible,
+      fournisseur: params.fournisseur,
+      boite: params.boite,
+      poids_unitaire: params.poidsUnitaire,
+      poids_total: params.poidsTotal,
+      custom: params.custom,
+      pas_dans_unite: params.pasDansUnite,
+      description: params.description,
+      image_url: params.imageUrl,
       synced_at: new Date().toISOString(),
     })
-    .eq('airtable_id', airtableId);
+    .eq('airtable_id', airtableId)
+    .select();
   if (error) throw new Error(error.message);
+  if (!data || data.length === 0) throw new Error('Modification bloquée (droits insuffisants ?)');
 
   revalidatePath('/pins');
 }
 
-export async function supprimerPin(airtableId: string) {
+export async function supprimerPin(airtableId: string): Promise<void> {
   const supabase = await creerClientSupabaseServeur();
 
   // .select() force Supabase/PostgREST à renvoyer les lignes supprimées : sans ça, une RLS qui
@@ -88,4 +103,18 @@ export async function supprimerPin(airtableId: string) {
   if (!data || data.length === 0) throw new Error('Suppression bloquée (droits insuffisants ?)');
 
   revalidatePath('/pins');
+}
+
+/** Envoie une photo (base64, lue côté navigateur via FileReader) vers le bucket public
+ * "stock-pins" (déjà utilisé par l'écran Stock > Pin's pour le même usage) et renvoie son URL
+ * publique. */
+export async function uploaderPhotoPin(base64: string, contentType: string): Promise<string> {
+  const supabase = await creerClientSupabaseServeur();
+  const extension = contentType === 'image/png' ? 'png' : 'jpg';
+  const nomFichier = `catalogue-${Date.now()}-${Math.random().toString(36).slice(2)}.${extension}`;
+  const buffer = Buffer.from(base64, 'base64');
+  const { error } = await supabase.storage.from('stock-pins').upload(nomFichier, buffer, { contentType });
+  if (error) throw new Error(error.message);
+  const { data } = supabase.storage.from('stock-pins').getPublicUrl(nomFichier);
+  return data.publicUrl;
 }

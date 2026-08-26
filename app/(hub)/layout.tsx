@@ -4,7 +4,7 @@ import { creerClientSupabaseServeur } from '@/lib/supabase/server';
 import { DeconnexionBouton } from './deconnexion-bouton';
 
 const SECTIONS: { titre: string | null; liens: { href: string; label: string }[] }[] = [
-  { titre: null, liens: [{ href: '/', label: 'Tableau de bord' }] },
+  { titre: null, liens: [{ href: '/', label: 'Tableau de bord' }, { href: '/pins', label: "Pin's" }] },
   {
     titre: 'Shopify',
     liens: [
@@ -16,7 +16,6 @@ const SECTIONS: { titre: string | null; liens: { href: string; label: string }[]
   {
     titre: 'Airtable',
     liens: [
-      { href: '/pins', label: "Pin's" },
       { href: '/commandes', label: 'Commandes fournisseurs' },
       { href: '/packs', label: "Packs de pin's" },
       { href: '/sabots', label: 'Sabots' },
