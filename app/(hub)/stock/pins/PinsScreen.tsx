@@ -35,12 +35,16 @@ export function PinsScreen({
   onRetour,
   initialPins,
   initialBoites,
+  masquerRetour,
 }: {
   popUps: PopUp[];
   popUpId: string | undefined;
-  onRetour: () => void;
+  onRetour?: () => void;
   initialPins: StockPin[];
   initialBoites: PopUpPinBoite[];
+  /** Espace Local (app/(local)/local) : cet écran est la seule page, il n'y a rien "avant" vers
+   * quoi revenir — masque le bouton "← Pin's" plutôt que de le rendre inerte. */
+  masquerRetour?: boolean;
 }) {
   const [pins, setPins] = useState(initialPins);
   const [boites, setBoites] = useState(initialBoites);
@@ -125,7 +129,7 @@ export function PinsScreen({
   if (!popUpActif) {
     return (
       <div>
-        <BoutonRetour onRetour={onRetour} />
+        {onRetour && <BoutonRetour onRetour={onRetour} />}
         <p className="text-sm text-slate-400">Aucun pop-up disponible.</p>
       </div>
     );
@@ -133,7 +137,7 @@ export function PinsScreen({
 
   return (
     <div>
-      <BoutonRetour onRetour={onRetour} titre="Pin&apos;s" />
+      {!masquerRetour && onRetour && <BoutonRetour onRetour={onRetour} titre="Pin&apos;s" />}
 
       {estVueLocaleActive ? (
         <LocalView

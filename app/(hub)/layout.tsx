@@ -1,7 +1,8 @@
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 
-import { creerClientSupabaseServeur } from '@/lib/supabase/server';
-import { DeconnexionBouton } from './deconnexion-bouton';
+import { DeconnexionBouton } from '@/components/DeconnexionBouton';
+import { determinerRoleHub } from '@/lib/roles';
 
 const SECTIONS: { titre: string | null; liens: { href: string; label: string }[] }[] = [
   { titre: null, liens: [{ href: '/', label: 'Tableau de bord' }, { href: '/pins', label: "Pin's" }] },
@@ -36,17 +37,15 @@ const SECTIONS: { titre: string | null; liens: { href: string; label: string }[]
   },
 ];
 
+/** Le Hub (ce layout et tout ce qui est en-dessous) reste réservé aux admins — cf. discussion
+ * 2026-08-26 : on construit un espace séparé par rôle plutôt que d'ouvrir le Hub tel quel à tout
+ * le monde. Une personne connectée non-admin est renvoyée vers son espace (/local pour l'instant,
+ * d'autres à venir), pas vers une page d'erreur — elle a un compte valide, juste pas ici. */
 export default async function HubLayout({ children }: { children: React.ReactNode }) {
-  const supabase = await creerClientSupabaseServeur();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { role, profil } = await determinerRoleHub();
+  if (role !== 'admin') redirect('/local');
 
-  let nomAffiche = user?.email ?? '';
-  if (user) {
-    const { data: profil } = await supabase.from('profiles').select('nom_complet').eq('id', user.id).maybeSingle();
-    if (profil?.nom_complet) nomAffiche = profil.nom_complet;
-  }
+  const nomAffiche = profil?.nom_complet ?? profil?.email ?? '';
 
   return (
     <div className="flex min-h-screen">

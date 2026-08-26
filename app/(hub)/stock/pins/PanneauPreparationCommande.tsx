@@ -52,6 +52,31 @@ export function PanneauPreparationCommande({
     });
   };
 
+  /** Ouvre un aperçu imprimable dans un nouvel onglet (même principe que l'ancien admin
+   * Shopify : une page HTML autonome, pas d'appel serveur) — pour préparer physiquement la
+   * commande sans l'écran ouvert à côté. */
+  const imprimer = () => {
+    const lignesHtml = lignes
+      .map((l) => {
+        const emplacement = formatEmplacement(l.pin) ?? '—';
+        return `<tr><td style="width:28px"><input type="checkbox" ${l.fait ? 'checked' : ''} style="width:18px;height:18px"></td><td>${l.pin.nom}</td><td>${l.pin.sku_pimpit ?? l.pin.sku_fournisseur ?? '—'}</td><td>${emplacement}</td></tr>`;
+      })
+      .join('');
+    const w = window.open('', '_blank');
+    if (!w) return;
+    w.document.write(`<html><head><title>Commande ${popUpNom}</title>
+      <style>body{font-family:system-ui;padding:32px}table{width:100%;border-collapse:collapse;font-size:14px}
+      th{background:#f3f4f6;padding:8px 10px;text-align:left}td{padding:8px 10px;border-bottom:1px solid #e5e7eb}
+      @media print{button{display:none}}</style></head><body>
+      <h2>Commande — ${popUpNom}</h2>
+      <p style="color:#6b7280;font-size:13px">${lignes.length} pin(s)</p>
+      <table><thead><tr><th></th><th>Nom</th><th>SKU</th><th>Emplacement</th></tr></thead>
+      <tbody>${lignesHtml}</tbody></table>
+      <button onclick="window.print()" style="margin-top:16px;padding:10px 20px;background:#111;color:#fff;border:none;border-radius:6px;cursor:pointer">Imprimer</button>
+      </body></html>`);
+    w.document.close();
+  };
+
   const confirmerValidation = () => {
     if (
       !confirm(
@@ -77,9 +102,14 @@ export function PanneauPreparationCommande({
           <h2 className="text-lg font-bold text-slate-900">Commande — {popUpNom}</h2>
           <p className="text-sm text-slate-400">Prépare chaque pin (photo, SKU, bac) puis coche-le.</p>
         </div>
-        <button onClick={toutCocher} disabled={enCours} className="rounded-lg bg-indigo-50 px-3 py-2 text-xs font-bold text-indigo-600">
-          Tout cocher
-        </button>
+        <div className="flex gap-2">
+          <button onClick={imprimer} className="rounded-lg bg-slate-100 px-3 py-2 text-xs font-bold text-slate-600">
+            Imprimer
+          </button>
+          <button onClick={toutCocher} disabled={enCours} className="rounded-lg bg-indigo-50 px-3 py-2 text-xs font-bold text-indigo-600">
+            Tout cocher
+          </button>
+        </div>
       </div>
 
       <div className="max-h-[420px] overflow-y-auto">
