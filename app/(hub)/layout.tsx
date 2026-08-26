@@ -1,50 +1,60 @@
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
 import { DeconnexionBouton } from '@/components/DeconnexionBouton';
 import { determinerRoleHub } from '@/lib/roles';
 import { definirApercuProfil } from './profil/actions';
-import { SidebarNav, type SectionNav } from './SidebarNav';
+import { SidebarNav, type CategorieNav } from './SidebarNav';
 
-const SECTIONS: SectionNav[] = [
+const ACCUEIL = { href: '/', label: 'Tableau de bord', icone: '🏠' };
+
+/** Menu en catégories par pôle d'activité (cf. discussion 2026-08-27) plutôt qu'un mur de liens.
+ * "Commercial" (Clients/Tâches/Recommandations) n'existe pas encore ici : ces écrans restent mis
+ * de côté (cf. commentaire plus bas) tant qu'ils ne sont pas repris — pas de catégorie vide
+ * affichée. Profil est volontairement hors catégorie (cf. rendu plus bas, à côté de Déconnexion) :
+ * c'est personnel, pas un pôle d'activité. */
+const CATEGORIES: CategorieNav[] = [
   {
-    titre: null,
+    titre: 'Gestion des produits',
+    icone: '📌',
     couleur: 'indigo',
     liens: [
-      { href: '/', label: 'Tableau de bord', icone: '🏠' },
       { href: '/pins', label: "Pin's", icone: '📌' },
-    ],
-  },
-  {
-    // Écrans repris à l'identique de l'ancien site et vérifiés (données + interface), au fur et à
-    // mesure — cf. demande utilisateur du 2026-08-26 : les regrouper ici pour distinguer d'un
-    // coup d'œil ce qui est déjà bon de ce qui reste à refaire.
-    titre: 'Vérifiés',
-    couleur: 'emerald',
-    liens: [
       { href: '/pins-unite', label: "Pin's à l'unité", icone: '🔗' },
       { href: '/packs', label: "Packs de pin's", icone: '🎁' },
-      { href: '/commandes', label: 'Commandes fournisseurs', icone: '📦' },
       { href: '/profil-expedition', label: "Profil d'expédition", icone: '🚚' },
     ],
   },
-  // Sections "Shopify" (Produits) et "Airtable" (Sabots, Sabots personnalisés, Produits
-  // complémentaires, Clients, Tâches, Recommandations) volontairement retirées du menu à la
-  // demande de l'utilisateur (2026-08-26) — mises de côté, pas supprimées : les pages existent
-  // toujours sous app/(hub)/produits, sabots, sabots-custom, produits-complementaires, clients,
-  // taches, recommandations, on verra plus tard si elles sont reprises.
   {
-    titre: 'Application',
+    titre: 'Logistique',
+    icone: '🚚',
     couleur: 'sky',
     liens: [
-      { href: '/planning', label: 'Planning', icone: '📅' },
-      { href: '/equipe', label: 'Équipe', icone: '👥' },
-      { href: '/ventes', label: 'Ventes', icone: '💰' },
+      { href: '/commandes', label: 'Commandes fournisseurs', icone: '📦' },
       { href: '/stock', label: 'Stock pop-up', icone: '📊' },
       { href: '/stock-cible', label: 'Stock cible', icone: '🎯' },
       { href: '/pop-ups', label: 'Pop-ups', icone: '🏪' },
-      { href: '/profil', label: 'Profil', icone: '👤' },
     ],
   },
+  {
+    titre: 'Planning & RH',
+    icone: '📅',
+    couleur: 'violet',
+    liens: [
+      { href: '/planning', label: 'Planning', icone: '📅' },
+      { href: '/equipe', label: 'Équipe', icone: '👥' },
+    ],
+  },
+  {
+    titre: 'Finance',
+    icone: '💰',
+    couleur: 'emerald',
+    liens: [{ href: '/ventes', label: 'Ventes', icone: '💰' }],
+  },
+  // "Commercial" (Clients, Tâches, Recommandations) et les autres écrans Shopify/Airtable mis de
+  // côté le 2026-08-26 (Produits, Sabots, Sabots personnalisés, Produits complémentaires) restent
+  // sur le disque (app/(hub)/produits, sabots, sabots-custom, produits-complementaires, clients,
+  // taches, recommandations) — à rajouter ici en nouvelle catégorie le jour où ils sont repris.
 ];
 
 /** Le Hub (ce layout et tout ce qui est en-dessous) reste réservé aux admins — cf. discussion
@@ -81,9 +91,20 @@ export default async function HubLayout({ children }: { children: React.ReactNod
             </div>
           </div>
 
-          <SidebarNav sections={SECTIONS} />
+          <SidebarNav accueil={ACCUEIL} categories={CATEGORIES} />
 
-          <DeconnexionBouton />
+          <div className="mt-2 border-t border-slate-100 pt-2">
+            <Link
+              href="/profil"
+              className="flex items-center gap-2.5 rounded-xl px-2.5 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+            >
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-sm text-slate-500">
+                👤
+              </span>
+              Profil
+            </Link>
+            <DeconnexionBouton />
+          </div>
         </aside>
 
         <main className="flex-1 px-8 py-8">
