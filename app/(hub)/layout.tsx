@@ -84,7 +84,9 @@ export default async function HubLayout({ children }: { children: React.ReactNod
         <DeconnexionBouton />
       </aside>
 
-      <main className="flex-1 px-8 py-8">{children}</main>
+      <main className="flex-1 px-8 py-8">
+        <div className="mx-auto max-w-[1200px]">{children}</div>
+      </main>
     </div>
   );
 }

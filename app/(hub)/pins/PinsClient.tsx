@@ -58,7 +58,14 @@ export function PinsClient({ pinsInitiaux }: { pinsInitiaux: HubPin[] }) {
       if (va == null && vb == null) return 0;
       if (va == null) return 1;
       if (vb == null) return -1;
-      if (typeof va === 'number' && typeof vb === 'number') return (va - vb) * triDir;
+      // sku_pimpit (et d'autres colonnes) sont du texte en base même quand la valeur est
+      // numérique ("1", "10", "100"...) — sans ceci, le tri comparait les chaînes lettre par
+      // lettre (1, 10, 100, 2, 20...) au lieu de l'ordre croissant attendu.
+      const na = typeof va === 'number' ? va : Number(va);
+      const nb = typeof vb === 'number' ? vb : Number(vb);
+      if (Number.isFinite(na) && Number.isFinite(nb) && String(va).trim() !== '' && String(vb).trim() !== '') {
+        return (na - nb) * triDir;
+      }
       return String(va).toLowerCase().localeCompare(String(vb).toLowerCase()) * triDir;
     });
   }, [pinsInitiaux, recherche, triCle, triDir]);
@@ -132,8 +139,8 @@ export function PinsClient({ pinsInitiaux }: { pinsInitiaux: HubPin[] }) {
         </div>
       </div>
 
-      <div className="inline-block max-w-full overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <table className="text-left text-sm">
+      <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <table className="w-full text-left text-sm">
           <thead className="border-b border-slate-100 text-xs font-semibold uppercase tracking-wide text-slate-400">
             <tr>
               <th className="px-4 py-3" />
