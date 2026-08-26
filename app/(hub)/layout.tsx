@@ -6,18 +6,24 @@ import { DeconnexionBouton } from './deconnexion-bouton';
 const SECTIONS: { titre: string | null; liens: { href: string; label: string }[] }[] = [
   { titre: null, liens: [{ href: '/', label: 'Tableau de bord' }, { href: '/pins', label: "Pin's" }] },
   {
-    titre: 'Shopify',
+    // Écrans repris à l'identique de l'ancien site et vérifiés (données + interface), au fur et à
+    // mesure — cf. demande utilisateur du 2026-08-26 : les regrouper ici pour distinguer d'un
+    // coup d'œil ce qui est déjà bon de ce qui reste à refaire.
+    titre: 'Vérifiés',
     liens: [
-      { href: '/produits', label: 'Produits' },
       { href: '/pins-unite', label: "Pin's à l'unité" },
+      { href: '/packs', label: "Packs de pin's" },
+      { href: '/commandes', label: 'Commandes fournisseurs' },
       { href: '/profil-expedition', label: "Profil d'expédition" },
     ],
   },
   {
+    titre: 'Shopify',
+    liens: [{ href: '/produits', label: 'Produits' }],
+  },
+  {
     titre: 'Airtable',
     liens: [
-      { href: '/commandes', label: 'Commandes fournisseurs' },
-      { href: '/packs', label: "Packs de pin's" },
       { href: '/sabots', label: 'Sabots' },
       { href: '/sabots-custom', label: 'Sabots personnalisés' },
       { href: '/produits-complementaires', label: 'Produits complémentaires' },
