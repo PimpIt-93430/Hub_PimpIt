@@ -17,21 +17,11 @@ const SECTIONS: { titre: string | null; liens: { href: string; label: string }[]
       { href: '/profil-expedition', label: "Profil d'expédition" },
     ],
   },
-  {
-    titre: 'Shopify',
-    liens: [{ href: '/produits', label: 'Produits' }],
-  },
-  {
-    titre: 'Airtable',
-    liens: [
-      { href: '/sabots', label: 'Sabots' },
-      { href: '/sabots-custom', label: 'Sabots personnalisés' },
-      { href: '/produits-complementaires', label: 'Produits complémentaires' },
-      { href: '/clients', label: 'Clients' },
-      { href: '/taches', label: 'Tâches' },
-      { href: '/recommandations', label: 'Recommandations' },
-    ],
-  },
+  // Sections "Shopify" (Produits) et "Airtable" (Sabots, Sabots personnalisés, Produits
+  // complémentaires, Clients, Tâches, Recommandations) volontairement retirées du menu à la
+  // demande de l'utilisateur (2026-08-26) — mises de côté, pas supprimées : les pages existent
+  // toujours sous app/(hub)/produits, sabots, sabots-custom, produits-complementaires, clients,
+  // taches, recommandations, on verra plus tard si elles sont reprises.
   {
     titre: 'Application',
     liens: [
