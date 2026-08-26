@@ -10,6 +10,7 @@ const SECTIONS: { titre: string | null; liens: { href: string; label: string }[]
     liens: [
       { href: '/produits', label: 'Produits' },
       { href: '/pins-unite', label: "Pin's à l'unité" },
+      { href: '/profil-expedition', label: "Profil d'expédition" },
     ],
   },
   {
@@ -35,6 +36,7 @@ const SECTIONS: { titre: string | null; liens: { href: string; label: string }[]
       { href: '/stock', label: 'Stock pop-up' },
       { href: '/stock-cible', label: 'Stock cible' },
       { href: '/pop-ups', label: 'Pop-ups' },
+      { href: '/profil', label: 'Profil' },
     ],
   },
 ];
@@ -61,9 +63,9 @@ export default async function HubLayout({ children }: { children: React.ReactNod
 
         <nav className="flex flex-1 flex-col gap-4 overflow-y-auto">
           {SECTIONS.map((section, i) => (
-            <div key={i} className="flex flex-col gap-1">
+            <div key={i} className="flex flex-col gap-0.5">
               {section.titre && (
-                <p className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                <p className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-wide text-text2">
                   {section.titre}
                 </p>
               )}
@@ -71,7 +73,7 @@ export default async function HubLayout({ children }: { children: React.ReactNod
                 <Link
                   key={lien.href}
                   href={lien.href}
-                  className="rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                  className="rounded-lg px-3 py-2.5 text-sm font-medium text-text2 transition-colors hover:bg-bg hover:text-gray-900"
                 >
                   {lien.label}
                 </Link>
