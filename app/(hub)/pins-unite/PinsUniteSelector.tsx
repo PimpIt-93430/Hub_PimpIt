@@ -5,6 +5,8 @@ import { useMemo, useState } from 'react';
 interface PinOption {
   airtable_id: string;
   name: string | null;
+  sku_pimpit: string | null;
+  image_url: string | null;
 }
 interface CollectionOption {
   id: string;
@@ -12,22 +14,40 @@ interface CollectionOption {
   handle: string;
 }
 
-/** Sélecteur multi-pins (sans quantité, contrairement à celui des sabots personnalisés) +
- * collections à cocher, pour reconstituer le formulaire "Créer un nouveau produit" de l'ancien
- * site. Écrit dans deux inputs cachés (`pin_ids` et `collection_ids`, tableaux JSON) soumis avec
- * le reste du formulaire. */
-export function PinsUniteSelector({ pins, collections }: { pins: PinOption[]; collections: CollectionOption[] }) {
+/** Réplique le sélecteur de pin's du tiroir "Créer un nouveau produit" de l'ancien admin
+ * (unite-create-list) : par défaut, seuls les pin's pas encore dans un produit (`pinsARajouter`)
+ * sont proposés — un bouton "+ Ajouter des pin's déjà dans des produits en ligne" révèle le reste
+ * sous un séparateur, exactement comme loadAllPinsForCreate()/renderCreateList() côté ancien site.
+ * Plus le choix des collections à cocher. */
+export function PinsUniteSelector({
+  pinsARajouter,
+  autresPins,
+  collections,
+}: {
+  pinsARajouter: PinOption[];
+  autresPins: PinOption[];
+  collections: CollectionOption[];
+}) {
   const [recherche, setRecherche] = useState('');
   const [selectionnes, setSelectionnes] = useState<Set<string>>(new Set());
   const [collectionsCochees, setCollectionsCochees] = useState<Set<string>>(new Set());
+  const [autresPinsCharges, setAutresPinsCharges] = useState(false);
 
-  const resultats = useMemo(() => {
-    const q = recherche.trim().toLowerCase();
-    const base = q ? pins.filter((p) => (p.name ?? '').toLowerCase().includes(q)) : pins;
-    return base.slice(0, 10);
-  }, [recherche, pins]);
+  const q = recherche.trim().toLowerCase();
+  const correspond = (p: PinOption) =>
+    !q || (p.name ?? '').toLowerCase().includes(q) || (p.sku_pimpit ?? '').includes(q);
 
-  const nomParId = useMemo(() => Object.fromEntries(pins.map((p) => [p.airtable_id, p.name ?? p.airtable_id])), [pins]);
+  const principaux = useMemo(() => pinsARajouter.filter(correspond), [pinsARajouter, q]);
+  const secondaires = useMemo(
+    () => (autresPinsCharges ? autresPins.filter(correspond) : []),
+    [autresPins, autresPinsCharges, q],
+  );
+
+  const tousLesPins = useMemo(() => [...pinsARajouter, ...autresPins], [pinsARajouter, autresPins]);
+  const nomParId = useMemo(
+    () => Object.fromEntries(tousLesPins.map((p) => [p.airtable_id, p.name ?? p.airtable_id])),
+    [tousLesPins],
+  );
 
   function basculer(id: string) {
     setSelectionnes((s) => {
@@ -46,56 +66,89 @@ export function PinsUniteSelector({ pins, collections }: { pins: PinOption[]; co
     });
   }
 
+  function ligne(p: PinOption) {
+    const sel = selectionnes.has(p.airtable_id);
+    return (
+      <label
+        key={p.airtable_id}
+        className="flex cursor-pointer items-center gap-2.5 rounded-lg px-2 py-1.5 text-sm hover:bg-slate-50"
+      >
+        <input
+          type="checkbox"
+          checked={sel}
+          onChange={() => basculer(p.airtable_id)}
+          className="h-4 w-4 rounded border-slate-300"
+        />
+        {p.image_url ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={p.image_url} alt="" className="h-8 w-8 shrink-0 rounded-md object-cover" />
+        ) : (
+          <div className="h-8 w-8 shrink-0 rounded-md bg-slate-100" />
+        )}
+        <span>
+          {p.name} <span className="text-xs text-slate-400">#{p.sku_pimpit ?? '?'}</span>
+        </span>
+      </label>
+    );
+  }
+
   return (
-    <div className="col-span-2 flex flex-col gap-3 sm:col-span-4">
+    <div>
       <input type="hidden" name="pin_ids" value={JSON.stringify([...selectionnes])} />
       <input type="hidden" name="collection_ids" value={JSON.stringify([...collectionsCochees])} />
 
-      <div>
-        <label className="mb-1 block text-xs font-semibold text-slate-500">
-          Pin&apos;s inclus ({selectionnes.size} sélectionné{selectionnes.size > 1 ? 's' : ''})
-        </label>
-        <input
-          value={recherche}
-          onChange={(e) => setRecherche(e.target.value)}
-          placeholder="Chercher un pin par nom…"
-          className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-slate-400 focus:outline-none"
-        />
-        <div className="mt-1 max-h-48 overflow-y-auto rounded-lg border border-slate-200 bg-white">
-          {resultats.map((p) => (
-            <label
-              key={p.airtable_id}
-              className="flex cursor-pointer items-center gap-2 px-3 py-1.5 text-sm hover:bg-slate-50"
-            >
-              <input
-                type="checkbox"
-                checked={selectionnes.has(p.airtable_id)}
-                onChange={() => basculer(p.airtable_id)}
-                className="h-4 w-4 rounded border-slate-300"
-              />
-              {p.name}
-            </label>
-          ))}
-          {resultats.length === 0 && <p className="px-3 py-2 text-sm text-slate-400">Aucun résultat.</p>}
-        </div>
-        {selectionnes.size > 0 && (
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            {[...selectionnes].map((id) => (
-              <span key={id} className="flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">
-                {nomParId[id] ?? id}
-                <button type="button" onClick={() => basculer(id)} className="text-slate-400 hover:text-slate-900">
-                  ×
-                </button>
-              </span>
-            ))}
-          </div>
+      <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-400">
+        Pin&apos;s inclus ({selectionnes.size} sélectionné{selectionnes.size > 1 ? 's' : ''})
+      </p>
+      <input
+        value={recherche}
+        onChange={(e) => setRecherche(e.target.value)}
+        placeholder="Rechercher..."
+        className="mb-1.5 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-400"
+      />
+      <div className="max-h-[340px] overflow-y-auto rounded-lg border border-slate-200 p-1">
+        {principaux.length === 0 && secondaires.length === 0 ? (
+          <p className="px-3 py-4 text-center text-sm text-slate-400">Aucun pin trouvé</p>
+        ) : (
+          <>
+            {principaux.map(ligne)}
+            {secondaires.length > 0 && (
+              <p className="mt-1 border-t border-slate-100 px-2 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                Déjà dans des produits en ligne
+              </p>
+            )}
+            {secondaires.map(ligne)}
+          </>
         )}
       </div>
 
+      {!autresPinsCharges && autresPins.length > 0 && (
+        <button
+          type="button"
+          onClick={() => setAutresPinsCharges(true)}
+          className="mt-2 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-500 hover:bg-slate-50"
+        >
+          + Ajouter des pin&apos;s déjà dans des produits en ligne
+        </button>
+      )}
+
+      {selectionnes.size > 0 && (
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {[...selectionnes].map((id) => (
+            <span key={id} className="flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">
+              {nomParId[id] ?? id}
+              <button type="button" onClick={() => basculer(id)} className="text-slate-400 hover:text-slate-900">
+                ×
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+
       {collections.length > 0 && (
-        <div>
-          <label className="mb-1 block text-xs font-semibold text-slate-500">Collections</label>
-          <div className="flex max-h-32 flex-wrap gap-3 overflow-y-auto rounded-lg border border-slate-200 p-2">
+        <div className="mt-4">
+          <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-400">Collections</p>
+          <div className="flex max-h-32 flex-wrap gap-3 overflow-y-auto rounded-lg border border-slate-200 p-2.5">
             {collections.map((c) => (
               <label key={c.id} className="flex items-center gap-1.5 whitespace-nowrap text-xs text-slate-600">
                 <input
