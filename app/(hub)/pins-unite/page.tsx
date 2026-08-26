@@ -33,14 +33,23 @@ export default async function PinsUnitePage() {
     .or('pas_dans_unite.eq.false,pas_dans_unite.is.null')
     .order('name');
 
+  // Comme /api/unite/collections de l'ancien site : custom_collections ET smart_collections
+  // (collections automatiques) — un seul des deux types manquait ici, ce qui cachait certaines
+  // collections cochables par rapport à l'ancien site.
   let collections: { id: string; title: string; handle: string }[] = [];
   try {
-    const data = await shopifyFetch('/custom_collections.json?limit=250');
-    collections = (data.custom_collections ?? []).map((c: { id: number; title: string; handle: string }) => ({
-      id: String(c.id),
-      title: c.title,
-      handle: c.handle,
-    }));
+    const [dataCustom, dataSmart] = await Promise.all([
+      shopifyFetch('/custom_collections.json?limit=250'),
+      shopifyFetch('/smart_collections.json?limit=250'),
+    ]);
+    const brutes = [...(dataCustom.custom_collections ?? []), ...(dataSmart.smart_collections ?? [])] as {
+      id: number;
+      title: string;
+      handle: string;
+    }[];
+    collections = brutes
+      .map((c) => ({ id: String(c.id), title: c.title, handle: c.handle }))
+      .sort((a, b) => a.title.localeCompare(b.title));
   } catch (e) {
     console.warn('Collections Shopify indisponibles :', e instanceof Error ? e.message : e);
   }
