@@ -1,22 +1,30 @@
-import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
 import { DeconnexionBouton } from '@/components/DeconnexionBouton';
 import { determinerRoleHub } from '@/lib/roles';
 import { definirApercuProfil } from './profil/actions';
+import { SidebarNav, type SectionNav } from './SidebarNav';
 
-const SECTIONS: { titre: string | null; liens: { href: string; label: string }[] }[] = [
-  { titre: null, liens: [{ href: '/', label: 'Tableau de bord' }, { href: '/pins', label: "Pin's" }] },
+const SECTIONS: SectionNav[] = [
+  {
+    titre: null,
+    couleur: 'indigo',
+    liens: [
+      { href: '/', label: 'Tableau de bord', icone: '🏠' },
+      { href: '/pins', label: "Pin's", icone: '📌' },
+    ],
+  },
   {
     // Écrans repris à l'identique de l'ancien site et vérifiés (données + interface), au fur et à
     // mesure — cf. demande utilisateur du 2026-08-26 : les regrouper ici pour distinguer d'un
     // coup d'œil ce qui est déjà bon de ce qui reste à refaire.
     titre: 'Vérifiés',
+    couleur: 'emerald',
     liens: [
-      { href: '/pins-unite', label: "Pin's à l'unité" },
-      { href: '/packs', label: "Packs de pin's" },
-      { href: '/commandes', label: 'Commandes fournisseurs' },
-      { href: '/profil-expedition', label: "Profil d'expédition" },
+      { href: '/pins-unite', label: "Pin's à l'unité", icone: '🔗' },
+      { href: '/packs', label: "Packs de pin's", icone: '🎁' },
+      { href: '/commandes', label: 'Commandes fournisseurs', icone: '📦' },
+      { href: '/profil-expedition', label: "Profil d'expédition", icone: '🚚' },
     ],
   },
   // Sections "Shopify" (Produits) et "Airtable" (Sabots, Sabots personnalisés, Produits
@@ -26,14 +34,15 @@ const SECTIONS: { titre: string | null; liens: { href: string; label: string }[]
   // taches, recommandations, on verra plus tard si elles sont reprises.
   {
     titre: 'Application',
+    couleur: 'sky',
     liens: [
-      { href: '/planning', label: 'Planning' },
-      { href: '/equipe', label: 'Équipe' },
-      { href: '/ventes', label: 'Ventes' },
-      { href: '/stock', label: 'Stock pop-up' },
-      { href: '/stock-cible', label: 'Stock cible' },
-      { href: '/pop-ups', label: 'Pop-ups' },
-      { href: '/profil', label: 'Profil' },
+      { href: '/planning', label: 'Planning', icone: '📅' },
+      { href: '/equipe', label: 'Équipe', icone: '👥' },
+      { href: '/ventes', label: 'Ventes', icone: '💰' },
+      { href: '/stock', label: 'Stock pop-up', icone: '📊' },
+      { href: '/stock-cible', label: 'Stock cible', icone: '🎯' },
+      { href: '/pop-ups', label: 'Pop-ups', icone: '🏪' },
+      { href: '/profil', label: 'Profil', icone: '👤' },
     ],
   },
 ];
@@ -62,31 +71,17 @@ export default async function HubLayout({ children }: { children: React.ReactNod
       )}
       <div className="flex flex-1">
         <aside className="flex w-64 shrink-0 flex-col border-r border-slate-200 bg-white px-4 py-6">
-          <div className="mb-8 px-2">
-            <p className="text-lg font-bold text-slate-900">Pimp It Hub</p>
-            <p className="text-xs text-slate-400">{nomAffiche}</p>
+          <div className="mb-8 flex items-center gap-2.5 px-2">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-700 text-base shadow-sm">
+              📌
+            </div>
+            <div>
+              <p className="text-base font-bold leading-tight text-slate-900">Pimp It Hub</p>
+              <p className="text-xs text-slate-400">{nomAffiche}</p>
+            </div>
           </div>
 
-          <nav className="flex flex-1 flex-col gap-4 overflow-y-auto">
-            {SECTIONS.map((section, i) => (
-              <div key={i} className="flex flex-col gap-0.5">
-                {section.titre && (
-                  <p className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-wide text-text2">
-                    {section.titre}
-                  </p>
-                )}
-                {section.liens.map((lien) => (
-                  <Link
-                    key={lien.href}
-                    href={lien.href}
-                    className="rounded-lg px-3 py-2.5 text-sm font-medium text-text2 transition-colors hover:bg-bg hover:text-gray-900"
-                  >
-                    {lien.label}
-                  </Link>
-                ))}
-              </div>
-            ))}
-          </nav>
+          <SidebarNav sections={SECTIONS} />
 
           <DeconnexionBouton />
         </aside>
