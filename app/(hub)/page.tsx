@@ -2,6 +2,8 @@ import Link from 'next/link';
 
 import { determinerRoleHub } from '@/lib/roles';
 import { creerClientSupabaseServeur } from '@/lib/supabase/server';
+import { chargerTachesQuotidiennes } from './taches-quotidiennes-actions';
+import { TachesQuotidiennesCard } from './TachesQuotidiennesCard';
 
 function formatMontant(montant: number): string {
   return montant.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' });
@@ -86,6 +88,7 @@ export default async function DashboardPage() {
     { count: commandesPopUpAPreparer },
     { data: commandesFournisseurRecentes },
     { data: commandesPopUpRecentes },
+    tachesQuotidiennes,
   ] = await Promise.all([
     supabase.from('ventes_sumup').select('montant, statut').gte('horodatage', debutJour.toISOString()),
     supabase.from('ventes_especes').select('montant, statut').gte('created_at', debutJour.toISOString()),
@@ -106,6 +109,7 @@ export default async function DashboardPage() {
     supabase.from('commandes_pop_up').select('*', { count: 'exact', head: true }).neq('statut', 'recue'),
     supabase.from('hub_purchase_orders').select('id, ref, label, statut, date_creation, date_reception').order('date_creation', { ascending: false }).limit(5),
     supabase.from('commandes_pop_up').select('id, statut, envoyee_at, recue_at, pop_up:pop_ups(nom)').order('envoyee_at', { ascending: false }).limit(5),
+    chargerTachesQuotidiennes(),
   ]);
 
   const caCarte = (ventesSumup ?? []).filter((v) => v.statut === 'SUCCESSFUL').reduce((s, v) => s + v.montant, 0);
@@ -121,7 +125,9 @@ export default async function DashboardPage() {
     .map((p) => ({ ...p, pct: Math.round((p.stock / p.seuil) * 100) }))
     .sort((a, b) => a.pct - b.pct);
 
-  const taches = [
+  // Signaux opérationnels agrégés dans la carte Alertes (comptes simples, pas de détail nominatif
+  // comme pour les pins/packs ci-dessus — juste assez pour savoir qu'il faut aller voir).
+  const alertesOperationnelles = [
     (commandesFournisseurEnAttente ?? 0) > 0 && {
       texte: `${commandesFournisseurEnAttente} commande${(commandesFournisseurEnAttente ?? 0) > 1 ? 's' : ''} fournisseur à réceptionner`,
       href: '/commandes',
@@ -130,8 +136,6 @@ export default async function DashboardPage() {
       texte: `${commandesPopUpAPreparer} commande${(commandesPopUpAPreparer ?? 0) > 1 ? 's' : ''} pop-up à préparer`,
       href: '/local',
     },
-    pinsCritiques.length > 0 && { texte: `${pinsCritiques.length} pin's à recommander (stock critique)`, href: '/pins' },
-    (packsAProbleme ?? []).length > 0 && { texte: `${(packsAProbleme ?? []).length} pack(s) signalé(s) à problème`, href: '/packs' },
     (pinsARajouter ?? 0) > 0 && { texte: `${pinsARajouter} pin's pas encore en ligne`, href: '/pins-unite' },
   ].filter((t): t is { texte: string; href: string } => Boolean(t));
 
@@ -177,27 +181,11 @@ export default async function DashboardPage() {
       </p>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {/* Tâches quotidiennes */}
-        <Carte titre="Tâches quotidiennes" icone="📋" couleur="indigo">
-          {taches.length === 0 ? (
-            <EtatVide texte="Rien en attente 🎉" />
-          ) : (
-            <ul className="flex flex-col gap-1.5">
-              {taches.map((t) => (
-                <li key={t.href + t.texte}>
-                  <Link
-                    href={t.href}
-                    className="flex items-center gap-2.5 rounded-xl px-2.5 py-2.5 text-sm text-slate-700 hover:bg-slate-50"
-                  >
-                    <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500" />
-                    <span className="flex-1">{t.texte}</span>
-                    <span className="text-slate-300">›</span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Carte>
+        {/* Tâches quotidiennes — checklist récurrente cochée à la main, pas un calcul automatique
+            (cf. discussion 2026-08-27) */}
+        <div className="flex h-full min-h-[300px] flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <TachesQuotidiennesCard tachesInitiales={tachesQuotidiennes} />
+        </div>
 
         {/* Chiffres de la journée */}
         <Carte titre="Chiffres de la journée" icone="💰" couleur="emerald">
@@ -241,11 +229,11 @@ export default async function DashboardPage() {
 
         {/* Alertes */}
         <Carte titre="Alertes" icone="🔔" couleur="amber">
-          {pinsCritiques.length === 0 && (packsAProbleme ?? []).length === 0 ? (
+          {pinsCritiques.length === 0 && (packsAProbleme ?? []).length === 0 && alertesOperationnelles.length === 0 ? (
             <EtatVide texte="Aucune alerte 🎉" />
           ) : (
             <ul className="flex flex-col gap-1.5">
-              {pinsCritiques.slice(0, 4).map((p) => (
+              {pinsCritiques.slice(0, 3).map((p) => (
                 <li key={p.nom}>
                   <Link href="/pins" className="flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-sm hover:bg-slate-50">
                     <span className="rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-bold text-red-700">{p.pct}%</span>
@@ -253,11 +241,19 @@ export default async function DashboardPage() {
                   </Link>
                 </li>
               ))}
-              {(packsAProbleme ?? []).map((p) => (
+              {(packsAProbleme ?? []).slice(0, 2).map((p) => (
                 <li key={p.nom_du_pack}>
                   <Link href="/packs" className="flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-sm hover:bg-slate-50">
                     <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-bold text-amber-700">!</span>
                     <span className="flex-1 truncate text-slate-700">{p.nom_du_pack}</span>
+                  </Link>
+                </li>
+              ))}
+              {alertesOperationnelles.map((a) => (
+                <li key={a.href + a.texte}>
+                  <Link href={a.href} className="flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-sm hover:bg-slate-50">
+                    <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500" />
+                    <span className="flex-1 truncate text-slate-700">{a.texte}</span>
                   </Link>
                 </li>
               ))}
