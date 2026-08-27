@@ -66,9 +66,11 @@ export default async function HubLayout({ children }: { children: React.ReactNod
   if (role !== 'admin') redirect('/local');
 
   const nomAffiche = profil?.nom_complet ?? profil?.email ?? '';
+  const initiale = (profil?.nom_complet || profil?.email || '?').slice(0, 1).toUpperCase();
+  const couleurAvatar = profil?.couleur ?? '#4F46E5';
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col bg-slate-50">
       {enApercu && (
         <div className="flex items-center justify-center gap-2 border-b border-amber-200 bg-amber-50 px-6 py-2 text-xs font-semibold text-amber-800">
           Tu vois le Hub comme {nomAffiche} le verrait
@@ -80,36 +82,49 @@ export default async function HubLayout({ children }: { children: React.ReactNod
         </div>
       )}
       <div className="flex flex-1">
-        <aside className="flex w-64 shrink-0 flex-col border-r border-slate-200 bg-white px-4 py-6">
+        {/* Sidebar sombre — cf. référence visuelle 2026-08-27 (fintech dashboard) */}
+        <aside className="flex w-64 shrink-0 flex-col bg-[#15141F] px-4 py-6">
           <div className="mb-8 flex items-center gap-2.5 px-2">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-700 text-base shadow-sm">
               📌
             </div>
-            <div>
-              <p className="text-base font-bold leading-tight text-slate-900">Pimp It Hub</p>
-              <p className="text-xs text-slate-400">{nomAffiche}</p>
-            </div>
+            <p className="text-base font-bold leading-tight text-white">Pimp It Hub</p>
           </div>
 
           <SidebarNav accueil={ACCUEIL} categories={CATEGORIES} />
 
-          <div className="mt-2 border-t border-slate-100 pt-2">
+          <div className="mt-2 border-t border-white/10 pt-2">
             <Link
               href="/profil"
-              className="flex items-center gap-2.5 rounded-xl px-2.5 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+              className="flex items-center gap-2.5 rounded-xl px-2.5 py-2.5 text-sm font-semibold text-slate-300 hover:bg-white/5 hover:text-white"
             >
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-sm text-slate-500">
-                👤
-              </span>
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/10 text-sm">👤</span>
               Profil
             </Link>
-            <DeconnexionBouton />
+            <DeconnexionBouton variant="dark" />
           </div>
         </aside>
 
-        <main className="flex-1 px-8 py-8">
-          <div className="mx-auto max-w-[1800px]">{children}</div>
-        </main>
+        <div className="flex flex-1 flex-col">
+          {/* Barre du haut — recherche à venir une fois qu'il y aura quelque chose de pertinent à
+              chercher (cf. discussion 2026-08-27) : pour l'instant juste le raccourci profil, pas
+              de contrôle qui ferait semblant de marcher. */}
+          <header className="flex h-16 shrink-0 items-center justify-end border-b border-slate-200 bg-white px-8">
+            <Link href="/profil" className="flex items-center gap-2.5 rounded-xl py-1.5 pl-1.5 pr-3 hover:bg-slate-50">
+              <span
+                className="flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold text-white"
+                style={{ backgroundColor: couleurAvatar }}
+              >
+                {initiale}
+              </span>
+              <span className="text-sm font-semibold text-slate-700">{nomAffiche}</span>
+            </Link>
+          </header>
+
+          <main className="flex-1 px-8 py-8">
+            <div className="mx-auto max-w-[1800px]">{children}</div>
+          </main>
+        </div>
       </div>
     </div>
   );

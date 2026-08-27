@@ -19,22 +19,25 @@ export interface CategorieNav {
   liens: LienNav[];
 }
 
-const CLASSES_CHIP_ACTIF: Record<CouleurNav, string> = {
-  indigo: 'bg-indigo-100 text-indigo-600',
-  sky: 'bg-sky-100 text-sky-600',
-  violet: 'bg-violet-100 text-violet-600',
-  emerald: 'bg-emerald-100 text-emerald-600',
-  amber: 'bg-amber-100 text-amber-600',
+// Chips translucides (fond couleur/15, texte couleur clair) : les teintes pastel utilisées sur
+// fond blanc (bg-indigo-100) deviennent illisibles sur la sidebar sombre — classes littérales pour
+// que Tailwind les détecte à la compilation.
+const CLASSES_CHIP: Record<CouleurNav, string> = {
+  indigo: 'bg-indigo-500/15 text-indigo-300',
+  sky: 'bg-sky-500/15 text-sky-300',
+  violet: 'bg-violet-500/15 text-violet-300',
+  emerald: 'bg-emerald-500/15 text-emerald-300',
+  amber: 'bg-amber-500/15 text-amber-300',
 };
 
 function EstActif(href: string, pathname: string): boolean {
   return href === '/' ? pathname === '/' : pathname.startsWith(href);
 }
 
-/** Menu en catégories repliables (Gestion des produits / Logistique / Planning & RH / Finance,
- * cf. discussion 2026-08-27) plutôt qu'un mur de liens à plat. La catégorie contenant la page
- * active s'ouvre automatiquement au chargement ; les autres restent repliées. "Tableau de bord"
- * reste épinglé au-dessus, hors catégorie (c'est l'accueil, pas un pôle d'activité). */
+/** Menu en catégories repliables sur sidebar sombre (cf. référence visuelle 2026-08-27 — fintech
+ * dashboard : sidebar foncée, icônes en chips colorées translucides, page active en pastille pleine
+ * couleur accent). La catégorie contenant la page active s'ouvre automatiquement ; les autres
+ * restent repliées. "Tableau de bord" reste épinglé au-dessus, hors catégorie. */
 export function SidebarNav({ accueil, categories }: { accueil: LienNav; categories: CategorieNav[] }) {
   const pathname = usePathname();
   const [ouvertes, setOuvertes] = useState<Set<number>>(
@@ -57,10 +60,10 @@ export function SidebarNav({ accueil, categories }: { accueil: LienNav; categori
       <Link
         href={accueil.href}
         className={`mb-3 flex items-center gap-2.5 rounded-xl px-2.5 py-2.5 text-sm font-semibold transition-colors ${
-          accueilActif ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+          accueilActif ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-900/40' : 'text-slate-300 hover:bg-white/5 hover:text-white'
         }`}
       >
-        <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-sm ${accueilActif ? 'bg-white/20 text-white' : 'bg-indigo-100 text-indigo-600'}`}>
+        <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-sm ${accueilActif ? 'bg-white/20 text-white' : 'bg-indigo-500/15 text-indigo-300'}`}>
           {accueil.icone}
         </span>
         {accueil.label}
@@ -72,17 +75,17 @@ export function SidebarNav({ accueil, categories }: { accueil: LienNav; categori
           <div key={cat.titre} className="flex flex-col">
             <button
               onClick={() => basculer(i)}
-              className="flex items-center gap-2.5 rounded-xl px-2.5 py-2.5 text-left text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+              className="flex items-center gap-2.5 rounded-xl px-2.5 py-2.5 text-left text-sm font-semibold text-slate-300 transition-colors hover:bg-white/5 hover:text-white"
             >
-              <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-sm ${CLASSES_CHIP_ACTIF[cat.couleur]}`}>
+              <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-sm ${CLASSES_CHIP[cat.couleur]}`}>
                 {cat.icone}
               </span>
               <span className="flex-1">{cat.titre}</span>
-              <span className={`text-[10px] text-slate-400 transition-transform ${ouverte ? 'rotate-180' : ''}`}>▾</span>
+              <span className={`text-[10px] text-slate-500 transition-transform ${ouverte ? 'rotate-180' : ''}`}>▾</span>
             </button>
 
             {ouverte && (
-              <div className="ml-3.5 flex flex-col gap-0.5 border-l border-slate-100 py-1 pl-3.5">
+              <div className="ml-3.5 flex flex-col gap-0.5 border-l border-white/10 py-1 pl-3.5">
                 {cat.liens.map((lien) => {
                   const actif = EstActif(lien.href, pathname);
                   return (
@@ -90,7 +93,7 @@ export function SidebarNav({ accueil, categories }: { accueil: LienNav; categori
                       key={lien.href}
                       href={lien.href}
                       className={`rounded-lg px-2.5 py-2 text-sm font-medium transition-colors ${
-                        actif ? 'bg-indigo-50 text-indigo-700' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+                        actif ? 'bg-indigo-500/20 text-indigo-200' : 'text-slate-400 hover:bg-white/5 hover:text-white'
                       }`}
                     >
                       {lien.label}
