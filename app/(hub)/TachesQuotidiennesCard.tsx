@@ -4,6 +4,65 @@ import { useState, useTransition } from 'react';
 
 import { basculerTacheQuotidienne, creerTacheQuotidienne, retirerTacheQuotidienne, type TacheQuotidienne } from './taches-quotidiennes-actions';
 
+function domaineDuLien(lien: string): string | null {
+  try {
+    return new URL(lien).hostname;
+  } catch {
+    return null;
+  }
+}
+
+/** Domaine racine (2 derniers segments, ex. message.alibaba.com → alibaba.com) — Google s2 renvoie
+ * souvent une icône générique 16px pour un sous-domaine qu'il ne connaît pas spécifiquement, alors
+ * qu'il a la vraie favicon du domaine principal. */
+function domaineRacine(hostname: string): string {
+  const parties = hostname.split('.');
+  return parties.length <= 2 ? hostname : parties.slice(-2).join('.');
+}
+
+/** Favicon de la tâche. Trois cas :
+ * 1) `icone` est déjà une URL d'image (posée à la main en base pour une tâche de départ, cf.
+ *    migration hub_taches_quotidiennes icone/lien) — utilisée telle quelle. Google s2 (cf. cas 2)
+ *    s'est révélé trop peu fiable pour ces services précis (réponses tantôt bonnes, tantôt une
+ *    icône générique 16px, de façon non déterministe d'un appel à l'autre) : pour eux, on hotlink
+ *    directement la vraie favicon depuis le CDN du service.
+ * 2) Sinon, tentative via Google s2 à partir du lien, en 2 paliers : sous-domaine exact (ex.
+ *    mail.google.com), puis domaine racine si le premier n'a renvoyé que l'icône générique 16px
+ *    (ex. message.alibaba.com → alibaba.com).
+ * 3) Repli sur l'emoji si tout échoue ou qu'il n'y a pas de lien. */
+function IconeTache({ icone, lien }: { icone: string | null; lien: string | null }) {
+  // Hook appelé inconditionnellement (règle des hooks) même s'il ne sert pas dans le cas 1 ci-dessous.
+  const [palier, setPalier] = useState<'sous-domaine' | 'racine' | 'emoji'>('sous-domaine');
+
+  if (icone?.startsWith('http')) {
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img src={icone} alt="" className="h-4 w-4 shrink-0 rounded-sm" />;
+  }
+
+  const hostname = lien ? domaineDuLien(lien) : null;
+  const domaine =
+    palier === 'sous-domaine' ? hostname : palier === 'racine' && hostname ? domaineRacine(hostname) : null;
+
+  if (domaine && palier !== 'emoji') {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={`https://www.google.com/s2/favicons?sz=64&domain=${domaine}`}
+        alt=""
+        className="h-4 w-4 shrink-0 rounded-sm"
+        onLoad={(e) => {
+          // Icône générique (16px) malgré la taille sz=64 demandée : Google n'a pas de favicon
+          // spécifique pour ce sous-domaine exact — on retente avec le domaine racine.
+          if (palier === 'sous-domaine' && e.currentTarget.naturalWidth <= 16) setPalier('racine');
+        }}
+        onError={() => setPalier((p) => (p === 'sous-domaine' ? 'racine' : 'emoji'))}
+      />
+    );
+  }
+  if (icone) return <span className="shrink-0 text-sm">{icone}</span>;
+  return null;
+}
+
 /** Checklist quotidienne (cf. discussion 2026-08-27 : pas un calcul automatique — une vraie liste
  * de tâches récurrentes fixes, cochée à la main chaque jour, qui se réinitialise le lendemain). */
 export function TachesQuotidiennesCard({ tachesInitiales }: { tachesInitiales: TacheQuotidienne[] }) {
@@ -37,7 +96,7 @@ export function TachesQuotidiennesCard({ tachesInitiales }: { tachesInitiales: T
     setAjoutOuvert(false);
     demarrer(async () => {
       await creerTacheQuotidienne(libelle);
-      setTaches((ts) => [...ts, { id: `temp-${Date.now()}`, libelle, valideAujourdhui: false }]);
+      setTaches((ts) => [...ts, { id: `temp-${Date.now()}`, libelle, icone: null, lien: null, valideAujourdhui: false }]);
     });
   };
 
@@ -68,12 +127,21 @@ export function TachesQuotidiennesCard({ tachesInitiales }: { tachesInitiales: T
                 >
                   {t.valideAujourdhui && <span className="text-[10px] font-bold text-white">✓</span>}
                 </button>
-                <button
-                  onClick={() => basculer(t.id)}
-                  className={`flex-1 text-left text-sm ${t.valideAujourdhui ? 'text-slate-400 line-through' : 'text-slate-700'}`}
-                >
-                  {t.libelle}
-                </button>
+                <IconeTache icone={t.icone} lien={t.lien} />
+                {t.lien ? (
+                  <a
+                    href={t.lien}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`flex-1 text-left text-sm hover:underline ${t.valideAujourdhui ? 'text-slate-400 line-through' : 'text-slate-700'}`}
+                  >
+                    {t.libelle}
+                  </a>
+                ) : (
+                  <span className={`flex-1 text-left text-sm ${t.valideAujourdhui ? 'text-slate-400 line-through' : 'text-slate-700'}`}>
+                    {t.libelle}
+                  </span>
+                )}
                 <button
                   onClick={() => retirer(t.id)}
                   className="shrink-0 text-slate-300 opacity-0 hover:text-red-500 group-hover:opacity-100"

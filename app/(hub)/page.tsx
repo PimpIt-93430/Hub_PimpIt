@@ -1,9 +1,15 @@
 import Link from 'next/link';
 
+import { ventesShopifyDepuis } from '@/lib/shopify';
 import { determinerRoleHub } from '@/lib/roles';
 import { creerClientSupabaseServeur } from '@/lib/supabase/server';
 import { chargerTachesQuotidiennes } from './taches-quotidiennes-actions';
 import { TachesQuotidiennesCard } from './TachesQuotidiennesCard';
+
+// Le tableau de bord doit toujours refléter l'instant présent (cf. discussion 2026-08-27 : "à
+// chaque fois qu'on clique dessus ça actualise les chiffres") — sans ça, Next.js peut resservir un
+// rendu mis en cache d'une visite précédente au lieu de refaire les requêtes Supabase/Shopify.
+export const dynamic = 'force-dynamic';
 
 function formatMontant(montant: number): string {
   return montant.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' });
@@ -73,71 +79,84 @@ export default async function DashboardPage() {
   const debutJour = new Date();
   debutJour.setHours(0, 0, 0, 0);
   const debutMois = new Date(debutJour.getFullYear(), debutJour.getMonth(), 1);
-  const ajd = debutJour.toISOString().slice(0, 10);
 
   const [
+    { data: popUps },
+    { data: emailsSumUp },
     { data: ventesSumup },
     { data: ventesEspeces },
     { data: ventesMoisSumup },
     { data: ventesMoisEspeces },
-    { data: mesCreneauxAujourdhui },
-    { data: pinsPourAlerte },
-    { data: packsAProbleme },
-    { count: pinsARajouter },
-    { count: commandesFournisseurEnAttente },
-    { count: commandesPopUpAPreparer },
+    ventesShopifyJour,
+    ventesShopifyMois,
     { data: commandesFournisseurRecentes },
     { data: commandesPopUpRecentes },
     tachesQuotidiennes,
+    { data: syncSumUp },
   ] = await Promise.all([
-    supabase.from('ventes_sumup').select('montant, statut').gte('horodatage', debutJour.toISOString()),
-    supabase.from('ventes_especes').select('montant, statut').gte('created_at', debutJour.toISOString()),
+    supabase.from('pop_ups').select('id, nom').order('nom'),
+    supabase.from('sumup_emails_pop_up').select('email, pop_up_id'),
+    supabase.from('ventes_sumup').select('montant, statut, sumup_email').gte('horodatage', debutJour.toISOString()),
+    supabase.from('ventes_especes').select('montant, statut, pop_up_id').gte('created_at', debutJour.toISOString()),
     supabase.from('ventes_sumup').select('montant, statut').gte('horodatage', debutMois.toISOString()),
     supabase.from('ventes_especes').select('montant, statut').gte('created_at', debutMois.toISOString()),
-    profil
-      ? supabase
-          .from('planning_shifts')
-          .select('id, heure_debut, heure_fin, pop_up:pop_ups(nom, couleur)')
-          .eq('profile_id', profil.id)
-          .eq('date', ajd)
-          .order('heure_debut')
-      : Promise.resolve({ data: null }),
-    supabase.from('hub_pins').select('name, stock, seuil_cible'),
-    supabase.from('hub_packs').select('nom_du_pack').eq('probleme', true).limit(4),
-    supabase.from('hub_pins').select('*', { count: 'exact', head: true }).eq('pas_dans_unite', true),
-    supabase.from('hub_purchase_orders').select('*', { count: 'exact', head: true }).eq('statut', 'en attente'),
-    supabase.from('commandes_pop_up').select('*', { count: 'exact', head: true }).neq('statut', 'recue'),
+    // Chiffres en ligne (Shopify + TikTok Shop) — cf. discussion 2026-08-27 : le tableau de bord ne
+    // montrait que les ventes en pop-up (SumUp/espèces), pas la boutique en ligne.
+    ventesShopifyDepuis(debutJour.toISOString()),
+    ventesShopifyDepuis(debutMois.toISOString()),
     supabase.from('hub_purchase_orders').select('id, ref, label, statut, date_creation, date_reception').order('date_creation', { ascending: false }).limit(5),
     supabase.from('commandes_pop_up').select('id, statut, envoyee_at, recue_at, pop_up:pop_ups(nom)').order('envoyee_at', { ascending: false }).limit(5),
     chargerTachesQuotidiennes(),
+    // cf. migration 0077 (App Pimp It) — dernière exécution (succès ou échec) de la synchro SumUp,
+    // écrite par la fonction elle-même à chaque appel (cron ou manuel) : donne un signal de
+    // fraîcheur vérifiable dans l'UI plutôt qu'une simple affirmation que "le cron tourne".
+    supabase.from('ventes_sumup_sync_etat').select('derniere_execution_le, ok, message, declenche_par').eq('id', true).maybeSingle(),
   ]);
 
-  const caCarte = (ventesSumup ?? []).filter((v) => v.statut === 'SUCCESSFUL').reduce((s, v) => s + v.montant, 0);
-  const caEspeces = (ventesEspeces ?? []).filter((v) => v.statut === 'confirmee').reduce((s, v) => s + v.montant, 0);
+  // Chiffres du jour séparés par pop-up (cf. discussion 2026-08-27 : "séparer les pop up"), et par
+  // source dans chaque pop-up : "montant SumUp" (ventes_sumup — tout ce que SumUp a synchronisé,
+  // carte ET espèces passées sur le terminal) vs "montant appli" (ventes_especes — espèces
+  // déclarées à la main dans l'écran Ventes de l'app). Même distinction déjà établie côté app dans
+  // RecapVentesEcran.tsx ("Espèce appli" vs "Espèce SumUp") : les fusionner masquait les écarts
+  // entre les deux sources, d'où la demande de les remettre côte à côte plutôt qu'additionnées.
+  //
+  // pop_up_id n'est pas fiable : la réattribution automatique (fonction sync-ventes-sumup) ne va
+  // pas au bout de la table (bug distinct, ~78% des ventes SumUp sans pop_up_id constaté le
+  // 2026-08-27) — cf. discussion 2026-08-28 : "uniquement en fonction du mail attribué". Le CA
+  // SumUp par pop-up vient donc exclusivement de sumup_emails_pop_up (email → pop-up déclaré à la
+  // main, source de vérité), pas de pop_up_id ni du GPS. Tout email SumUp non déclaré dans cette
+  // table (y compris un compte personnel comme octave.blanc@gmail.com, pas retiré de la table pour
+  // l'instant) tombe dans "Ventes hors pop-up" plutôt que d'être silencieusement compté ou perdu.
+  const popUpIdParEmail = new Map((emailsSumUp ?? []).map((e) => [e.email, e.pop_up_id]));
+
+  const sumupParPopUp = new Map<string, number>();
+  let sumupHorsPopUp = 0;
+  for (const v of ventesSumup ?? []) {
+    if (v.statut !== 'SUCCESSFUL') continue;
+    const popUpId = v.sumup_email ? popUpIdParEmail.get(v.sumup_email) : undefined;
+    if (popUpId) sumupParPopUp.set(popUpId, (sumupParPopUp.get(popUpId) ?? 0) + v.montant);
+    else sumupHorsPopUp += v.montant;
+  }
+  const especesParPopUp = new Map<string, number>();
+  for (const v of ventesEspeces ?? []) {
+    if (v.statut !== 'confirmee' || !v.pop_up_id) continue;
+    especesParPopUp.set(v.pop_up_id, (especesParPopUp.get(v.pop_up_id) ?? 0) + v.montant);
+  }
+  const chiffresParPopUp = (popUps ?? [])
+    .map((p) => ({ nom: p.nom, sumup: sumupParPopUp.get(p.id) ?? 0, appli: especesParPopUp.get(p.id) ?? 0 }))
+    .filter((p) => p.sumup > 0 || p.appli > 0);
+
   const caMois =
     (ventesMoisSumup ?? []).filter((v) => v.statut === 'SUCCESSFUL').reduce((s, v) => s + v.montant, 0) +
-    (ventesMoisEspeces ?? []).filter((v) => v.statut === 'confirmee').reduce((s, v) => s + v.montant, 0);
+    (ventesMoisEspeces ?? []).filter((v) => v.statut === 'confirmee').reduce((s, v) => s + v.montant, 0) +
+    ventesShopifyMois.shopify +
+    ventesShopifyMois.tiktok;
 
-  // Même seuil que la modale "Alertes" de Database Pin's (< 30% du seuil cible).
-  const pinsCritiques = (pinsPourAlerte ?? [])
-    .map((p) => ({ nom: p.name, stock: Number(p.stock ?? 0), seuil: Number(p.seuil_cible ?? 0) }))
-    .filter((p) => p.seuil > 0 && p.stock < p.seuil * 0.3)
-    .map((p) => ({ ...p, pct: Math.round((p.stock / p.seuil) * 100) }))
-    .sort((a, b) => a.pct - b.pct);
-
-  // Signaux opérationnels agrégés dans la carte Alertes (comptes simples, pas de détail nominatif
-  // comme pour les pins/packs ci-dessus — juste assez pour savoir qu'il faut aller voir).
-  const alertesOperationnelles = [
-    (commandesFournisseurEnAttente ?? 0) > 0 && {
-      texte: `${commandesFournisseurEnAttente} commande${(commandesFournisseurEnAttente ?? 0) > 1 ? 's' : ''} fournisseur à réceptionner`,
-      href: '/commandes',
-    },
-    (commandesPopUpAPreparer ?? 0) > 0 && {
-      texte: `${commandesPopUpAPreparer} commande${(commandesPopUpAPreparer ?? 0) > 1 ? 's' : ''} pop-up à préparer`,
-      href: '/local',
-    },
-    (pinsARajouter ?? 0) > 0 && { texte: `${pinsARajouter} pin's pas encore en ligne`, href: '/pins-unite' },
-  ].filter((t): t is { texte: string; href: string } => Boolean(t));
+  // Signal de fraîcheur de la synchro SumUp (cf. migration 0077, App Pimp It) : le cron tourne
+  // toutes les 15 min, donc un écart de plus de 30 min (ou un dernier passage en échec) mérite un
+  // signalement visible plutôt qu'un CA silencieusement à zéro comme avant.
+  const syncSumUpMinutes = syncSumUp ? Math.floor((Date.now() - new Date(syncSumUp.derniere_execution_le).getTime()) / 60000) : null;
+  const syncSumUpEnPanne = !syncSumUp || syncSumUp.ok === false || syncSumUpMinutes === null || syncSumUpMinutes > 30;
 
   interface Evenement {
     id: string;
@@ -164,15 +183,6 @@ export default async function DashboardPage() {
   evenements.sort((a, b) => new Date(b.quand).getTime() - new Date(a.quand).getTime());
   const derniersEvenements = evenements.slice(0, 5);
 
-  const raccourcis = [
-    { href: '/pins', label: "Pin's", icone: '📌' },
-    { href: '/commandes', label: 'Commandes fourn.', icone: '📦' },
-    { href: '/equipe', label: 'Équipe', icone: '👥' },
-    { href: '/planning', label: 'Planning', icone: '📅' },
-    { href: '/stock', label: 'Stock pop-up', icone: '📊' },
-    { href: '/ventes', label: 'Ventes', icone: '💰' },
-  ];
-
   return (
     <div>
       <h1 className="mb-1 text-2xl font-bold text-slate-900">Tableau de bord</h1>
@@ -180,120 +190,90 @@ export default async function DashboardPage() {
         {profil?.nom_complet ? `Bonjour ${profil.nom_complet.split(' ')[0]} — ` : ''}vue d&apos;ensemble du jour.
       </p>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        {/* Chiffres de la journée — carte principale du tableau de bord, cf. discussion 2026-08-27
+            ("c'est le plus important") : grande, en premier, chiffres agrandis. */}
+        <div className="flex min-h-[420px] flex-col rounded-2xl border border-slate-200 bg-white p-7 shadow-sm lg:col-span-2">
+          <div className="mb-5 flex items-center gap-3">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-xl text-emerald-600">💰</span>
+            <h2 className="text-lg font-bold text-slate-900">Chiffres de la journée</h2>
+          </div>
+          <div className="flex flex-1 flex-col gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {chiffresParPopUp.map((p) => (
+                <div key={p.nom} className="flex flex-col justify-center rounded-2xl bg-slate-50 p-5">
+                  <p className="truncate text-xs font-semibold uppercase tracking-wide text-slate-400">{p.nom}</p>
+                  <div className="mt-2 flex items-baseline gap-4">
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">SumUp</p>
+                      <p className="text-2xl font-bold text-slate-900">{formatMontant(p.sumup)}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Appli</p>
+                      <p className="text-2xl font-bold text-slate-900">{formatMontant(p.appli)}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {chiffresParPopUp.length === 0 && (
+                <div className="flex flex-col justify-center rounded-2xl bg-slate-50 p-5 sm:col-span-2">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Pop-ups</p>
+                  <p className="mt-2 text-2xl font-bold text-slate-900">Aucune vente aujourd&apos;hui</p>
+                </div>
+              )}
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="flex flex-col justify-center rounded-2xl bg-sky-50 p-5">
+                <p className="text-xs font-semibold uppercase tracking-wide text-sky-700">Shopify</p>
+                <p className="mt-2 text-2xl font-bold text-sky-900">{formatMontant(ventesShopifyJour.shopify)}</p>
+              </div>
+              <div className="flex flex-col justify-center rounded-2xl bg-violet-50 p-5">
+                <p className="text-xs font-semibold uppercase tracking-wide text-violet-700">TikTok Shop</p>
+                <p className="mt-2 text-2xl font-bold text-violet-900">{formatMontant(ventesShopifyJour.tiktok)}</p>
+              </div>
+              <div className="flex flex-col justify-center rounded-2xl bg-amber-50 p-5">
+                <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">SumUp hors pop-up</p>
+                <p className="mt-2 text-2xl font-bold text-amber-900">{formatMontant(sumupHorsPopUp)}</p>
+              </div>
+            </div>
+            <div className="flex flex-1 flex-col justify-center rounded-2xl bg-emerald-50 p-6">
+              <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">CA du mois (tous canaux)</p>
+              <p className="mt-2 text-4xl font-bold text-emerald-800">{formatMontant(caMois)}</p>
+            </div>
+          </div>
+          <p className={`mt-4 flex items-center gap-1.5 text-xs font-medium ${syncSumUpEnPanne ? 'text-red-500' : 'text-slate-400'}`}>
+            <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${syncSumUpEnPanne ? 'bg-red-500' : 'bg-emerald-500'}`} />
+            {syncSumUp
+              ? `Synchro SumUp ${syncSumUp.ok ? '' : '(échec) '}— ${tempsRelatif(syncSumUp.derniere_execution_le)}`
+              : 'Synchro SumUp — jamais exécutée'}
+          </p>
+        </div>
+
         {/* Tâches quotidiennes — checklist récurrente cochée à la main, pas un calcul automatique
             (cf. discussion 2026-08-27) */}
         <div className="flex h-full min-h-[300px] flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <TachesQuotidiennesCard tachesInitiales={tachesQuotidiennes} />
         </div>
 
-        {/* Chiffres de la journée */}
-        <Carte titre="Chiffres de la journée" icone="💰" couleur="emerald">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-xl bg-slate-50 p-3.5">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">CA carte</p>
-              <p className="mt-1 text-xl font-bold text-slate-900">{formatMontant(caCarte)}</p>
-            </div>
-            <div className="rounded-xl bg-slate-50 p-3.5">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Espèces</p>
-              <p className="mt-1 text-xl font-bold text-slate-900">{formatMontant(caEspeces)}</p>
-            </div>
-            <div className="col-span-2 rounded-xl bg-emerald-50 p-3.5">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-emerald-700">CA du mois</p>
-              <p className="mt-1 text-xl font-bold text-emerald-800">{formatMontant(caMois)}</p>
-            </div>
-          </div>
-        </Carte>
-
-        {/* Mon planning */}
-        <Carte titre="Mon planning" icone="📅" couleur="violet" href="/planning">
-          {!mesCreneauxAujourdhui || mesCreneauxAujourdhui.length === 0 ? (
-            <EtatVide texte="Aucun créneau pour toi aujourd'hui" />
-          ) : (
-            <ul className="flex flex-col gap-2">
-              {mesCreneauxAujourdhui.map((c) => {
-                const popUp = c.pop_up as unknown as { nom: string; couleur: string | null } | null;
-                return (
-                  <li key={c.id} className="flex items-center gap-2.5 rounded-xl bg-slate-50 px-3 py-2.5">
-                    <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: popUp?.couleur ?? '#94a3b8' }} />
-                    <span className="flex-1 text-sm font-semibold text-slate-800">{popUp?.nom ?? '—'}</span>
-                    <span className="text-xs text-slate-500">
-                      {c.heure_debut?.slice(0, 5)}–{c.heure_fin?.slice(0, 5)}
-                    </span>
+        {/* Activité récente — pour contrôler ce qui a été fait (cf. discussion 2026-08-27) */}
+        <div className="lg:col-span-3">
+          <Carte titre="Activité récente" icone="🕒" couleur="slate">
+            {derniersEvenements.length === 0 ? (
+              <EtatVide texte="Rien à signaler pour l'instant" />
+            ) : (
+              <ul className="flex flex-col gap-1">
+                {derniersEvenements.map((e) => (
+                  <li key={e.id}>
+                    <Link href={e.href} className="flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-sm hover:bg-slate-50">
+                      <span className="flex-1 truncate text-slate-700">{e.texte}</span>
+                      <span className="shrink-0 text-xs text-slate-400">{tempsRelatif(e.quand)}</span>
+                    </Link>
                   </li>
-                );
-              })}
-            </ul>
-          )}
-        </Carte>
-
-        {/* Alertes */}
-        <Carte titre="Alertes" icone="🔔" couleur="amber">
-          {pinsCritiques.length === 0 && (packsAProbleme ?? []).length === 0 && alertesOperationnelles.length === 0 ? (
-            <EtatVide texte="Aucune alerte 🎉" />
-          ) : (
-            <ul className="flex flex-col gap-1.5">
-              {pinsCritiques.slice(0, 3).map((p) => (
-                <li key={p.nom}>
-                  <Link href="/pins" className="flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-sm hover:bg-slate-50">
-                    <span className="rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-bold text-red-700">{p.pct}%</span>
-                    <span className="flex-1 truncate text-slate-700">{p.nom}</span>
-                  </Link>
-                </li>
-              ))}
-              {(packsAProbleme ?? []).slice(0, 2).map((p) => (
-                <li key={p.nom_du_pack}>
-                  <Link href="/packs" className="flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-sm hover:bg-slate-50">
-                    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-bold text-amber-700">!</span>
-                    <span className="flex-1 truncate text-slate-700">{p.nom_du_pack}</span>
-                  </Link>
-                </li>
-              ))}
-              {alertesOperationnelles.map((a) => (
-                <li key={a.href + a.texte}>
-                  <Link href={a.href} className="flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-sm hover:bg-slate-50">
-                    <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500" />
-                    <span className="flex-1 truncate text-slate-700">{a.texte}</span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Carte>
-
-        {/* Raccourcis rapides */}
-        <Carte titre="Raccourcis rapides" icone="⚡" couleur="sky">
-          <div className="grid grid-cols-2 gap-2">
-            {raccourcis.map((r) => (
-              <Link
-                key={r.href}
-                href={r.href}
-                className="flex flex-col items-center justify-center gap-1.5 rounded-xl bg-slate-50 px-2 py-4 text-center hover:bg-slate-100"
-              >
-                <span className="text-lg">{r.icone}</span>
-                <span className="text-xs font-semibold text-slate-600">{r.label}</span>
-              </Link>
-            ))}
-          </div>
-        </Carte>
-
-        {/* Activité récente */}
-        <Carte titre="Activité récente" icone="🕒" couleur="slate">
-          {derniersEvenements.length === 0 ? (
-            <EtatVide texte="Rien à signaler pour l'instant" />
-          ) : (
-            <ul className="flex flex-col gap-1">
-              {derniersEvenements.map((e) => (
-                <li key={e.id}>
-                  <Link href={e.href} className="flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-sm hover:bg-slate-50">
-                    <span className="flex-1 truncate text-slate-700">{e.texte}</span>
-                    <span className="shrink-0 text-xs text-slate-400">{tempsRelatif(e.quand)}</span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Carte>
+                ))}
+              </ul>
+            )}
+          </Carte>
+        </div>
       </div>
     </div>
   );

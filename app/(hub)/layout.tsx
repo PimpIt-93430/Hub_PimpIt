@@ -8,11 +8,12 @@ import { SidebarNav, type CategorieNav } from './SidebarNav';
 
 const ACCUEIL = { href: '/', label: 'Tableau de bord', icone: '🏠' };
 
-/** Menu en catégories par pôle d'activité (cf. discussion 2026-08-27) plutôt qu'un mur de liens.
- * "Commercial" (Clients/Tâches/Recommandations) n'existe pas encore ici : ces écrans restent mis
- * de côté (cf. commentaire plus bas) tant qu'ils ne sont pas repris — pas de catégorie vide
- * affichée. Profil est volontairement hors catégorie (cf. rendu plus bas, à côté de Déconnexion) :
- * c'est personnel, pas un pôle d'activité. */
+/** Menu en catégories par pôle d'activité (cf. discussion 2026-08-27, réorganisé le 2026-08-28 :
+ * Logistique = commandes uniquement, Pop up = tout ce qui concerne les lieux de vente) plutôt qu'un
+ * mur de liens. "Commercial" (Clients/Tâches/Recommandations) n'existe pas encore ici : ces écrans
+ * restent mis de côté (cf. commentaire plus bas) tant qu'ils ne sont pas repris — pas de catégorie
+ * vide affichée. Profil est volontairement hors catégorie (cf. rendu plus bas, à côté de
+ * Déconnexion) : c'est personnel, pas un pôle d'activité. */
 const CATEGORIES: CategorieNav[] = [
   {
     titre: 'Gestion des produits',
@@ -31,9 +32,17 @@ const CATEGORIES: CategorieNav[] = [
     couleur: 'sky',
     liens: [
       { href: '/commandes', label: 'Commandes fournisseurs', icone: '📦' },
-      { href: '/stock', label: 'Stock pop-up', icone: '📊' },
+      { href: '/commandes-shopify', label: 'Commandes Shopify', icone: '🛒' },
+    ],
+  },
+  {
+    titre: 'Pop up',
+    icone: '🏪',
+    couleur: 'amber',
+    liens: [
+      { href: '/pop-ups', label: 'Pop up', icone: '🏪' },
       { href: '/stock-cible', label: 'Stock cible', icone: '🎯' },
-      { href: '/pop-ups', label: 'Pop-ups', icone: '🏪' },
+      { href: '/stock', label: 'Stock pop up', icone: '📊' },
     ],
   },
   {
@@ -43,6 +52,7 @@ const CATEGORIES: CategorieNav[] = [
     liens: [
       { href: '/planning', label: 'Planning', icone: '📅' },
       { href: '/equipe', label: 'Équipe', icone: '👥' },
+      { href: '/export-comptable', label: 'Export comptable', icone: '🧾' },
     ],
   },
   {
@@ -82,8 +92,10 @@ export default async function HubLayout({ children }: { children: React.ReactNod
         </div>
       )}
       <div className="flex flex-1">
-        {/* Sidebar sombre — cf. référence visuelle 2026-08-27 (fintech dashboard) */}
-        <aside className="flex w-64 shrink-0 flex-col bg-[#15141F] px-4 py-6">
+        {/* Sidebar sombre — cf. référence visuelle 2026-08-27 (fintech dashboard). Masquée à
+            l'impression (print:hidden) : personne ne veut le menu dans un PDF exporté depuis une
+            page du Hub, cf. Export comptable (2026-08-28). */}
+        <aside className="flex w-64 shrink-0 flex-col bg-[#15141F] px-4 py-6 print:hidden">
           <div className="mb-8 flex items-center gap-2.5 px-2">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-700 text-base shadow-sm">
               📌
@@ -91,7 +103,7 @@ export default async function HubLayout({ children }: { children: React.ReactNod
             <p className="text-base font-bold leading-tight text-white">Pimp It Hub</p>
           </div>
 
-          <SidebarNav accueil={ACCUEIL} categories={CATEGORIES} />
+          <SidebarNav epingles={[ACCUEIL]} categories={CATEGORIES} />
 
           <div className="mt-2 border-t border-white/10 pt-2">
             <Link
@@ -109,7 +121,7 @@ export default async function HubLayout({ children }: { children: React.ReactNod
           {/* Barre du haut — recherche à venir une fois qu'il y aura quelque chose de pertinent à
               chercher (cf. discussion 2026-08-27) : pour l'instant juste le raccourci profil, pas
               de contrôle qui ferait semblant de marcher. */}
-          <header className="flex h-16 shrink-0 items-center justify-end border-b border-slate-200 bg-white px-8">
+          <header className="flex h-16 shrink-0 items-center justify-end border-b border-slate-200 bg-white px-8 print:hidden">
             <Link href="/profil" className="flex items-center gap-2.5 rounded-xl py-1.5 pl-1.5 pr-3 hover:bg-slate-50">
               <span
                 className="flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold text-white"
@@ -121,8 +133,8 @@ export default async function HubLayout({ children }: { children: React.ReactNod
             </Link>
           </header>
 
-          <main className="flex-1 px-8 py-8">
-            <div className="mx-auto max-w-[1800px]">{children}</div>
+          <main className="flex-1 px-8 py-8 print:p-0">
+            <div className="mx-auto max-w-[1800px] print:max-w-none">{children}</div>
           </main>
         </div>
       </div>

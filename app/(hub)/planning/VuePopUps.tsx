@@ -36,20 +36,14 @@ export function VuePopUps({
         </div>
       </div>
 
-      <div className="flex min-h-0 flex-1 overflow-y-auto">
-        <div className="w-[180px] shrink-0 border-r border-slate-100">
-          {popUps.map((p) => (
-            <div key={p.id} className="flex min-h-[68px] items-center gap-2 border-b border-slate-100 px-3.5">
-              <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: p.couleur }} />
-              <span className="truncate text-[13px] font-semibold text-slate-800">{p.nom}</span>
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+        {popUps.map((popUp) => (
+          <div key={popUp.id} className="flex border-b border-slate-100">
+            <div className="flex w-[180px] shrink-0 items-center gap-2 border-r border-slate-100 px-3.5 py-2">
+              <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: popUp.couleur }} />
+              <span className="truncate text-[13px] font-semibold text-slate-800">{popUp.nom}</span>
             </div>
-          ))}
-          {popUps.length === 0 && <p className="px-3.5 py-5 text-sm text-slate-400">Aucun pop-up.</p>}
-        </div>
-
-        <div className="flex-1">
-          {popUps.map((popUp) => (
-            <div key={popUp.id} className="flex">
+            <div className="flex flex-1">
               {jours.map((j) => {
                 const dateIso = dateEnISO(j);
                 const shiftsCellule = shifts.filter((s) => s.pop_up_id === popUp.id && s.date === dateIso);
@@ -58,7 +52,7 @@ export function VuePopUps({
                     key={dateIso}
                     type="button"
                     onClick={() => onPressCellule(popUp, dateIso, shiftsCellule)}
-                    className="flex min-h-[68px] flex-1 flex-col gap-1 border-b border-l border-slate-100 p-1.5 text-left hover:bg-slate-50"
+                    className="flex min-h-[68px] flex-1 flex-col gap-1 border-l border-slate-100 p-1.5 text-left hover:bg-slate-50"
                   >
                     {shiftsCellule.map((s) => {
                       const employe = profilParId.get(s.profile_id);
@@ -77,8 +71,9 @@ export function VuePopUps({
                 );
               })}
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
+        {popUps.length === 0 && <p className="px-3.5 py-5 text-sm text-slate-400">Aucun pop-up.</p>}
       </div>
     </div>
   );

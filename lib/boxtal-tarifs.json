@@ -1,0 +1,8244 @@
+{
+ "FR": [
+  {
+   "transporteur": "Chronopost",
+   "offre": "Chrono 13",
+   "depart": "Point de dépôt",
+   "arrivee": "Domicile",
+   "typePoids": "VOLUME_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 12.88,
+     "prixMax": 42.46,
+     "prixMaxNonMeca": 42.46
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 12.88,
+     "prixMax": 42.46,
+     "prixMaxNonMeca": 42.46
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 12.88,
+     "prixMax": 42.46,
+     "prixMaxNonMeca": 42.46
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 12.88,
+     "prixMax": 42.46,
+     "prixMaxNonMeca": 42.46
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 13.02,
+     "prixMax": 42.59,
+     "prixMaxNonMeca": 42.59
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 13.02,
+     "prixMax": 42.59,
+     "prixMaxNonMeca": 42.59
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 13.41,
+     "prixMax": 43.37,
+     "prixMaxNonMeca": 43.37
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 14.2,
+     "prixMax": 44.55,
+     "prixMaxNonMeca": 44.55
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 15.37,
+     "prixMax": 46.52,
+     "prixMaxNonMeca": 46.52
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 17.34,
+     "prixMax": 48.48,
+     "prixMaxNonMeca": 48.48
+    },
+    {
+     "label": "20.001 kg – 30 kg",
+     "min": 20001,
+     "max": 30000,
+     "prixMin": 19.3,
+     "prixMax": 52.4,
+     "prixMaxNonMeca": 52.4
+    },
+    {
+     "label": "30.001 kg +",
+     "min": 30001,
+     "max": null,
+     "prixMin": 23.23,
+     "prixMax": 64.18,
+     "prixMaxNonMeca": 64.18
+    }
+   ]
+  },
+  {
+   "transporteur": "Chronopost",
+   "offre": "Chrono 13 collecte",
+   "depart": "Domicile",
+   "arrivee": "Domicile",
+   "typePoids": "VOLUME_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 15.04,
+     "prixMax": 44.98,
+     "prixMaxNonMeca": 44.98
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 15.04,
+     "prixMax": 44.98,
+     "prixMaxNonMeca": 44.98
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 15.04,
+     "prixMax": 44.98,
+     "prixMaxNonMeca": 44.98
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 15.04,
+     "prixMax": 44.98,
+     "prixMaxNonMeca": 44.98
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 15.18,
+     "prixMax": 45.11,
+     "prixMaxNonMeca": 45.11
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 15.18,
+     "prixMax": 45.11,
+     "prixMaxNonMeca": 45.11
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 15.57,
+     "prixMax": 45.9,
+     "prixMaxNonMeca": 45.9
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 16.38,
+     "prixMax": 47.1,
+     "prixMaxNonMeca": 47.1
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 17.56,
+     "prixMax": 49.09,
+     "prixMaxNonMeca": 49.09
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 19.55,
+     "prixMax": 51.08,
+     "prixMaxNonMeca": 51.08
+    },
+    {
+     "label": "20.001 kg – 30 kg",
+     "min": 20001,
+     "max": 30000,
+     "prixMin": 21.54,
+     "prixMax": 55.04,
+     "prixMaxNonMeca": 55.04
+    },
+    {
+     "label": "30.001 kg +",
+     "min": 30001,
+     "max": null,
+     "prixMin": 25.51,
+     "prixMax": 66.97,
+     "prixMaxNonMeca": 66.97
+    }
+   ]
+  },
+  {
+   "transporteur": "Chronopost",
+   "offre": "Chrono 18",
+   "depart": "Point de dépôt",
+   "arrivee": "Domicile",
+   "typePoids": "VOLUME_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 9.93,
+     "prixMax": 38.68,
+     "prixMaxNonMeca": 38.68
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 9.93,
+     "prixMax": 38.68,
+     "prixMaxNonMeca": 38.68
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 9.93,
+     "prixMax": 38.68,
+     "prixMaxNonMeca": 38.68
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 9.93,
+     "prixMax": 38.68,
+     "prixMaxNonMeca": 38.68
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 11.41,
+     "prixMax": 41.23,
+     "prixMaxNonMeca": 41.23
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 11.41,
+     "prixMax": 41.23,
+     "prixMaxNonMeca": 41.23
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 13.32,
+     "prixMax": 43.79,
+     "prixMaxNonMeca": 43.79
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 14.26,
+     "prixMax": 44.74,
+     "prixMaxNonMeca": 44.74
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 15.44,
+     "prixMax": 46.71,
+     "prixMaxNonMeca": 46.71
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 17.41,
+     "prixMax": 48.68,
+     "prixMaxNonMeca": 48.68
+    },
+    {
+     "label": "20.001 kg – 30 kg",
+     "min": 20001,
+     "max": 30000,
+     "prixMin": 19.38,
+     "prixMax": 52.61,
+     "prixMaxNonMeca": 52.61
+    },
+    {
+     "label": "30.001 kg +",
+     "min": 30001,
+     "max": null,
+     "prixMin": 23.58,
+     "prixMax": 72.32,
+     "prixMaxNonMeca": 72.32
+    }
+   ]
+  },
+  {
+   "transporteur": "Chronopost",
+   "offre": "Chrono18 boîte aux lettres",
+   "depart": "Point de dépôt",
+   "arrivee": "Domicile",
+   "typePoids": "WEIGHT_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 8.73,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 8.73,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 8.73,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 8.73,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 37.87,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 37.87,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 37.87,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 37.87,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 37.87,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 37.87,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "20.001 kg – 30 kg",
+     "min": 20001,
+     "max": 30000,
+     "prixMin": 37.87,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "30.001 kg +",
+     "min": 30001,
+     "max": null,
+     "prixMin": 37.87,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    }
+   ]
+  },
+  {
+   "transporteur": "Chronopost",
+   "offre": "Chrono 18 collecte",
+   "depart": "Domicile",
+   "arrivee": "Domicile",
+   "typePoids": "VOLUME_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 12.09,
+     "prixMax": 41.28,
+     "prixMaxNonMeca": 41.28
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 12.09,
+     "prixMax": 41.28,
+     "prixMaxNonMeca": 41.28
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 12.09,
+     "prixMax": 41.28,
+     "prixMaxNonMeca": 41.28
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 12.09,
+     "prixMax": 41.28,
+     "prixMaxNonMeca": 41.28
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 13.6,
+     "prixMax": 43.9,
+     "prixMaxNonMeca": 43.9
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 13.6,
+     "prixMax": 43.9,
+     "prixMaxNonMeca": 43.9
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 15.58,
+     "prixMax": 46.67,
+     "prixMaxNonMeca": 46.67
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 16.32,
+     "prixMax": 46.93,
+     "prixMaxNonMeca": 46.93
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 17.5,
+     "prixMax": 48.92,
+     "prixMaxNonMeca": 48.92
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 19.48,
+     "prixMax": 50.9,
+     "prixMaxNonMeca": 50.9
+    },
+    {
+     "label": "20.001 kg – 30 kg",
+     "min": 20001,
+     "max": 30000,
+     "prixMin": 21.46,
+     "prixMax": 54.85,
+     "prixMaxNonMeca": 54.85
+    },
+    {
+     "label": "30.001 kg +",
+     "min": 30001,
+     "max": null,
+     "prixMin": 25.69,
+     "prixMax": 74.64,
+     "prixMaxNonMeca": 74.64
+    }
+   ]
+  },
+  {
+   "transporteur": "Chronopost",
+   "offre": "Chrono 2Shop Direct",
+   "depart": "Point de dépôt",
+   "arrivee": "Point de retrait",
+   "typePoids": "WEIGHT_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 2.99,
+     "prixMax": 16.28,
+     "prixMaxNonMeca": 17.79
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 3.1,
+     "prixMax": 17.5,
+     "prixMaxNonMeca": 20.08
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 3.66,
+     "prixMax": 17.79,
+     "prixMaxNonMeca": 21.36
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 4.63,
+     "prixMax": 20.08,
+     "prixMaxNonMeca": 23.29
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 5.1,
+     "prixMax": 21.36,
+     "prixMaxNonMeca": 26.51
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 6.44,
+     "prixMax": 23.29,
+     "prixMaxNonMeca": 29.73
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 7.85,
+     "prixMax": 26.51,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 9.14,
+     "prixMax": 29.73,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 11.07,
+     "prixMax": 15.55,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 14.29,
+     "prixMax": 15.7,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "20.001 kg – 30 kg",
+     "min": 20001,
+     "max": 30000,
+     "prixMin": 15.55,
+     "prixMax": 16.28,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "30.001 kg +",
+     "min": 30001,
+     "max": null,
+     "prixMin": 15.7,
+     "prixMax": 17.5,
+     "prixMaxNonMeca": null
+    }
+   ]
+  },
+  {
+   "transporteur": "Chronopost",
+   "offre": "Chrono 2ShopDirect Retour",
+   "depart": "Point de dépôt",
+   "arrivee": "Domicile",
+   "typePoids": "WEIGHT_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 4.59,
+     "prixMax": null,
+     "prixMaxNonMeca": 5.57
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 4.59,
+     "prixMax": null,
+     "prixMaxNonMeca": 7.25
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 4.63,
+     "prixMax": null,
+     "prixMaxNonMeca": 8.84
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 5.12,
+     "prixMax": 7.25,
+     "prixMaxNonMeca": 11.24
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 5.57,
+     "prixMax": 8.84,
+     "prixMaxNonMeca": 15.23
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 6.45,
+     "prixMax": 11.24,
+     "prixMaxNonMeca": 19.21
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 8.04,
+     "prixMax": 15.23,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 9.64,
+     "prixMax": 19.21,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 12.03,
+     "prixMax": 4.59,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 16.02,
+     "prixMax": 4.59,
+     "prixMaxNonMeca": null
+    }
+   ]
+  },
+  {
+   "transporteur": "Chronopost",
+   "offre": "Chrono Relais 13",
+   "depart": "Point de dépôt",
+   "arrivee": "Point de retrait",
+   "typePoids": "VOLUME_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 5.92,
+     "prixMax": 33.2,
+     "prixMaxNonMeca": 33.2
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 5.92,
+     "prixMax": 33.2,
+     "prixMaxNonMeca": 33.2
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 5.92,
+     "prixMax": 33.2,
+     "prixMaxNonMeca": 33.2
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 6.89,
+     "prixMax": 34.18,
+     "prixMaxNonMeca": 34.18
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 7.48,
+     "prixMax": 34.76,
+     "prixMaxNonMeca": 34.76
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 8.18,
+     "prixMax": 36.15,
+     "prixMaxNonMeca": 36.15
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 9.57,
+     "prixMax": 37.55,
+     "prixMaxNonMeca": 37.55
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 10.96,
+     "prixMax": 39.63,
+     "prixMaxNonMeca": 39.63
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 13.04,
+     "prixMax": 43.12,
+     "prixMaxNonMeca": 43.12
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 16.52,
+     "prixMax": 46.6,
+     "prixMaxNonMeca": 46.6
+    },
+    {
+     "label": "20.001 kg – 30 kg",
+     "min": 20001,
+     "max": 30000,
+     "prixMin": 20,
+     "prixMax": 53.56,
+     "prixMaxNonMeca": 53.56
+    },
+    {
+     "label": "30.001 kg +",
+     "min": 30001,
+     "max": null,
+     "prixMin": 26.96,
+     "prixMax": 74.44,
+     "prixMaxNonMeca": 74.44
+    }
+   ]
+  },
+  {
+   "transporteur": "Chronopost",
+   "offre": "Chrono Relais 13 collecte",
+   "depart": "Domicile",
+   "arrivee": "Point de retrait",
+   "typePoids": "VOLUME_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 7.92,
+     "prixMax": 35.2,
+     "prixMaxNonMeca": 35.2
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 7.92,
+     "prixMax": 35.2,
+     "prixMaxNonMeca": 35.2
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 7.92,
+     "prixMax": 35.2,
+     "prixMaxNonMeca": 35.2
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 8.89,
+     "prixMax": 36.18,
+     "prixMaxNonMeca": 36.18
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 9.48,
+     "prixMax": 36.76,
+     "prixMaxNonMeca": 36.76
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 10.18,
+     "prixMax": 38.15,
+     "prixMaxNonMeca": 38.15
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 11.57,
+     "prixMax": 39.55,
+     "prixMaxNonMeca": 39.55
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 12.96,
+     "prixMax": 41.63,
+     "prixMaxNonMeca": 41.63
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 15.04,
+     "prixMax": 45.12,
+     "prixMaxNonMeca": 45.12
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 18.52,
+     "prixMax": 48.6,
+     "prixMaxNonMeca": 48.6
+    },
+    {
+     "label": "20.001 kg – 30 kg",
+     "min": 20001,
+     "max": 30000,
+     "prixMin": 22,
+     "prixMax": 55.56,
+     "prixMaxNonMeca": 55.56
+    },
+    {
+     "label": "30.001 kg +",
+     "min": 30001,
+     "max": null,
+     "prixMin": 28.96,
+     "prixMax": 76.44,
+     "prixMaxNonMeca": 76.44
+    }
+   ]
+  },
+  {
+   "transporteur": "Chronopost",
+   "offre": "Chrono Shop2Shop",
+   "depart": "Point de dépôt",
+   "arrivee": "Point de retrait",
+   "typePoids": "WEIGHT_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 2.99,
+     "prixMax": 16.28,
+     "prixMaxNonMeca": 17.79
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 3.1,
+     "prixMax": 17.5,
+     "prixMaxNonMeca": 20.08
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 3.66,
+     "prixMax": 17.79,
+     "prixMaxNonMeca": 21.36
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 4.63,
+     "prixMax": 20.08,
+     "prixMaxNonMeca": 23.29
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 5.1,
+     "prixMax": 21.36,
+     "prixMaxNonMeca": 26.51
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 6.44,
+     "prixMax": 23.29,
+     "prixMaxNonMeca": 29.73
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 7.85,
+     "prixMax": 26.51,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 9.14,
+     "prixMax": 29.73,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 11.07,
+     "prixMax": 15.55,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 14.29,
+     "prixMax": 15.7,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "20.001 kg – 30 kg",
+     "min": 20001,
+     "max": 30000,
+     "prixMin": 15.55,
+     "prixMax": 16.28,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "30.001 kg +",
+     "min": 30001,
+     "max": null,
+     "prixMin": 15.7,
+     "prixMax": 17.5,
+     "prixMaxNonMeca": null
+    }
+   ]
+  },
+  {
+   "transporteur": "Colis Privé",
+   "offre": "Colis Privé Domicile",
+   "depart": "Point de dépôt",
+   "arrivee": "Domicile",
+   "typePoids": "WEIGHT_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 5.79,
+     "prixMax": 8.59,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 6.63,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 7.81,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 9.6,
+     "prixMax": 12.8,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 10.65,
+     "prixMax": 14.87,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 11.69,
+     "prixMax": 17.97,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 13.79,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 15.85,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 21.07,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 26.42,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    }
+   ]
+  },
+  {
+   "transporteur": "Colis Privé",
+   "offre": "Colis Privé Relais",
+   "depart": "Point de dépôt",
+   "arrivee": "Point de retrait",
+   "typePoids": "WEIGHT_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 3.7,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 3.7,
+     "prixMax": 5.56,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 4.26,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 4.84,
+     "prixMax": 8.66,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 5.79,
+     "prixMax": 10.66,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 6.09,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 8.66,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 10.66,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 12.95,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 16.39,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    }
+   ]
+  },
+  {
+   "transporteur": "Colis Privé",
+   "offre": "Colis Privé Domicile avec signature",
+   "depart": "Point de dépôt",
+   "arrivee": "Domicile",
+   "typePoids": "WEIGHT_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 6.99,
+     "prixMax": 9.73,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 7.81,
+     "prixMax": 10.7,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 8.96,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 10.81,
+     "prixMax": 13.95,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 11.74,
+     "prixMax": 16.12,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 12.85,
+     "prixMax": 19.19,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 14.92,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 17.08,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 21.04,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 31.9,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    }
+   ]
+  },
+  {
+   "transporteur": "Mondial Relay",
+   "offre": "Mondial Points Relais",
+   "depart": "Point de dépôt",
+   "arrivee": "Point de retrait",
+   "typePoids": "WEIGHT_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 3.04,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 3.14,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 3.51,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 4.9,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 5.21,
+     "prixMax": 9.44,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 5.21,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 10.36,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 10.36,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 16.16,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 16.26,
+     "prixMax": 18.6,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "20.001 kg – 30 kg",
+     "min": 20001,
+     "max": 30000,
+     "prixMin": 16.26,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    }
+   ]
+  },
+  {
+   "transporteur": "Mondial Relay",
+   "offre": "Mondial Domicile France",
+   "depart": "Point de dépôt",
+   "arrivee": "Domicile",
+   "typePoids": "WEIGHT_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 5.1,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 5.55,
+     "prixMax": 6.23,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 5.85,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 7.26,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 8.54,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 10.25,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 11.11,
+     "prixMax": 13.67,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 12.67,
+     "prixMax": 17.09,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 12.57,
+     "prixMax": 28.21,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 20.45,
+     "prixMax": 37.95,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "20.001 kg – 30 kg",
+     "min": 20001,
+     "max": 30000,
+     "prixMin": 30.16,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    }
+   ]
+  },
+  {
+   "transporteur": "Colissimo",
+   "offre": "Colissimo Domicile - sans signature",
+   "depart": "Point de dépôt",
+   "arrivee": "Domicile",
+   "typePoids": "WEIGHT_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 6.7,
+     "prixMax": null,
+     "prixMaxNonMeca": 16.56
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 7.54,
+     "prixMax": 9.13,
+     "prixMaxNonMeca": 17.68
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 8.41,
+     "prixMax": null,
+     "prixMaxNonMeca": 18.65
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 10.24,
+     "prixMax": null,
+     "prixMaxNonMeca": 20.64
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 11.23,
+     "prixMax": 13.21,
+     "prixMaxNonMeca": 22.22
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 12.24,
+     "prixMax": 14.8,
+     "prixMaxNonMeca": 25.14
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 13.82,
+     "prixMax": 17.71,
+     "prixMaxNonMeca": 29.57
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 15.76,
+     "prixMax": 22.14,
+     "prixMaxNonMeca": 34.33
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 18.31,
+     "prixMax": 26.9,
+     "prixMaxNonMeca": 43.49
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 23.09,
+     "prixMax": 36.06,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "20.001 kg – 30 kg",
+     "min": 20001,
+     "max": 30000,
+     "prixMin": 27.58,
+     "prixMax": 14.13,
+     "prixMaxNonMeca": null
+    }
+   ]
+  },
+  {
+   "transporteur": "Colissimo",
+   "offre": "Colissimo Domicile - avec signature",
+   "depart": "Point de dépôt",
+   "arrivee": "Domicile",
+   "typePoids": "WEIGHT_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 7.73,
+     "prixMax": null,
+     "prixMaxNonMeca": 17.58
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 8.57,
+     "prixMax": 10.15,
+     "prixMaxNonMeca": 18.7
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 9.43,
+     "prixMax": null,
+     "prixMaxNonMeca": 19.67
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 11.26,
+     "prixMax": null,
+     "prixMaxNonMeca": 21.66
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 12.24,
+     "prixMax": 14.23,
+     "prixMaxNonMeca": 23.24
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 13.26,
+     "prixMax": 15.81,
+     "prixMaxNonMeca": 26.17
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 14.85,
+     "prixMax": 18.74,
+     "prixMaxNonMeca": 30.59
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 16.77,
+     "prixMax": 23.16,
+     "prixMaxNonMeca": 35.35
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 19.33,
+     "prixMax": 27.92,
+     "prixMaxNonMeca": 44.52
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 24.11,
+     "prixMax": 37.09,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "20.001 kg – 30 kg",
+     "min": 20001,
+     "max": 30000,
+     "prixMin": 28.6,
+     "prixMax": 15.16,
+     "prixMaxNonMeca": null
+    }
+   ]
+  },
+  {
+   "transporteur": "Colissimo",
+   "offre": "Colissimo Point Retrait",
+   "depart": "Point de dépôt",
+   "arrivee": "Point de retrait",
+   "typePoids": "WEIGHT_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 5.11,
+     "prixMax": null,
+     "prixMaxNonMeca": 14.98
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 5.95,
+     "prixMax": 7.54,
+     "prixMaxNonMeca": 16.07
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 6.83,
+     "prixMax": null,
+     "prixMaxNonMeca": 17.06
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 8.65,
+     "prixMax": null,
+     "prixMaxNonMeca": 19.06
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 9.63,
+     "prixMax": 11.63,
+     "prixMaxNonMeca": 20.62
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 10.65,
+     "prixMax": 13.19,
+     "prixMaxNonMeca": 23.54
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 12.24,
+     "prixMax": 16.11,
+     "prixMaxNonMeca": 27.98
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 14.16,
+     "prixMax": 20.54,
+     "prixMaxNonMeca": 32.71
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 16.74,
+     "prixMax": 25.29,
+     "prixMaxNonMeca": 41.92
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 21.49,
+     "prixMax": 34.48,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "20.001 kg – 30 kg",
+     "min": 20001,
+     "max": 30000,
+     "prixMin": 25.99,
+     "prixMax": 12.54,
+     "prixMaxNonMeca": null
+    }
+   ]
+  },
+  {
+   "transporteur": "Sodexi",
+   "offre": "Sodexi Express",
+   "depart": "Domicile",
+   "arrivee": "Domicile",
+   "typePoids": "VOLUME_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 65.72,
+     "prixMax": 105.97,
+     "prixMaxNonMeca": 123.47
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 65.72,
+     "prixMax": 105.97,
+     "prixMaxNonMeca": 123.47
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 65.72,
+     "prixMax": 105.97,
+     "prixMaxNonMeca": 123.47
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 67.49,
+     "prixMax": 109.61,
+     "prixMaxNonMeca": 127.11
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 69.36,
+     "prixMax": 113.05,
+     "prixMaxNonMeca": 130.55
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 72.8,
+     "prixMax": 120.19,
+     "prixMaxNonMeca": 137.69
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 79.94,
+     "prixMax": 124.29,
+     "prixMaxNonMeca": 141.79
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 84.04,
+     "prixMax": 129.36,
+     "prixMaxNonMeca": 146.86
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 90.79,
+     "prixMax": 155.4,
+     "prixMaxNonMeca": 172.9
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 117.24,
+     "prixMax": 166.01,
+     "prixMaxNonMeca": 183.51
+    },
+    {
+     "label": "20.001 kg – 30 kg",
+     "min": 20001,
+     "max": 30000,
+     "prixMin": 127.89,
+     "prixMax": 187.29,
+     "prixMaxNonMeca": 204.79
+    },
+    {
+     "label": "30.001 kg +",
+     "min": 30001,
+     "max": null,
+     "prixMin": 211.97,
+     "prixMax": 1628.98,
+     "prixMaxNonMeca": 1646.48
+    }
+   ]
+  },
+  {
+   "transporteur": "TNT",
+   "offre": "TNT 13:00 Express",
+   "depart": "Domicile",
+   "arrivee": "Domicile",
+   "typePoids": "WEIGHT_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 20.76,
+     "prixMax": 55.85,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 20.76,
+     "prixMax": 55.85,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 20.76,
+     "prixMax": 55.85,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 21.38,
+     "prixMax": 56.88,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 21.99,
+     "prixMax": 57.9,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 22.6,
+     "prixMax": 59.93,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 23.83,
+     "prixMax": 61.96,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 25.05,
+     "prixMax": 65.03,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 26.88,
+     "prixMax": 70.11,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 29.94,
+     "prixMax": 75.21,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "20.001 kg – 30 kg",
+     "min": 20001,
+     "max": 30000,
+     "prixMin": 32.99,
+     "prixMax": 85.4,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "30.001 kg +",
+     "min": 30001,
+     "max": null,
+     "prixMin": 39.1,
+     "prixMax": 207.64,
+     "prixMaxNonMeca": null
+    }
+   ]
+  },
+  {
+   "transporteur": "TNT",
+   "offre": "TNT 18:00 Express",
+   "depart": "Domicile",
+   "arrivee": "Domicile",
+   "typePoids": "WEIGHT_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 15.73,
+     "prixMax": 51.26,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 15.73,
+     "prixMax": 51.26,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 15.73,
+     "prixMax": 51.26,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 16.33,
+     "prixMax": 52.23,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 16.91,
+     "prixMax": 53.2,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 17.51,
+     "prixMax": 55.14,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 18.68,
+     "prixMax": 57.07,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 19.86,
+     "prixMax": 59.97,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 21.63,
+     "prixMax": 64.81,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 24.57,
+     "prixMax": 69.64,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "20.001 kg – 30 kg",
+     "min": 20001,
+     "max": 30000,
+     "prixMin": 27.52,
+     "prixMax": 79.32,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "30.001 kg +",
+     "min": 30001,
+     "max": null,
+     "prixMin": 33.42,
+     "prixMax": 195.39,
+     "prixMaxNonMeca": null
+    }
+   ]
+  },
+  {
+   "transporteur": "TNT",
+   "offre": "TNT Express National Palette",
+   "depart": "Domicile",
+   "arrivee": "Domicile",
+   "typePoids": "WEIGHT_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 92.26,
+     "prixMax": null,
+     "prixMaxNonMeca": 148.51
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 92.26,
+     "prixMax": null,
+     "prixMaxNonMeca": 148.51
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 92.26,
+     "prixMax": null,
+     "prixMaxNonMeca": 148.51
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 92.26,
+     "prixMax": null,
+     "prixMaxNonMeca": 148.51
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 92.26,
+     "prixMax": null,
+     "prixMaxNonMeca": 148.51
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 92.26,
+     "prixMax": null,
+     "prixMaxNonMeca": 148.51
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 92.26,
+     "prixMax": null,
+     "prixMaxNonMeca": 148.51
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 92.26,
+     "prixMax": null,
+     "prixMaxNonMeca": 148.51
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 92.26,
+     "prixMax": null,
+     "prixMaxNonMeca": 148.51
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 92.26,
+     "prixMax": null,
+     "prixMaxNonMeca": 148.51
+    },
+    {
+     "label": "20.001 kg – 30 kg",
+     "min": 20001,
+     "max": 30000,
+     "prixMin": 92.26,
+     "prixMax": null,
+     "prixMaxNonMeca": 148.51
+    },
+    {
+     "label": "30.001 kg +",
+     "min": 30001,
+     "max": null,
+     "prixMin": 96.03,
+     "prixMax": 2433.29,
+     "prixMaxNonMeca": 2489.54
+    }
+   ]
+  },
+  {
+   "transporteur": "TNT",
+   "offre": "TNT 10:00 Express",
+   "depart": "Domicile",
+   "arrivee": "Domicile",
+   "typePoids": "WEIGHT_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 39.75,
+     "prixMax": 47.21,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 39.75,
+     "prixMax": 47.21,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 39.75,
+     "prixMax": 47.21,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 40.58,
+     "prixMax": 48.04,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 41.4,
+     "prixMax": 48.86,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 42.24,
+     "prixMax": 50.54,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 43.9,
+     "prixMax": 52.19,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 45.56,
+     "prixMax": 54.69,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 48.04,
+     "prixMax": 58.84,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 52.21,
+     "prixMax": 62.99,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "20.001 kg – 30 kg",
+     "min": 20001,
+     "max": 30000,
+     "prixMin": 56.36,
+     "prixMax": 71.3,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "30.001 kg +",
+     "min": 30001,
+     "max": null,
+     "prixMin": 64.65,
+     "prixMax": 191.51,
+     "prixMaxNonMeca": null
+    }
+   ]
+  },
+  {
+   "transporteur": "TNT",
+   "offre": "TNT 12:00 Express",
+   "depart": "Domicile",
+   "arrivee": "Domicile",
+   "typePoids": "WEIGHT_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 25.06,
+     "prixMax": 32.53,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 25.06,
+     "prixMax": 32.53,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 25.06,
+     "prixMax": 32.53,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 25.9,
+     "prixMax": 33.36,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 26.71,
+     "prixMax": 34.18,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 27.55,
+     "prixMax": 35.85,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 29.21,
+     "prixMax": 37.51,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 30.88,
+     "prixMax": 40,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 33.38,
+     "prixMax": 44.15,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 37.53,
+     "prixMax": 48.3,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "20.001 kg – 30 kg",
+     "min": 20001,
+     "max": 30000,
+     "prixMin": 41.67,
+     "prixMax": 56.61,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "30.001 kg +",
+     "min": 30001,
+     "max": null,
+     "prixMin": 49.99,
+     "prixMax": 177.25,
+     "prixMaxNonMeca": null
+    }
+   ]
+  }
+ ],
+ "BE": [
+  {
+   "transporteur": "Chronopost",
+   "offre": "Chrono 2Shop Europe",
+   "depart": "Point de dépôt",
+   "arrivee": "Point de retrait",
+   "typePoids": "WEIGHT_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 4.05,
+     "prixMax": null,
+     "prixMaxNonMeca": 7.5
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 4.05,
+     "prixMax": null,
+     "prixMaxNonMeca": 8.99
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 4.17,
+     "prixMax": null,
+     "prixMaxNonMeca": 10.48
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 4.54,
+     "prixMax": 8.99,
+     "prixMaxNonMeca": 12.72
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 7.5,
+     "prixMax": 10.48,
+     "prixMaxNonMeca": 16.44
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 8.24,
+     "prixMax": 12.72,
+     "prixMaxNonMeca": 20.17
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 9.73,
+     "prixMax": 16.44,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 11.22,
+     "prixMax": 20.17,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 13.46,
+     "prixMax": 4.05,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 17.19,
+     "prixMax": 4.05,
+     "prixMaxNonMeca": null
+    }
+   ]
+  },
+  {
+   "transporteur": "Chronopost",
+   "offre": "Chrono Classic",
+   "depart": "Point de dépôt",
+   "arrivee": "Domicile",
+   "typePoids": "WEIGHT_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 12.3,
+     "prixMax": null,
+     "prixMaxNonMeca": 16.74
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 12.3,
+     "prixMax": null,
+     "prixMaxNonMeca": 17.93
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 12.3,
+     "prixMax": null,
+     "prixMaxNonMeca": 19.11
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 13.48,
+     "prixMax": null,
+     "prixMaxNonMeca": 21.47
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 14.67,
+     "prixMax": 17.03,
+     "prixMaxNonMeca": 23.85
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 15.86,
+     "prixMax": 19.4,
+     "prixMaxNonMeca": 27.39
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 18.22,
+     "prixMax": 22.95,
+     "prixMaxNonMeca": 33.31
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 20.59,
+     "prixMax": 28.87,
+     "prixMaxNonMeca": 39.23
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 24.14,
+     "prixMax": 34.79,
+     "prixMaxNonMeca": 51.07
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 30.06,
+     "prixMax": 46.63,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "20.001 kg – 30 kg",
+     "min": 20001,
+     "max": 30000,
+     "prixMin": 35.98,
+     "prixMax": 16.74,
+     "prixMaxNonMeca": null
+    }
+   ]
+  },
+  {
+   "transporteur": "Chronopost",
+   "offre": "Chrono Classic collecte",
+   "depart": "Domicile",
+   "arrivee": "Domicile",
+   "typePoids": "WEIGHT_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 14.3,
+     "prixMax": null,
+     "prixMaxNonMeca": 18.74
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 14.3,
+     "prixMax": null,
+     "prixMaxNonMeca": 19.93
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 14.3,
+     "prixMax": null,
+     "prixMaxNonMeca": 21.11
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 15.48,
+     "prixMax": null,
+     "prixMaxNonMeca": 23.47
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 16.67,
+     "prixMax": 19.03,
+     "prixMaxNonMeca": 25.85
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 17.86,
+     "prixMax": 21.4,
+     "prixMaxNonMeca": 29.39
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 20.22,
+     "prixMax": 24.95,
+     "prixMaxNonMeca": 35.31
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 22.59,
+     "prixMax": 30.87,
+     "prixMaxNonMeca": 41.23
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 26.14,
+     "prixMax": 36.79,
+     "prixMaxNonMeca": 53.07
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 32.06,
+     "prixMax": 48.63,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "20.001 kg – 30 kg",
+     "min": 20001,
+     "max": 30000,
+     "prixMin": 37.98,
+     "prixMax": 18.74,
+     "prixMaxNonMeca": null
+    }
+   ]
+  },
+  {
+   "transporteur": "Chronopost",
+   "offre": "Chrono Express",
+   "depart": "Point de dépôt",
+   "arrivee": "Domicile",
+   "typePoids": "VOLUME_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 18.25,
+     "prixMax": null,
+     "prixMaxNonMeca": 18.25
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 18.25,
+     "prixMax": null,
+     "prixMaxNonMeca": 18.25
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 22.4,
+     "prixMax": null,
+     "prixMaxNonMeca": 22.4
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 25.27,
+     "prixMax": 27.43,
+     "prixMaxNonMeca": 27.43
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 29.59,
+     "prixMax": 31.77,
+     "prixMaxNonMeca": 31.77
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 33.93,
+     "prixMax": 40.45,
+     "prixMaxNonMeca": 40.45
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 42.61,
+     "prixMax": 49.11,
+     "prixMaxNonMeca": 49.11
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 51.29,
+     "prixMax": 62.12,
+     "prixMaxNonMeca": 62.12
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 64.6,
+     "prixMax": 86.85,
+     "prixMaxNonMeca": 86.85
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 89.31,
+     "prixMax": 111.56,
+     "prixMaxNonMeca": 111.56
+    },
+    {
+     "label": "20.001 kg – 30 kg",
+     "min": 20001,
+     "max": 30000,
+     "prixMin": 114.51,
+     "prixMax": 170.71,
+     "prixMaxNonMeca": 170.71
+    },
+    {
+     "label": "30.001 kg +",
+     "min": 30001,
+     "max": null,
+     "prixMin": 173.66,
+     "prixMax": 348.12,
+     "prixMaxNonMeca": 348.12
+    }
+   ]
+  },
+  {
+   "transporteur": "Chronopost",
+   "offre": "Chrono Express collecte",
+   "depart": "Domicile",
+   "arrivee": "Domicile",
+   "typePoids": "VOLUME_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 20.25,
+     "prixMax": null,
+     "prixMaxNonMeca": 20.25
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 20.25,
+     "prixMax": null,
+     "prixMaxNonMeca": 20.25
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 24.4,
+     "prixMax": null,
+     "prixMaxNonMeca": 24.4
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 27.27,
+     "prixMax": 29.43,
+     "prixMaxNonMeca": 29.43
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 31.59,
+     "prixMax": 33.77,
+     "prixMaxNonMeca": 33.77
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 35.93,
+     "prixMax": 42.45,
+     "prixMaxNonMeca": 42.45
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 44.61,
+     "prixMax": 51.11,
+     "prixMaxNonMeca": 51.11
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 53.29,
+     "prixMax": 64.12,
+     "prixMaxNonMeca": 64.12
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 66.6,
+     "prixMax": 88.85,
+     "prixMaxNonMeca": 88.85
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 91.31,
+     "prixMax": 113.56,
+     "prixMaxNonMeca": 113.56
+    },
+    {
+     "label": "20.001 kg – 30 kg",
+     "min": 20001,
+     "max": 30000,
+     "prixMin": 116.51,
+     "prixMax": 172.71,
+     "prixMaxNonMeca": 172.71
+    },
+    {
+     "label": "30.001 kg +",
+     "min": 30001,
+     "max": null,
+     "prixMin": 175.66,
+     "prixMax": 350.12,
+     "prixMaxNonMeca": 350.12
+    }
+   ]
+  },
+  {
+   "transporteur": "Chronopost",
+   "offre": "Chrono Relais Europe",
+   "depart": "Point de dépôt",
+   "arrivee": "Point de retrait",
+   "typePoids": "VOLUME_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 11.72,
+     "prixMax": null,
+     "prixMaxNonMeca": 15.81
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 11.72,
+     "prixMax": null,
+     "prixMaxNonMeca": 15.81
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 11.72,
+     "prixMax": null,
+     "prixMaxNonMeca": 15.81
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 12.48,
+     "prixMax": null,
+     "prixMaxNonMeca": 16.57
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 13.26,
+     "prixMax": null,
+     "prixMaxNonMeca": 17.34
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 14.02,
+     "prixMax": 14.78,
+     "prixMaxNonMeca": 18.86
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 15.54,
+     "prixMax": 16.31,
+     "prixMaxNonMeca": 20.4
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 17.07,
+     "prixMax": 18.59,
+     "prixMaxNonMeca": 22.68
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 19.35,
+     "prixMax": 22.4,
+     "prixMaxNonMeca": 26.49
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 23.16,
+     "prixMax": 26.23,
+     "prixMaxNonMeca": 30.3
+    },
+    {
+     "label": "20.001 kg – 30 kg",
+     "min": 20001,
+     "max": 30000,
+     "prixMin": 26.99,
+     "prixMax": 33.85,
+     "prixMaxNonMeca": 37.93
+    },
+    {
+     "label": "30.001 kg +",
+     "min": 30001,
+     "max": null,
+     "prixMin": 34.61,
+     "prixMax": 56.73,
+     "prixMaxNonMeca": 60.82
+    }
+   ]
+  },
+  {
+   "transporteur": "Delivengo",
+   "offre": "Delivengo easy",
+   "depart": "Point de dépôt",
+   "arrivee": "Domicile",
+   "typePoids": "WEIGHT_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 8.45,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 9.9,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 11.5,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 16.45,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    }
+   ]
+  },
+  {
+   "transporteur": "Happy Post",
+   "offre": "Happy Post avec Suivi sans Signature",
+   "depart": "Point de dépôt",
+   "arrivee": "Domicile",
+   "typePoids": "WEIGHT_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 9.94,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 9.94,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 10.18,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 11.15,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 12.13,
+     "prixMax": 14.1,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 13.11,
+     "prixMax": 16.05,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 15.07,
+     "prixMax": 18.98,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 17.03,
+     "prixMax": 23.89,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 19.45,
+     "prixMax": 28.78,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 24.87,
+     "prixMax": 31.14,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "20.001 kg – 30 kg",
+     "min": 20001,
+     "max": 30000,
+     "prixMin": 29.25,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    }
+   ]
+  },
+  {
+   "transporteur": "Mondial Relay",
+   "offre": "Mondial Points Relais - Europe",
+   "depart": "Point de dépôt",
+   "arrivee": "Point de retrait",
+   "typePoids": "WEIGHT_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 3.55,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 3.55,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 4.33,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 7.02,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 7.39,
+     "prixMax": 11.47,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 7.39,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 11.47,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 11.94,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 17.38,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 18.17,
+     "prixMax": 20.29,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "20.001 kg – 30 kg",
+     "min": 20001,
+     "max": 30000,
+     "prixMin": 19.1,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    }
+   ]
+  },
+  {
+   "transporteur": "Mondial Relay",
+   "offre": "Mondial Domicile Europe",
+   "depart": "Point de dépôt",
+   "arrivee": "Domicile",
+   "typePoids": "WEIGHT_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 8.94,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 8.94,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 9.12,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 10.78,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 12.59,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 12.6,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 17.39,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 19.49,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 24.54,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 29.85,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "20.001 kg – 30 kg",
+     "min": 20001,
+     "max": 30000,
+     "prixMin": 32.48,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    }
+   ]
+  },
+  {
+   "transporteur": "Colissimo",
+   "offre": "Colissimo International Domicile - sans signature",
+   "depart": "Point de dépôt",
+   "arrivee": "Domicile",
+   "typePoids": "WEIGHT_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 8.55,
+     "prixMax": null,
+     "prixMaxNonMeca": 18.03
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 8.65,
+     "prixMax": 10.59,
+     "prixMaxNonMeca": 18.79
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 10.57,
+     "prixMax": null,
+     "prixMaxNonMeca": 19.62
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 11.35,
+     "prixMax": null,
+     "prixMaxNonMeca": 21.18
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 12.2,
+     "prixMax": 13.76,
+     "prixMaxNonMeca": 22.54
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 12.98,
+     "prixMax": 15.11,
+     "prixMaxNonMeca": 25.07
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 14.53,
+     "prixMax": 17.64,
+     "prixMaxNonMeca": 29.56
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 16.09,
+     "prixMax": 22.13,
+     "prixMaxNonMeca": 33.99
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 20.55,
+     "prixMax": 26.55,
+     "prixMaxNonMeca": 42.89
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 25.05,
+     "prixMax": 35.46,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "20.001 kg – 30 kg",
+     "min": 20001,
+     "max": 30000,
+     "prixMin": 30.16,
+     "prixMax": 15.98,
+     "prixMaxNonMeca": null
+    }
+   ]
+  },
+  {
+   "transporteur": "Colissimo",
+   "offre": "Colissimo International Domicile - avec signature",
+   "depart": "Point de dépôt",
+   "arrivee": "Domicile",
+   "typePoids": "WEIGHT_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 9.03,
+     "prixMax": null,
+     "prixMaxNonMeca": 18.51
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 9.13,
+     "prixMax": 11.08,
+     "prixMaxNonMeca": 19.27
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 11.07,
+     "prixMax": null,
+     "prixMaxNonMeca": 20.12
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 11.85,
+     "prixMax": null,
+     "prixMaxNonMeca": 21.67
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 12.69,
+     "prixMax": 14.24,
+     "prixMaxNonMeca": 23.04
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 13.46,
+     "prixMax": 15.6,
+     "prixMaxNonMeca": 25.56
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 15.02,
+     "prixMax": 18.13,
+     "prixMaxNonMeca": 30.05
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 16.57,
+     "prixMax": 22.61,
+     "prixMaxNonMeca": 34.48
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 21.05,
+     "prixMax": 27.05,
+     "prixMaxNonMeca": 43.39
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 25.53,
+     "prixMax": 35.96,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "20.001 kg – 30 kg",
+     "min": 20001,
+     "max": 30000,
+     "prixMin": 30.63,
+     "prixMax": 16.46,
+     "prixMaxNonMeca": null
+    }
+   ]
+  },
+  {
+   "transporteur": "Colissimo",
+   "offre": "Colissimo International Point Retrait",
+   "depart": "Point de dépôt",
+   "arrivee": "Point de retrait",
+   "typePoids": "WEIGHT_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 6.61,
+     "prixMax": 8.85,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 6.91,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 7.88,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 9.62,
+     "prixMax": 11.43,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 10.46,
+     "prixMax": 12.4,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 10.94,
+     "prixMax": 13.86,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 11.91,
+     "prixMax": 20.38,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 12.89,
+     "prixMax": 24.82,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 16.68,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 22.82,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    }
+   ]
+  },
+  {
+   "transporteur": "Sodexi",
+   "offre": "Sodexi Express International",
+   "depart": "Domicile",
+   "arrivee": "Domicile",
+   "typePoids": "VOLUME_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 81.84,
+     "prixMax": null,
+     "prixMaxNonMeca": 130.93
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 81.84,
+     "prixMax": null,
+     "prixMaxNonMeca": 130.93
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 81.84,
+     "prixMax": null,
+     "prixMaxNonMeca": 130.93
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 84.15,
+     "prixMax": 86.53,
+     "prixMaxNonMeca": 135.62
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 88.1,
+     "prixMax": 91.07,
+     "prixMaxNonMeca": 140.15
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 92.64,
+     "prixMax": 100.3,
+     "prixMaxNonMeca": 149.38
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 102.24,
+     "prixMax": 109.45,
+     "prixMaxNonMeca": 158.54
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 111.41,
+     "prixMax": 123.19,
+     "prixMaxNonMeca": 172.28
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 127.78,
+     "prixMax": 146.01,
+     "prixMaxNonMeca": 195.09
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 150.58,
+     "prixMax": 168.92,
+     "prixMaxNonMeca": 218.01
+    },
+    {
+     "label": "20.001 kg – 30 kg",
+     "min": 20001,
+     "max": 30000,
+     "prixMin": 173.46,
+     "prixMax": 268.25,
+     "prixMaxNonMeca": 268.25
+    },
+    {
+     "label": "30.001 kg +",
+     "min": 30001,
+     "max": null,
+     "prixMin": 276.61,
+     "prixMax": 2231.61,
+     "prixMaxNonMeca": 2231.61
+    }
+   ]
+  }
+ ],
+ "DE": [
+  {
+   "transporteur": "Chronopost",
+   "offre": "Chrono 2Shop Europe",
+   "depart": "Point de dépôt",
+   "arrivee": "Point de retrait",
+   "typePoids": "WEIGHT_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 4.6,
+     "prixMax": null,
+     "prixMaxNonMeca": 8.13
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 4.6,
+     "prixMax": null,
+     "prixMaxNonMeca": 9.66
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 4.86,
+     "prixMax": null,
+     "prixMaxNonMeca": 11.18
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 5.24,
+     "prixMax": 9.66,
+     "prixMaxNonMeca": 13.47
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 8.13,
+     "prixMax": 11.18,
+     "prixMaxNonMeca": 17.28
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 8.89,
+     "prixMax": 13.47,
+     "prixMaxNonMeca": 21.09
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 10.42,
+     "prixMax": 17.28,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 11.94,
+     "prixMax": 21.09,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 14.23,
+     "prixMax": 4.6,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 18.04,
+     "prixMax": 4.6,
+     "prixMaxNonMeca": null
+    }
+   ]
+  },
+  {
+   "transporteur": "Chronopost",
+   "offre": "Chrono Classic",
+   "depart": "Point de dépôt",
+   "arrivee": "Domicile",
+   "typePoids": "WEIGHT_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 12.3,
+     "prixMax": null,
+     "prixMaxNonMeca": 16.74
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 12.3,
+     "prixMax": null,
+     "prixMaxNonMeca": 17.93
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 12.3,
+     "prixMax": null,
+     "prixMaxNonMeca": 19.11
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 13.48,
+     "prixMax": null,
+     "prixMaxNonMeca": 21.47
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 14.67,
+     "prixMax": 17.03,
+     "prixMaxNonMeca": 23.85
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 15.86,
+     "prixMax": 19.4,
+     "prixMaxNonMeca": 27.39
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 18.22,
+     "prixMax": 22.95,
+     "prixMaxNonMeca": 33.31
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 20.59,
+     "prixMax": 28.87,
+     "prixMaxNonMeca": 39.23
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 24.14,
+     "prixMax": 34.79,
+     "prixMaxNonMeca": 51.07
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 30.06,
+     "prixMax": 46.63,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "20.001 kg – 30 kg",
+     "min": 20001,
+     "max": 30000,
+     "prixMin": 35.98,
+     "prixMax": 16.74,
+     "prixMaxNonMeca": null
+    }
+   ]
+  },
+  {
+   "transporteur": "Chronopost",
+   "offre": "Chrono Classic collecte",
+   "depart": "Domicile",
+   "arrivee": "Domicile",
+   "typePoids": "WEIGHT_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 14.3,
+     "prixMax": null,
+     "prixMaxNonMeca": 18.74
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 14.3,
+     "prixMax": null,
+     "prixMaxNonMeca": 19.93
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 14.3,
+     "prixMax": null,
+     "prixMaxNonMeca": 21.11
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 15.48,
+     "prixMax": null,
+     "prixMaxNonMeca": 23.47
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 16.67,
+     "prixMax": 19.03,
+     "prixMaxNonMeca": 25.85
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 17.86,
+     "prixMax": 21.4,
+     "prixMaxNonMeca": 29.39
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 20.22,
+     "prixMax": 24.95,
+     "prixMaxNonMeca": 35.31
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 22.59,
+     "prixMax": 30.87,
+     "prixMaxNonMeca": 41.23
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 26.14,
+     "prixMax": 36.79,
+     "prixMaxNonMeca": 53.07
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 32.06,
+     "prixMax": 48.63,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "20.001 kg – 30 kg",
+     "min": 20001,
+     "max": 30000,
+     "prixMin": 37.98,
+     "prixMax": 18.74,
+     "prixMaxNonMeca": null
+    }
+   ]
+  },
+  {
+   "transporteur": "Chronopost",
+   "offre": "Chrono Express",
+   "depart": "Point de dépôt",
+   "arrivee": "Domicile",
+   "typePoids": "VOLUME_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 18.25,
+     "prixMax": null,
+     "prixMaxNonMeca": 18.25
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 18.25,
+     "prixMax": null,
+     "prixMaxNonMeca": 18.25
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 22.4,
+     "prixMax": null,
+     "prixMaxNonMeca": 22.4
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 25.27,
+     "prixMax": 27.43,
+     "prixMaxNonMeca": 27.43
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 29.59,
+     "prixMax": 31.77,
+     "prixMaxNonMeca": 31.77
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 33.93,
+     "prixMax": 40.45,
+     "prixMaxNonMeca": 40.45
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 42.61,
+     "prixMax": 49.11,
+     "prixMaxNonMeca": 49.11
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 51.29,
+     "prixMax": 62.12,
+     "prixMaxNonMeca": 62.12
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 64.6,
+     "prixMax": 86.85,
+     "prixMaxNonMeca": 86.85
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 89.31,
+     "prixMax": 111.56,
+     "prixMaxNonMeca": 111.56
+    },
+    {
+     "label": "20.001 kg – 30 kg",
+     "min": 20001,
+     "max": 30000,
+     "prixMin": 114.51,
+     "prixMax": 170.71,
+     "prixMaxNonMeca": 170.71
+    },
+    {
+     "label": "30.001 kg +",
+     "min": 30001,
+     "max": null,
+     "prixMin": 173.66,
+     "prixMax": 348.12,
+     "prixMaxNonMeca": 348.12
+    }
+   ]
+  },
+  {
+   "transporteur": "Chronopost",
+   "offre": "Chrono Express collecte",
+   "depart": "Domicile",
+   "arrivee": "Domicile",
+   "typePoids": "VOLUME_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 20.25,
+     "prixMax": null,
+     "prixMaxNonMeca": 20.25
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 20.25,
+     "prixMax": null,
+     "prixMaxNonMeca": 20.25
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 24.4,
+     "prixMax": null,
+     "prixMaxNonMeca": 24.4
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 27.27,
+     "prixMax": 29.43,
+     "prixMaxNonMeca": 29.43
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 31.59,
+     "prixMax": 33.77,
+     "prixMaxNonMeca": 33.77
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 35.93,
+     "prixMax": 42.45,
+     "prixMaxNonMeca": 42.45
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 44.61,
+     "prixMax": 51.11,
+     "prixMaxNonMeca": 51.11
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 53.29,
+     "prixMax": 64.12,
+     "prixMaxNonMeca": 64.12
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 66.6,
+     "prixMax": 88.85,
+     "prixMaxNonMeca": 88.85
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 91.31,
+     "prixMax": 113.56,
+     "prixMaxNonMeca": 113.56
+    },
+    {
+     "label": "20.001 kg – 30 kg",
+     "min": 20001,
+     "max": 30000,
+     "prixMin": 116.51,
+     "prixMax": 172.71,
+     "prixMaxNonMeca": 172.71
+    },
+    {
+     "label": "30.001 kg +",
+     "min": 30001,
+     "max": null,
+     "prixMin": 175.66,
+     "prixMax": 350.12,
+     "prixMaxNonMeca": 350.12
+    }
+   ]
+  },
+  {
+   "transporteur": "Chronopost",
+   "offre": "Chrono Relais Europe",
+   "depart": "Point de dépôt",
+   "arrivee": "Point de retrait",
+   "typePoids": "VOLUME_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 11.72,
+     "prixMax": null,
+     "prixMaxNonMeca": 15.81
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 11.72,
+     "prixMax": null,
+     "prixMaxNonMeca": 15.81
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 11.72,
+     "prixMax": null,
+     "prixMaxNonMeca": 15.81
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 12.48,
+     "prixMax": null,
+     "prixMaxNonMeca": 16.57
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 13.26,
+     "prixMax": null,
+     "prixMaxNonMeca": 17.34
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 14.02,
+     "prixMax": 14.78,
+     "prixMaxNonMeca": 18.86
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 15.54,
+     "prixMax": 16.31,
+     "prixMaxNonMeca": 20.4
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 17.07,
+     "prixMax": 18.59,
+     "prixMaxNonMeca": 22.68
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 19.35,
+     "prixMax": 22.4,
+     "prixMaxNonMeca": 26.49
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 23.16,
+     "prixMax": 26.23,
+     "prixMaxNonMeca": 30.3
+    },
+    {
+     "label": "20.001 kg – 30 kg",
+     "min": 20001,
+     "max": 30000,
+     "prixMin": 26.99,
+     "prixMax": 33.85,
+     "prixMaxNonMeca": 37.93
+    },
+    {
+     "label": "30.001 kg +",
+     "min": 30001,
+     "max": null,
+     "prixMin": 34.61,
+     "prixMax": 56.73,
+     "prixMaxNonMeca": 60.82
+    }
+   ]
+  },
+  {
+   "transporteur": "Delivengo",
+   "offre": "Delivengo easy",
+   "depart": "Point de dépôt",
+   "arrivee": "Domicile",
+   "typePoids": "WEIGHT_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 8.45,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 9.9,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 11.5,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 16.45,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    }
+   ]
+  },
+  {
+   "transporteur": "Happy Post",
+   "offre": "Happy Post avec Suivi sans Signature",
+   "depart": "Point de dépôt",
+   "arrivee": "Domicile",
+   "typePoids": "WEIGHT_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 9.25,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 9.25,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 9.55,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 10.7,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 11.88,
+     "prixMax": 14.12,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 12.99,
+     "prixMax": 16.63,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 15.52,
+     "prixMax": 19.95,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 17.74,
+     "prixMax": 25.51,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 20.55,
+     "prixMax": 31.06,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 26.62,
+     "prixMax": 34.07,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "20.001 kg – 30 kg",
+     "min": 20001,
+     "max": 30000,
+     "prixMin": 31.66,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    }
+   ]
+  },
+  {
+   "transporteur": "Mondial Relay",
+   "offre": "Mondial Points Relais - Europe",
+   "depart": "Point de dépôt",
+   "arrivee": "Point de retrait",
+   "typePoids": "WEIGHT_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 5.46,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 5.46,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 6.66,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 8.03,
+     "prixMax": 14.88,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 13.49,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 13.49,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 14.88,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 15.49,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 23.63,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 23.63,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    }
+   ]
+  },
+  {
+   "transporteur": "Mondial Relay",
+   "offre": "Mondial Domicile Europe",
+   "depart": "Point de dépôt",
+   "arrivee": "Domicile",
+   "typePoids": "WEIGHT_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 8.94,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 8.94,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 9.12,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 10.78,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 12.59,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 12.6,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 17.39,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 19.49,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 24.54,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 29.85,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "20.001 kg – 30 kg",
+     "min": 20001,
+     "max": 30000,
+     "prixMin": 32.48,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    }
+   ]
+  },
+  {
+   "transporteur": "Colissimo",
+   "offre": "Colissimo International Domicile - avec signature",
+   "depart": "Point de dépôt",
+   "arrivee": "Domicile",
+   "typePoids": "WEIGHT_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 9.2,
+     "prixMax": null,
+     "prixMaxNonMeca": 18.73
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 9.3,
+     "prixMax": 11.29,
+     "prixMaxNonMeca": 19.5
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 11.26,
+     "prixMax": null,
+     "prixMaxNonMeca": 20.36
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 12.07,
+     "prixMax": null,
+     "prixMaxNonMeca": 21.92
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 12.93,
+     "prixMax": 14.48,
+     "prixMaxNonMeca": 23.28
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 13.71,
+     "prixMax": 15.85,
+     "prixMaxNonMeca": 25.81
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 15.26,
+     "prixMax": 18.37,
+     "prixMaxNonMeca": 30.49
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 16.82,
+     "prixMax": 23.06,
+     "prixMaxNonMeca": 35.03
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 21.29,
+     "prixMax": 27.59,
+     "prixMaxNonMeca": 44.1
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 26.66,
+     "prixMax": 36.66,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "20.001 kg – 30 kg",
+     "min": 20001,
+     "max": 30000,
+     "prixMin": 31.19,
+     "prixMax": 16.63,
+     "prixMaxNonMeca": null
+    }
+   ]
+  },
+  {
+   "transporteur": "Colissimo",
+   "offre": "Colissimo International Point Retrait",
+   "depart": "Point de dépôt",
+   "arrivee": "Point de retrait",
+   "typePoids": "WEIGHT_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 6.78,
+     "prixMax": 9.07,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 7.08,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 8.07,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 9.85,
+     "prixMax": 11.68,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 10.7,
+     "prixMax": 12.65,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 11.18,
+     "prixMax": 14.1,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 12.15,
+     "prixMax": 20.83,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 13.12,
+     "prixMax": 25.37,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 16.92,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 23.26,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    }
+   ]
+  },
+  {
+   "transporteur": "Sodexi",
+   "offre": "Sodexi Express International",
+   "depart": "Domicile",
+   "arrivee": "Domicile",
+   "typePoids": "VOLUME_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 81.84,
+     "prixMax": null,
+     "prixMaxNonMeca": 130.93
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 81.84,
+     "prixMax": null,
+     "prixMaxNonMeca": 130.93
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 81.84,
+     "prixMax": null,
+     "prixMaxNonMeca": 130.93
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 84.15,
+     "prixMax": 86.53,
+     "prixMaxNonMeca": 135.62
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 88.1,
+     "prixMax": 91.07,
+     "prixMaxNonMeca": 140.15
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 92.64,
+     "prixMax": 100.3,
+     "prixMaxNonMeca": 149.38
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 102.24,
+     "prixMax": 109.45,
+     "prixMaxNonMeca": 158.54
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 111.41,
+     "prixMax": 123.19,
+     "prixMaxNonMeca": 172.28
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 127.78,
+     "prixMax": 146.01,
+     "prixMaxNonMeca": 195.09
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 150.58,
+     "prixMax": 168.92,
+     "prixMaxNonMeca": 218.01
+    },
+    {
+     "label": "20.001 kg – 30 kg",
+     "min": 20001,
+     "max": 30000,
+     "prixMin": 173.46,
+     "prixMax": 268.25,
+     "prixMaxNonMeca": 268.25
+    },
+    {
+     "label": "30.001 kg +",
+     "min": 30001,
+     "max": null,
+     "prixMin": 276.61,
+     "prixMax": 2231.61,
+     "prixMaxNonMeca": 2231.61
+    }
+   ]
+  }
+ ],
+ "ES": [
+  {
+   "transporteur": "Chronopost",
+   "offre": "Chrono 2Shop Europe",
+   "depart": "Point de dépôt",
+   "arrivee": "Point de retrait",
+   "typePoids": "WEIGHT_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 5.79,
+     "prixMax": null,
+     "prixMaxNonMeca": 9.29
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 5.79,
+     "prixMax": null,
+     "prixMaxNonMeca": 10.8
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 6.05,
+     "prixMax": null,
+     "prixMaxNonMeca": 12.31
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 6.42,
+     "prixMax": 10.8,
+     "prixMaxNonMeca": 14.58
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 9.29,
+     "prixMax": 12.31,
+     "prixMaxNonMeca": 18.36
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 10.04,
+     "prixMax": 14.58,
+     "prixMaxNonMeca": 22.14
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 11.56,
+     "prixMax": 18.36,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 13.07,
+     "prixMax": 22.14,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 15.33,
+     "prixMax": 5.79,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 19.11,
+     "prixMax": 5.79,
+     "prixMaxNonMeca": null
+    }
+   ]
+  },
+  {
+   "transporteur": "Chronopost",
+   "offre": "Chrono Classic",
+   "depart": "Point de dépôt",
+   "arrivee": "Domicile",
+   "typePoids": "WEIGHT_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 13.03,
+     "prixMax": null,
+     "prixMaxNonMeca": 17.47
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 13.03,
+     "prixMax": null,
+     "prixMaxNonMeca": 18.81
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 13.03,
+     "prixMax": null,
+     "prixMaxNonMeca": 20.16
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 14.37,
+     "prixMax": null,
+     "prixMaxNonMeca": 22.85
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 15.72,
+     "prixMax": 18.41,
+     "prixMaxNonMeca": 25.54
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 17.07,
+     "prixMax": 21.1,
+     "prixMaxNonMeca": 29.59
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 19.76,
+     "prixMax": 25.14,
+     "prixMaxNonMeca": 36.32
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 22.45,
+     "prixMax": 31.88,
+     "prixMaxNonMeca": 43.06
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 26.5,
+     "prixMax": 38.61,
+     "prixMaxNonMeca": 56.52
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 33.23,
+     "prixMax": 52.08,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "20.001 kg – 30 kg",
+     "min": 20001,
+     "max": 30000,
+     "prixMin": 39.96,
+     "prixMax": 17.47,
+     "prixMaxNonMeca": null
+    }
+   ]
+  },
+  {
+   "transporteur": "Chronopost",
+   "offre": "Chrono Classic collecte",
+   "depart": "Domicile",
+   "arrivee": "Domicile",
+   "typePoids": "WEIGHT_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 15.03,
+     "prixMax": null,
+     "prixMaxNonMeca": 19.47
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 15.03,
+     "prixMax": null,
+     "prixMaxNonMeca": 20.81
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 15.03,
+     "prixMax": null,
+     "prixMaxNonMeca": 22.16
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 16.37,
+     "prixMax": null,
+     "prixMaxNonMeca": 24.85
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 17.72,
+     "prixMax": 20.41,
+     "prixMaxNonMeca": 27.54
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 19.07,
+     "prixMax": 23.1,
+     "prixMaxNonMeca": 31.59
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 21.76,
+     "prixMax": 27.14,
+     "prixMaxNonMeca": 38.32
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 24.45,
+     "prixMax": 33.88,
+     "prixMaxNonMeca": 45.06
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 28.5,
+     "prixMax": 40.61,
+     "prixMaxNonMeca": 58.52
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 35.23,
+     "prixMax": 54.08,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "20.001 kg – 30 kg",
+     "min": 20001,
+     "max": 30000,
+     "prixMin": 41.96,
+     "prixMax": 19.47,
+     "prixMaxNonMeca": null
+    }
+   ]
+  },
+  {
+   "transporteur": "Chronopost",
+   "offre": "Chrono Express",
+   "depart": "Point de dépôt",
+   "arrivee": "Domicile",
+   "typePoids": "VOLUME_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 18.25,
+     "prixMax": null,
+     "prixMaxNonMeca": 18.25
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 18.25,
+     "prixMax": null,
+     "prixMaxNonMeca": 18.25
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 22.4,
+     "prixMax": null,
+     "prixMaxNonMeca": 22.4
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 25.27,
+     "prixMax": 27.43,
+     "prixMaxNonMeca": 27.43
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 29.59,
+     "prixMax": 31.77,
+     "prixMaxNonMeca": 31.77
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 33.93,
+     "prixMax": 40.45,
+     "prixMaxNonMeca": 40.45
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 42.61,
+     "prixMax": 49.11,
+     "prixMaxNonMeca": 49.11
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 51.29,
+     "prixMax": 62.12,
+     "prixMaxNonMeca": 62.12
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 64.6,
+     "prixMax": 86.85,
+     "prixMaxNonMeca": 86.85
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 89.31,
+     "prixMax": 111.56,
+     "prixMaxNonMeca": 111.56
+    },
+    {
+     "label": "20.001 kg – 30 kg",
+     "min": 20001,
+     "max": 30000,
+     "prixMin": 114.51,
+     "prixMax": 170.71,
+     "prixMaxNonMeca": 170.71
+    },
+    {
+     "label": "30.001 kg +",
+     "min": 30001,
+     "max": null,
+     "prixMin": 173.66,
+     "prixMax": 348.12,
+     "prixMaxNonMeca": 348.12
+    }
+   ]
+  },
+  {
+   "transporteur": "Chronopost",
+   "offre": "Chrono Express collecte",
+   "depart": "Domicile",
+   "arrivee": "Domicile",
+   "typePoids": "VOLUME_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 20.25,
+     "prixMax": null,
+     "prixMaxNonMeca": 20.25
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 20.25,
+     "prixMax": null,
+     "prixMaxNonMeca": 20.25
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 24.4,
+     "prixMax": null,
+     "prixMaxNonMeca": 24.4
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 27.27,
+     "prixMax": 29.43,
+     "prixMaxNonMeca": 29.43
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 31.59,
+     "prixMax": 33.77,
+     "prixMaxNonMeca": 33.77
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 35.93,
+     "prixMax": 42.45,
+     "prixMaxNonMeca": 42.45
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 44.61,
+     "prixMax": 51.11,
+     "prixMaxNonMeca": 51.11
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 53.29,
+     "prixMax": 64.12,
+     "prixMaxNonMeca": 64.12
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 66.6,
+     "prixMax": 88.85,
+     "prixMaxNonMeca": 88.85
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 91.31,
+     "prixMax": 113.56,
+     "prixMaxNonMeca": 113.56
+    },
+    {
+     "label": "20.001 kg – 30 kg",
+     "min": 20001,
+     "max": 30000,
+     "prixMin": 116.51,
+     "prixMax": 172.71,
+     "prixMaxNonMeca": 172.71
+    },
+    {
+     "label": "30.001 kg +",
+     "min": 30001,
+     "max": null,
+     "prixMin": 175.66,
+     "prixMax": 350.12,
+     "prixMaxNonMeca": 350.12
+    }
+   ]
+  },
+  {
+   "transporteur": "Chronopost",
+   "offre": "Chrono Relais Europe",
+   "depart": "Point de dépôt",
+   "arrivee": "Point de retrait",
+   "typePoids": "VOLUME_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 12.4,
+     "prixMax": null,
+     "prixMaxNonMeca": 16.48
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 12.4,
+     "prixMax": null,
+     "prixMaxNonMeca": 16.48
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 12.4,
+     "prixMax": null,
+     "prixMaxNonMeca": 16.48
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 13.65,
+     "prixMax": null,
+     "prixMaxNonMeca": 17.73
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 14.9,
+     "prixMax": null,
+     "prixMaxNonMeca": 18.99
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 16.15,
+     "prixMax": 17.41,
+     "prixMaxNonMeca": 21.49
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 18.72,
+     "prixMax": 20.03,
+     "prixMaxNonMeca": 24.1
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 21.34,
+     "prixMax": 23.94,
+     "prixMaxNonMeca": 28.03
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 25.25,
+     "prixMax": 30.48,
+     "prixMaxNonMeca": 34.57
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 31.79,
+     "prixMax": 37.02,
+     "prixMaxNonMeca": 41.11
+    },
+    {
+     "label": "20.001 kg – 30 kg",
+     "min": 20001,
+     "max": 30000,
+     "prixMin": 38.33,
+     "prixMax": 50.1,
+     "prixMaxNonMeca": 54.18
+    },
+    {
+     "label": "30.001 kg +",
+     "min": 30001,
+     "max": null,
+     "prixMin": 51.41,
+     "prixMax": 89.32,
+     "prixMaxNonMeca": 93.41
+    }
+   ]
+  },
+  {
+   "transporteur": "Delivengo",
+   "offre": "Delivengo easy",
+   "depart": "Point de dépôt",
+   "arrivee": "Domicile",
+   "typePoids": "WEIGHT_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 8.45,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 9.9,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 11.5,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 16.45,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    }
+   ]
+  },
+  {
+   "transporteur": "Happy Post",
+   "offre": "Happy Post avec Suivi sans Signature",
+   "depart": "Point de dépôt",
+   "arrivee": "Domicile",
+   "typePoids": "WEIGHT_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 9.22,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 9.22,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 9.62,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 11.2,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 12.69,
+     "prixMax": 15.29,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 13.99,
+     "prixMax": 19.26,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 17.96,
+     "prixMax": 23.13,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 20.55,
+     "prixMax": 30.35,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 24.66,
+     "prixMax": 37.63,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 32.46,
+     "prixMax": 46.34,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "20.001 kg – 30 kg",
+     "min": 20001,
+     "max": 30000,
+     "prixMin": 43.2,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    }
+   ]
+  },
+  {
+   "transporteur": "Mondial Relay",
+   "offre": "Mondial Points Relais - Europe",
+   "depart": "Point de dépôt",
+   "arrivee": "Point de retrait",
+   "typePoids": "WEIGHT_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 5,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 5,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 6.15,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 7.85,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 9.21,
+     "prixMax": 12.69,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 9.21,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 12.69,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 13.21,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 20.08,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 20.08,
+     "prixMax": 24.11,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "20.001 kg – 30 kg",
+     "min": 20001,
+     "max": 30000,
+     "prixMin": 21.12,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    }
+   ]
+  },
+  {
+   "transporteur": "Mondial Relay",
+   "offre": "Mondial Domicile Europe",
+   "depart": "Point de dépôt",
+   "arrivee": "Domicile",
+   "typePoids": "WEIGHT_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 9.21,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 9.21,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 9.38,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 11.02,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 12.84,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 12.84,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 19.47,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 19.47,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 21.9,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 36.29,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "20.001 kg – 30 kg",
+     "min": 20001,
+     "max": 30000,
+     "prixMin": 36.29,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    }
+   ]
+  },
+  {
+   "transporteur": "Colissimo",
+   "offre": "Colissimo International Domicile - avec signature",
+   "depart": "Point de dépôt",
+   "arrivee": "Domicile",
+   "typePoids": "WEIGHT_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 10.34,
+     "prixMax": null,
+     "prixMaxNonMeca": 20.63
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 10.43,
+     "prixMax": 13.2,
+     "prixMaxNonMeca": 22.17
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 13.15,
+     "prixMax": null,
+     "prixMaxNonMeca": 23.11
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 14.74,
+     "prixMax": null,
+     "prixMaxNonMeca": 24.66
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 15.68,
+     "prixMax": 17.23,
+     "prixMaxNonMeca": 26.02
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 16.45,
+     "prixMax": 18.58,
+     "prixMaxNonMeca": 28.54
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 18.01,
+     "prixMax": 21.12,
+     "prixMaxNonMeca": 33.72
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 19.56,
+     "prixMax": 26.29,
+     "prixMaxNonMeca": 38.22
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 24.03,
+     "prixMax": 30.78,
+     "prixMaxNonMeca": 47.22
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 29.9,
+     "prixMax": 39.78,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "20.001 kg – 30 kg",
+     "min": 20001,
+     "max": 30000,
+     "prixMin": 34.39,
+     "prixMax": 17.78,
+     "prixMaxNonMeca": null
+    }
+   ]
+  },
+  {
+   "transporteur": "Colissimo",
+   "offre": "Colissimo International Point Retrait",
+   "depart": "Point de dépôt",
+   "arrivee": "Point de retrait",
+   "typePoids": "WEIGHT_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 7.92,
+     "prixMax": 10.98,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 8.21,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 9.6,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 12.5,
+     "prixMax": 14.41,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 13.44,
+     "prixMax": 15.39,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 13.94,
+     "prixMax": 16.85,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 14.91,
+     "prixMax": 24.07,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 15.88,
+     "prixMax": 28.55,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 19.66,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 26.5,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    }
+   ]
+  },
+  {
+   "transporteur": "Sodexi",
+   "offre": "Sodexi Express International",
+   "depart": "Domicile",
+   "arrivee": "Domicile",
+   "typePoids": "VOLUME_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 81.84,
+     "prixMax": null,
+     "prixMaxNonMeca": 130.93
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 81.84,
+     "prixMax": null,
+     "prixMaxNonMeca": 130.93
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 81.84,
+     "prixMax": null,
+     "prixMaxNonMeca": 130.93
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 84.15,
+     "prixMax": 86.53,
+     "prixMaxNonMeca": 135.62
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 88.1,
+     "prixMax": 91.07,
+     "prixMaxNonMeca": 140.15
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 92.64,
+     "prixMax": 100.3,
+     "prixMaxNonMeca": 149.38
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 102.24,
+     "prixMax": 109.45,
+     "prixMaxNonMeca": 158.54
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 111.41,
+     "prixMax": 123.19,
+     "prixMaxNonMeca": 172.28
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 127.78,
+     "prixMax": 146.01,
+     "prixMaxNonMeca": 195.09
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 150.58,
+     "prixMax": 168.92,
+     "prixMaxNonMeca": 218.01
+    },
+    {
+     "label": "20.001 kg – 30 kg",
+     "min": 20001,
+     "max": 30000,
+     "prixMin": 173.46,
+     "prixMax": 268.25,
+     "prixMaxNonMeca": 268.25
+    },
+    {
+     "label": "30.001 kg +",
+     "min": 30001,
+     "max": null,
+     "prixMin": 276.61,
+     "prixMax": 2231.61,
+     "prixMaxNonMeca": 2231.61
+    }
+   ]
+  }
+ ],
+ "IT": [
+  {
+   "transporteur": "Chronopost",
+   "offre": "Chrono 2Shop Europe",
+   "depart": "Point de dépôt",
+   "arrivee": "Point de retrait",
+   "typePoids": "WEIGHT_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 5.79,
+     "prixMax": null,
+     "prixMaxNonMeca": 9.29
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 5.79,
+     "prixMax": null,
+     "prixMaxNonMeca": 10.8
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 6.05,
+     "prixMax": null,
+     "prixMaxNonMeca": 12.31
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 6.42,
+     "prixMax": 10.8,
+     "prixMaxNonMeca": 14.58
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 9.29,
+     "prixMax": 12.31,
+     "prixMaxNonMeca": 18.36
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 10.04,
+     "prixMax": 14.58,
+     "prixMaxNonMeca": 22.14
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 11.56,
+     "prixMax": 18.36,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 13.07,
+     "prixMax": 22.14,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 15.33,
+     "prixMax": 5.79,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 19.11,
+     "prixMax": 5.79,
+     "prixMaxNonMeca": null
+    }
+   ]
+  },
+  {
+   "transporteur": "Chronopost",
+   "offre": "Chrono Classic",
+   "depart": "Point de dépôt",
+   "arrivee": "Domicile",
+   "typePoids": "WEIGHT_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 13.03,
+     "prixMax": null,
+     "prixMaxNonMeca": 17.47
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 13.03,
+     "prixMax": null,
+     "prixMaxNonMeca": 18.81
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 13.03,
+     "prixMax": null,
+     "prixMaxNonMeca": 20.16
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 14.37,
+     "prixMax": null,
+     "prixMaxNonMeca": 22.85
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 15.72,
+     "prixMax": 18.41,
+     "prixMaxNonMeca": 25.54
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 17.07,
+     "prixMax": 21.1,
+     "prixMaxNonMeca": 29.59
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 19.76,
+     "prixMax": 25.14,
+     "prixMaxNonMeca": 36.32
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 22.45,
+     "prixMax": 31.88,
+     "prixMaxNonMeca": 43.06
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 26.5,
+     "prixMax": 38.61,
+     "prixMaxNonMeca": 56.52
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 33.23,
+     "prixMax": 52.08,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "20.001 kg – 30 kg",
+     "min": 20001,
+     "max": 30000,
+     "prixMin": 39.96,
+     "prixMax": 17.47,
+     "prixMaxNonMeca": null
+    }
+   ]
+  },
+  {
+   "transporteur": "Chronopost",
+   "offre": "Chrono Classic collecte",
+   "depart": "Domicile",
+   "arrivee": "Domicile",
+   "typePoids": "WEIGHT_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 15.03,
+     "prixMax": null,
+     "prixMaxNonMeca": 19.47
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 15.03,
+     "prixMax": null,
+     "prixMaxNonMeca": 20.81
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 15.03,
+     "prixMax": null,
+     "prixMaxNonMeca": 22.16
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 16.37,
+     "prixMax": null,
+     "prixMaxNonMeca": 24.85
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 17.72,
+     "prixMax": 20.41,
+     "prixMaxNonMeca": 27.54
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 19.07,
+     "prixMax": 23.1,
+     "prixMaxNonMeca": 31.59
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 21.76,
+     "prixMax": 27.14,
+     "prixMaxNonMeca": 38.32
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 24.45,
+     "prixMax": 33.88,
+     "prixMaxNonMeca": 45.06
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 28.5,
+     "prixMax": 40.61,
+     "prixMaxNonMeca": 58.52
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 35.23,
+     "prixMax": 54.08,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "20.001 kg – 30 kg",
+     "min": 20001,
+     "max": 30000,
+     "prixMin": 41.96,
+     "prixMax": 19.47,
+     "prixMaxNonMeca": null
+    }
+   ]
+  },
+  {
+   "transporteur": "Chronopost",
+   "offre": "Chrono Express",
+   "depart": "Point de dépôt",
+   "arrivee": "Domicile",
+   "typePoids": "VOLUME_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 18.25,
+     "prixMax": null,
+     "prixMaxNonMeca": 18.25
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 18.25,
+     "prixMax": null,
+     "prixMaxNonMeca": 18.25
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 22.4,
+     "prixMax": null,
+     "prixMaxNonMeca": 22.4
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 25.27,
+     "prixMax": 27.43,
+     "prixMaxNonMeca": 27.43
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 29.59,
+     "prixMax": 31.77,
+     "prixMaxNonMeca": 31.77
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 33.93,
+     "prixMax": 40.45,
+     "prixMaxNonMeca": 40.45
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 42.61,
+     "prixMax": 49.11,
+     "prixMaxNonMeca": 49.11
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 51.29,
+     "prixMax": 62.12,
+     "prixMaxNonMeca": 62.12
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 64.6,
+     "prixMax": 86.85,
+     "prixMaxNonMeca": 86.85
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 89.31,
+     "prixMax": 111.56,
+     "prixMaxNonMeca": 111.56
+    },
+    {
+     "label": "20.001 kg – 30 kg",
+     "min": 20001,
+     "max": 30000,
+     "prixMin": 114.51,
+     "prixMax": 170.71,
+     "prixMaxNonMeca": 170.71
+    },
+    {
+     "label": "30.001 kg +",
+     "min": 30001,
+     "max": null,
+     "prixMin": 173.66,
+     "prixMax": 348.12,
+     "prixMaxNonMeca": 348.12
+    }
+   ]
+  },
+  {
+   "transporteur": "Chronopost",
+   "offre": "Chrono Express collecte",
+   "depart": "Domicile",
+   "arrivee": "Domicile",
+   "typePoids": "VOLUME_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 20.25,
+     "prixMax": null,
+     "prixMaxNonMeca": 20.25
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 20.25,
+     "prixMax": null,
+     "prixMaxNonMeca": 20.25
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 24.4,
+     "prixMax": null,
+     "prixMaxNonMeca": 24.4
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 27.27,
+     "prixMax": 29.43,
+     "prixMaxNonMeca": 29.43
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 31.59,
+     "prixMax": 33.77,
+     "prixMaxNonMeca": 33.77
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 35.93,
+     "prixMax": 42.45,
+     "prixMaxNonMeca": 42.45
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 44.61,
+     "prixMax": 51.11,
+     "prixMaxNonMeca": 51.11
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 53.29,
+     "prixMax": 64.12,
+     "prixMaxNonMeca": 64.12
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 66.6,
+     "prixMax": 88.85,
+     "prixMaxNonMeca": 88.85
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 91.31,
+     "prixMax": 113.56,
+     "prixMaxNonMeca": 113.56
+    },
+    {
+     "label": "20.001 kg – 30 kg",
+     "min": 20001,
+     "max": 30000,
+     "prixMin": 116.51,
+     "prixMax": 172.71,
+     "prixMaxNonMeca": 172.71
+    },
+    {
+     "label": "30.001 kg +",
+     "min": 30001,
+     "max": null,
+     "prixMin": 175.66,
+     "prixMax": 350.12,
+     "prixMaxNonMeca": 350.12
+    }
+   ]
+  },
+  {
+   "transporteur": "Chronopost",
+   "offre": "Chrono Relais Europe",
+   "depart": "Point de dépôt",
+   "arrivee": "Point de retrait",
+   "typePoids": "VOLUME_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 12.4,
+     "prixMax": null,
+     "prixMaxNonMeca": 16.48
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 12.4,
+     "prixMax": null,
+     "prixMaxNonMeca": 16.48
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 12.4,
+     "prixMax": null,
+     "prixMaxNonMeca": 16.48
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 13.65,
+     "prixMax": null,
+     "prixMaxNonMeca": 17.73
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 14.9,
+     "prixMax": null,
+     "prixMaxNonMeca": 18.99
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 16.15,
+     "prixMax": 17.41,
+     "prixMaxNonMeca": 21.49
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 18.72,
+     "prixMax": 20.03,
+     "prixMaxNonMeca": 24.1
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 21.34,
+     "prixMax": 23.94,
+     "prixMaxNonMeca": 28.03
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 25.25,
+     "prixMax": 30.48,
+     "prixMaxNonMeca": 34.57
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 31.79,
+     "prixMax": 37.02,
+     "prixMaxNonMeca": 41.11
+    },
+    {
+     "label": "20.001 kg – 30 kg",
+     "min": 20001,
+     "max": 30000,
+     "prixMin": 38.33,
+     "prixMax": 50.1,
+     "prixMaxNonMeca": 54.18
+    },
+    {
+     "label": "30.001 kg +",
+     "min": 30001,
+     "max": null,
+     "prixMin": 51.41,
+     "prixMax": 89.32,
+     "prixMaxNonMeca": 93.41
+    }
+   ]
+  },
+  {
+   "transporteur": "Delivengo",
+   "offre": "Delivengo easy",
+   "depart": "Point de dépôt",
+   "arrivee": "Domicile",
+   "typePoids": "WEIGHT_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 8.45,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 9.9,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 11.5,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 16.45,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    }
+   ]
+  },
+  {
+   "transporteur": "Happy Post",
+   "offre": "Happy Post avec Suivi sans Signature",
+   "depart": "Point de dépôt",
+   "arrivee": "Domicile",
+   "typePoids": "WEIGHT_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 10.96,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 10.96,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 11.36,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 12.64,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 13.93,
+     "prixMax": 18.09,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 16.79,
+     "prixMax": 21.44,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 20.15,
+     "prixMax": 25.32,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 22.74,
+     "prixMax": 34.94,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 29.2,
+     "prixMax": 41.49,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 36.25,
+     "prixMax": 45.49,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "20.001 kg – 30 kg",
+     "min": 20001,
+     "max": 30000,
+     "prixMin": 42.28,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    }
+   ]
+  },
+  {
+   "transporteur": "Mondial Relay",
+   "offre": "Mondial Points Relais - Europe",
+   "depart": "Point de dépôt",
+   "arrivee": "Point de retrait",
+   "typePoids": "WEIGHT_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 5,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 5,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 6.15,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 7.85,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 9.21,
+     "prixMax": 12.69,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 9.21,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 12.69,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 13.21,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 20.08,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 20.08,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "20.001 kg – 30 kg",
+     "min": 20001,
+     "max": 30000,
+     "prixMin": 21.12,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    }
+   ]
+  },
+  {
+   "transporteur": "Colissimo",
+   "offre": "Colissimo International Domicile - avec signature",
+   "depart": "Point de dépôt",
+   "arrivee": "Domicile",
+   "typePoids": "WEIGHT_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 10.39,
+     "prixMax": null,
+     "prixMaxNonMeca": 20.71
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 10.49,
+     "prixMax": 13.27,
+     "prixMaxNonMeca": 22.24
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 13.21,
+     "prixMax": null,
+     "prixMaxNonMeca": 23.18
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 14.81,
+     "prixMax": null,
+     "prixMaxNonMeca": 24.73
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 15.76,
+     "prixMax": 17.31,
+     "prixMaxNonMeca": 26.1
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 16.53,
+     "prixMax": 18.66,
+     "prixMaxNonMeca": 28.62
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 18.09,
+     "prixMax": 21.2,
+     "prixMaxNonMeca": 33.87
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 19.64,
+     "prixMax": 26.43,
+     "prixMaxNonMeca": 38.38
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 24.11,
+     "prixMax": 30.95,
+     "prixMaxNonMeca": 47.41
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 30.02,
+     "prixMax": 39.98,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "20.001 kg – 30 kg",
+     "min": 20001,
+     "max": 30000,
+     "prixMin": 34.53,
+     "prixMax": 17.83,
+     "prixMaxNonMeca": null
+    }
+   ]
+  },
+  {
+   "transporteur": "Colissimo",
+   "offre": "Colissimo International Point Retrait",
+   "depart": "Point de dépôt",
+   "arrivee": "Point de retrait",
+   "typePoids": "WEIGHT_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 7.97,
+     "prixMax": 11.04,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 8.26,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 9.65,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 12.57,
+     "prixMax": 14.49,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 13.52,
+     "prixMax": 15.46,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 14.02,
+     "prixMax": 16.93,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 14.99,
+     "prixMax": 24.2,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 15.96,
+     "prixMax": 28.71,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 19.75,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 26.62,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    }
+   ]
+  },
+  {
+   "transporteur": "Sodexi",
+   "offre": "Sodexi Express International",
+   "depart": "Domicile",
+   "arrivee": "Domicile",
+   "typePoids": "VOLUME_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 81.84,
+     "prixMax": null,
+     "prixMaxNonMeca": 130.93
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 81.84,
+     "prixMax": null,
+     "prixMaxNonMeca": 130.93
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 81.84,
+     "prixMax": null,
+     "prixMaxNonMeca": 130.93
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 84.15,
+     "prixMax": 86.53,
+     "prixMaxNonMeca": 135.62
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 88.1,
+     "prixMax": 91.07,
+     "prixMaxNonMeca": 140.15
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 92.64,
+     "prixMax": 100.3,
+     "prixMaxNonMeca": 149.38
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 102.24,
+     "prixMax": 109.45,
+     "prixMaxNonMeca": 158.54
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 111.41,
+     "prixMax": 123.19,
+     "prixMaxNonMeca": 172.28
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 127.78,
+     "prixMax": 146.01,
+     "prixMaxNonMeca": 195.09
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 150.58,
+     "prixMax": 168.92,
+     "prixMaxNonMeca": 218.01
+    },
+    {
+     "label": "20.001 kg – 30 kg",
+     "min": 20001,
+     "max": 30000,
+     "prixMin": 173.46,
+     "prixMax": 268.25,
+     "prixMaxNonMeca": 268.25
+    },
+    {
+     "label": "30.001 kg +",
+     "min": 30001,
+     "max": null,
+     "prixMin": 276.61,
+     "prixMax": 2231.61,
+     "prixMaxNonMeca": 2231.61
+    }
+   ]
+  }
+ ],
+ "CH": [
+  {
+   "transporteur": "Chronopost",
+   "offre": "Chrono 2Shop Europe",
+   "depart": "Point de dépôt",
+   "arrivee": "Point de retrait",
+   "typePoids": "WEIGHT_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 33.44,
+     "prixMax": null,
+     "prixMaxNonMeca": 37.03
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 33.44,
+     "prixMax": null,
+     "prixMaxNonMeca": 38.58
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 33.7,
+     "prixMax": null,
+     "prixMaxNonMeca": 40.13
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 34.09,
+     "prixMax": 38.58,
+     "prixMaxNonMeca": 42.45
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 37.03,
+     "prixMax": 40.13,
+     "prixMaxNonMeca": 46.33
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 37.8,
+     "prixMax": 42.45,
+     "prixMaxNonMeca": 50.2
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 39.35,
+     "prixMax": 46.33,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 40.9,
+     "prixMax": 50.2,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 43.23,
+     "prixMax": 33.44,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 47.1,
+     "prixMax": 33.44,
+     "prixMaxNonMeca": null
+    }
+   ]
+  },
+  {
+   "transporteur": "Chronopost",
+   "offre": "Chrono Classic",
+   "depart": "Point de dépôt",
+   "arrivee": "Domicile",
+   "typePoids": "WEIGHT_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 34.48,
+     "prixMax": null,
+     "prixMaxNonMeca": 38.92
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 34.48,
+     "prixMax": null,
+     "prixMaxNonMeca": 40.38
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 34.48,
+     "prixMax": null,
+     "prixMaxNonMeca": 41.85
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 35.94,
+     "prixMax": null,
+     "prixMaxNonMeca": 44.77
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 37.4,
+     "prixMax": 40.34,
+     "prixMaxNonMeca": 47.71
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 38.86,
+     "prixMax": 43.27,
+     "prixMaxNonMeca": 52.1
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 41.8,
+     "prixMax": 47.67,
+     "prixMaxNonMeca": 59.43
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 44.73,
+     "prixMax": 54.98,
+     "prixMaxNonMeca": 66.75
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 49.13,
+     "prixMax": 62.31,
+     "prixMaxNonMeca": 81.41
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 56.46,
+     "prixMax": 76.97,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "20.001 kg – 30 kg",
+     "min": 20001,
+     "max": 30000,
+     "prixMin": 63.77,
+     "prixMax": 38.92,
+     "prixMaxNonMeca": null
+    }
+   ]
+  },
+  {
+   "transporteur": "Chronopost",
+   "offre": "Chrono Classic collecte",
+   "depart": "Domicile",
+   "arrivee": "Domicile",
+   "typePoids": "WEIGHT_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 36.48,
+     "prixMax": null,
+     "prixMaxNonMeca": 40.92
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 36.48,
+     "prixMax": null,
+     "prixMaxNonMeca": 42.38
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 36.48,
+     "prixMax": null,
+     "prixMaxNonMeca": 43.85
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 37.94,
+     "prixMax": null,
+     "prixMaxNonMeca": 46.77
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 39.4,
+     "prixMax": 42.34,
+     "prixMaxNonMeca": 49.71
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 40.86,
+     "prixMax": 45.27,
+     "prixMaxNonMeca": 54.1
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 43.8,
+     "prixMax": 49.67,
+     "prixMaxNonMeca": 61.43
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 46.73,
+     "prixMax": 56.98,
+     "prixMaxNonMeca": 68.75
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 51.13,
+     "prixMax": 64.31,
+     "prixMaxNonMeca": 83.41
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 58.46,
+     "prixMax": 78.97,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "20.001 kg – 30 kg",
+     "min": 20001,
+     "max": 30000,
+     "prixMin": 65.77,
+     "prixMax": 40.92,
+     "prixMaxNonMeca": null
+    }
+   ]
+  },
+  {
+   "transporteur": "Chronopost",
+   "offre": "Chrono Express",
+   "depart": "Point de dépôt",
+   "arrivee": "Domicile",
+   "typePoids": "VOLUME_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 34.39,
+     "prixMax": null,
+     "prixMaxNonMeca": 34.39
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 34.39,
+     "prixMax": null,
+     "prixMaxNonMeca": 34.39
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 40.76,
+     "prixMax": null,
+     "prixMaxNonMeca": 40.76
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 45.86,
+     "prixMax": 49.95,
+     "prixMaxNonMeca": 49.95
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 54.05,
+     "prixMax": 58.14,
+     "prixMaxNonMeca": 58.14
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 62.23,
+     "prixMax": 74.51,
+     "prixMaxNonMeca": 74.51
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 78.24,
+     "prixMax": 89.43,
+     "prixMaxNonMeca": 89.43
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 93.17,
+     "prixMax": 111.82,
+     "prixMaxNonMeca": 111.82
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 116.23,
+     "prixMax": 155.95,
+     "prixMaxNonMeca": 155.95
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 160.36,
+     "prixMax": 200.07,
+     "prixMaxNonMeca": 200.07
+    },
+    {
+     "label": "20.001 kg – 30 kg",
+     "min": 20001,
+     "max": 30000,
+     "prixMin": 204.94,
+     "prixMax": 297.43,
+     "prixMaxNonMeca": 297.43
+    },
+    {
+     "label": "30.001 kg +",
+     "min": 30001,
+     "max": null,
+     "prixMin": 302.3,
+     "prixMax": 589.49,
+     "prixMaxNonMeca": 589.49
+    }
+   ]
+  },
+  {
+   "transporteur": "Chronopost",
+   "offre": "Chrono Express collecte",
+   "depart": "Domicile",
+   "arrivee": "Domicile",
+   "typePoids": "VOLUME_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 36.39,
+     "prixMax": null,
+     "prixMaxNonMeca": 36.39
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 36.39,
+     "prixMax": null,
+     "prixMaxNonMeca": 36.39
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 42.76,
+     "prixMax": null,
+     "prixMaxNonMeca": 42.76
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 47.86,
+     "prixMax": 51.95,
+     "prixMaxNonMeca": 51.95
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 56.05,
+     "prixMax": 60.14,
+     "prixMaxNonMeca": 60.14
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 64.23,
+     "prixMax": 76.51,
+     "prixMaxNonMeca": 76.51
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 80.24,
+     "prixMax": 91.43,
+     "prixMaxNonMeca": 91.43
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 95.17,
+     "prixMax": 113.82,
+     "prixMaxNonMeca": 113.82
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 118.23,
+     "prixMax": 157.95,
+     "prixMaxNonMeca": 157.95
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 162.36,
+     "prixMax": 202.07,
+     "prixMaxNonMeca": 202.07
+    },
+    {
+     "label": "20.001 kg – 30 kg",
+     "min": 20001,
+     "max": 30000,
+     "prixMin": 206.94,
+     "prixMax": 299.43,
+     "prixMaxNonMeca": 299.43
+    },
+    {
+     "label": "30.001 kg +",
+     "min": 30001,
+     "max": null,
+     "prixMin": 304.3,
+     "prixMax": 591.49,
+     "prixMaxNonMeca": 591.49
+    }
+   ]
+  },
+  {
+   "transporteur": "Chronopost",
+   "offre": "Chrono Relais Europe",
+   "depart": "Point de dépôt",
+   "arrivee": "Point de retrait",
+   "typePoids": "VOLUME_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 13.73,
+     "prixMax": null,
+     "prixMaxNonMeca": 17.82
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 13.73,
+     "prixMax": null,
+     "prixMaxNonMeca": 17.82
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 13.73,
+     "prixMax": null,
+     "prixMaxNonMeca": 17.82
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 15.09,
+     "prixMax": null,
+     "prixMaxNonMeca": 19.18
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 16.46,
+     "prixMax": null,
+     "prixMaxNonMeca": 20.54
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 17.82,
+     "prixMax": 19.18,
+     "prixMaxNonMeca": 23.27
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 20.6,
+     "prixMax": 22.01,
+     "prixMaxNonMeca": 26.1
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 23.43,
+     "prixMax": 26.26,
+     "prixMaxNonMeca": 30.35
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 27.67,
+     "prixMax": 33.34,
+     "prixMaxNonMeca": 37.43
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 34.76,
+     "prixMax": 40.42,
+     "prixMaxNonMeca": 44.51
+    },
+    {
+     "label": "20.001 kg – 30 kg",
+     "min": 20001,
+     "max": 30000,
+     "prixMin": 41.85,
+     "prixMax": 54.6,
+     "prixMaxNonMeca": 58.67
+    },
+    {
+     "label": "30.001 kg +",
+     "min": 30001,
+     "max": null,
+     "prixMin": 56.01,
+     "prixMax": 97.09,
+     "prixMaxNonMeca": 101.18
+    }
+   ]
+  },
+  {
+   "transporteur": "Delivengo",
+   "offre": "Delivengo easy",
+   "depart": "Point de dépôt",
+   "arrivee": "Domicile",
+   "typePoids": "WEIGHT_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 15.3,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 18.3,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 27.1,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 41.1,
+     "prixMax": null,
+     "prixMaxNonMeca": null
+    }
+   ]
+  },
+  {
+   "transporteur": "Colissimo",
+   "offre": "Colissimo International Domicile - sans signature",
+   "depart": "Point de dépôt",
+   "arrivee": "Domicile",
+   "typePoids": "WEIGHT_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 11.81,
+     "prixMax": null,
+     "prixMaxNonMeca": 22.65
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 11.9,
+     "prixMax": 14.85,
+     "prixMaxNonMeca": 24.43
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 14.81,
+     "prixMax": null,
+     "prixMaxNonMeca": 25.95
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 16.63,
+     "prixMax": null,
+     "prixMaxNonMeca": 29.68
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 18.16,
+     "prixMax": 21.89,
+     "prixMaxNonMeca": 37.64
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 20,
+     "prixMax": 29.84,
+     "prixMaxNonMeca": 41.11
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 28.68,
+     "prixMax": 33.31,
+     "prixMaxNonMeca": 51.71
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 31.01,
+     "prixMax": 43.92,
+     "prixMaxNonMeca": 60.34
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 38.61,
+     "prixMax": 52.54,
+     "prixMaxNonMeca": 71.47
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 48,
+     "prixMax": 63.66,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "20.001 kg – 30 kg",
+     "min": 20001,
+     "max": 30000,
+     "prixMin": 56.61,
+     "prixMax": 19.61,
+     "prixMaxNonMeca": null
+    }
+   ]
+  },
+  {
+   "transporteur": "Colissimo",
+   "offre": "Colissimo International Domicile - avec signature",
+   "depart": "Point de dépôt",
+   "arrivee": "Domicile",
+   "typePoids": "WEIGHT_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 12.31,
+     "prixMax": null,
+     "prixMaxNonMeca": 23.16
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 12.42,
+     "prixMax": 15.36,
+     "prixMaxNonMeca": 24.93
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 15.31,
+     "prixMax": null,
+     "prixMaxNonMeca": 26.46
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 17.13,
+     "prixMax": null,
+     "prixMaxNonMeca": 30.19
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 18.66,
+     "prixMax": 22.39,
+     "prixMaxNonMeca": 38.14
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 20.52,
+     "prixMax": 30.35,
+     "prixMaxNonMeca": 41.61
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 29.19,
+     "prixMax": 33.81,
+     "prixMaxNonMeca": 52.23
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 31.5,
+     "prixMax": 44.42,
+     "prixMaxNonMeca": 60.84
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 39.11,
+     "prixMax": 53.04,
+     "prixMaxNonMeca": 71.97
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 48.51,
+     "prixMax": 64.18,
+     "prixMaxNonMeca": null
+    },
+    {
+     "label": "20.001 kg – 30 kg",
+     "min": 20001,
+     "max": 30000,
+     "prixMin": 57.12,
+     "prixMax": 20.11,
+     "prixMaxNonMeca": null
+    }
+   ]
+  },
+  {
+   "transporteur": "Sodexi",
+   "offre": "Sodexi Express International",
+   "depart": "Domicile",
+   "arrivee": "Domicile",
+   "typePoids": "VOLUME_BASED",
+   "tranches": [
+    {
+     "label": "1 g – 250 g",
+     "min": 1,
+     "max": 250,
+     "prixMin": 92.54,
+     "prixMax": null,
+     "prixMaxNonMeca": 141.62
+    },
+    {
+     "label": "251 g – 500 g",
+     "min": 251,
+     "max": 500,
+     "prixMin": 92.54,
+     "prixMax": null,
+     "prixMaxNonMeca": 141.62
+    },
+    {
+     "label": "501 g – 1 kg",
+     "min": 501,
+     "max": 1000,
+     "prixMin": 92.54,
+     "prixMax": null,
+     "prixMaxNonMeca": 141.62
+    },
+    {
+     "label": "1.001 kg – 2 kg",
+     "min": 1001,
+     "max": 2000,
+     "prixMin": 100.53,
+     "prixMax": 108.56,
+     "prixMaxNonMeca": 157.65
+    },
+    {
+     "label": "2.001 kg – 3 kg",
+     "min": 2001,
+     "max": 3000,
+     "prixMin": 115.77,
+     "prixMax": 122.68,
+     "prixMaxNonMeca": 171.77
+    },
+    {
+     "label": "3.001 kg – 5 kg",
+     "min": 3001,
+     "max": 5000,
+     "prixMin": 128.16,
+     "prixMax": 147.43,
+     "prixMaxNonMeca": 196.53
+    },
+    {
+     "label": "5.001 kg – 7 kg",
+     "min": 5001,
+     "max": 7000,
+     "prixMin": 151.37,
+     "prixMax": 164.6,
+     "prixMaxNonMeca": 213.68
+    },
+    {
+     "label": "7.001 kg – 10 kg",
+     "min": 7001,
+     "max": 10000,
+     "prixMin": 168.56,
+     "prixMax": 190.4,
+     "prixMaxNonMeca": 239.48
+    },
+    {
+     "label": "10.001 kg – 15 kg",
+     "min": 10001,
+     "max": 15000,
+     "prixMin": 198.98,
+     "prixMax": 233.32,
+     "prixMaxNonMeca": 282.41
+    },
+    {
+     "label": "15.001 kg – 20 kg",
+     "min": 15001,
+     "max": 20000,
+     "prixMin": 241.91,
+     "prixMax": 276.29,
+     "prixMaxNonMeca": 325.37
+    },
+    {
+     "label": "20.001 kg – 30 kg",
+     "min": 20001,
+     "max": 30000,
+     "prixMin": 284.84,
+     "prixMax": 399.29,
+     "prixMaxNonMeca": 399.29
+    },
+    {
+     "label": "30.001 kg +",
+     "min": 30001,
+     "max": null,
+     "prixMin": 406.78,
+     "prixMax": 2460.39,
+     "prixMaxNonMeca": 2460.39
+    }
+   ]
+  }
+ ]
+}

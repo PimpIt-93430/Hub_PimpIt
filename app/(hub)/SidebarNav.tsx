@@ -37,8 +37,9 @@ function EstActif(href: string, pathname: string): boolean {
 /** Menu en catégories repliables sur sidebar sombre (cf. référence visuelle 2026-08-27 — fintech
  * dashboard : sidebar foncée, icônes en chips colorées translucides, page active en pastille pleine
  * couleur accent). La catégorie contenant la page active s'ouvre automatiquement ; les autres
- * restent repliées. "Tableau de bord" reste épinglé au-dessus, hors catégorie. */
-export function SidebarNav({ accueil, categories }: { accueil: LienNav; categories: CategorieNav[] }) {
+ * restent repliées. Les liens "épinglés" (Tableau de bord, Commandes Shopify — cf. 2026-08-27)
+ * restent au-dessus, hors catégorie. */
+export function SidebarNav({ epingles, categories }: { epingles: LienNav[]; categories: CategorieNav[] }) {
   const pathname = usePathname();
   const [ouvertes, setOuvertes] = useState<Set<number>>(
     () => new Set(categories.map((c, i) => (c.liens.some((l) => EstActif(l.href, pathname)) ? i : -1)).filter((i) => i >= 0)),
@@ -53,21 +54,26 @@ export function SidebarNav({ accueil, categories }: { accueil: LienNav; categori
     });
   };
 
-  const accueilActif = EstActif(accueil.href, pathname);
-
   return (
     <nav className="flex flex-1 flex-col gap-1 overflow-y-auto">
-      <Link
-        href={accueil.href}
-        className={`mb-3 flex items-center gap-2.5 rounded-xl px-2.5 py-2.5 text-sm font-semibold transition-colors ${
-          accueilActif ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-900/40' : 'text-slate-300 hover:bg-white/5 hover:text-white'
-        }`}
-      >
-        <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-sm ${accueilActif ? 'bg-white/20 text-white' : 'bg-indigo-500/15 text-indigo-300'}`}>
-          {accueil.icone}
-        </span>
-        {accueil.label}
-      </Link>
+      {epingles.map((lien) => {
+        const actif = EstActif(lien.href, pathname);
+        return (
+          <Link
+            key={lien.href}
+            href={lien.href}
+            className={`mb-1 flex items-center gap-2.5 rounded-xl px-2.5 py-2.5 text-sm font-semibold transition-colors ${
+              actif ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-900/40' : 'text-slate-300 hover:bg-white/5 hover:text-white'
+            }`}
+          >
+            <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-sm ${actif ? 'bg-white/20 text-white' : 'bg-indigo-500/15 text-indigo-300'}`}>
+              {lien.icone}
+            </span>
+            {lien.label}
+          </Link>
+        );
+      })}
+      <div className="mb-2" />
 
       {categories.map((cat, i) => {
         const ouverte = ouvertes.has(i);

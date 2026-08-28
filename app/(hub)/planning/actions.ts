@@ -192,17 +192,12 @@ export async function genererEtInsererPlanning(dateDebut: string, dateFin: strin
     datesDebutContrat: informationsRh ?? [],
   });
 
-  // Ne supprime que les brouillons auto-générés de cette semaine — jamais un ajout manuel ni un
-  // créneau déjà validé/publié (cf. supprimerShiftsGeneresAutomatiquement côté app).
-  const { error: eDelete } = await supabase
-    .from('planning_shifts')
-    .delete()
-    .eq('statut', 'brouillon')
-    .eq('genere_automatiquement', true)
-    .gte('date', dateDebut)
-    .lte('date', dateFin);
-  if (eDelete) throw new Error(eDelete.message);
-
+  // Purement additif — ne supprime plus rien (cf. incident : ça supprimait puis recréait tous les
+  // brouillons auto-générés de la semaine à chaque clic, donc ça écrasait aussi ceux qu'un admin
+  // avait corrigés à la main entre-temps — même bug que generer-planning-auto côté App PIMP IT,
+  // qui l'a révélé en l'appliquant sur 52 semaines d'un coup. `shiftsExistants`, chargé avant
+  // l'appel à genererPlanning ci-dessus, fait déjà que seules les cases encore vides reçoivent un
+  // nouveau créneau — tout ce qui existait déjà (généré, corrigé, ou publié) reste intact).
   if (resultat.shifts.length > 0) {
     const { error: eInsert } = await supabase.from('planning_shifts').insert(resultat.shifts);
     if (eInsert) throw new Error(eInsert.message);

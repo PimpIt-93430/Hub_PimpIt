@@ -7,6 +7,8 @@ import { creerClientSupabaseServeur } from '@/lib/supabase/server';
 export interface TacheQuotidienne {
   id: string;
   libelle: string;
+  icone: string | null;
+  lien: string | null;
   valideAujourdhui: boolean;
 }
 
@@ -24,12 +26,18 @@ export async function chargerTachesQuotidiennes(): Promise<TacheQuotidienne[]> {
   const date = aujourdhui();
 
   const [{ data: taches }, { data: validations }] = await Promise.all([
-    supabase.from('hub_taches_quotidiennes').select('id, libelle').eq('actif', true).order('ordre'),
+    supabase.from('hub_taches_quotidiennes').select('id, libelle, icone, lien').eq('actif', true).order('ordre'),
     supabase.from('hub_taches_quotidiennes_validations').select('tache_id').eq('date', date),
   ]);
 
   const validesAujourdhui = new Set((validations ?? []).map((v) => v.tache_id as string));
-  return (taches ?? []).map((t) => ({ id: t.id, libelle: t.libelle, valideAujourdhui: validesAujourdhui.has(t.id) }));
+  return (taches ?? []).map((t) => ({
+    id: t.id,
+    libelle: t.libelle,
+    icone: t.icone,
+    lien: t.lien,
+    valideAujourdhui: validesAujourdhui.has(t.id),
+  }));
 }
 
 export async function basculerTacheQuotidienne(tacheId: string, valide: boolean): Promise<void> {
