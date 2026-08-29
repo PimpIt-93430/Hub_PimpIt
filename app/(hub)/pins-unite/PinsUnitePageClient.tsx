@@ -1,8 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
+import { mettreAJourPhotoPin } from './actions';
 import { PinsUniteModal } from './PinsUniteModal';
+import { uploaderPhotoPinNavigateur } from '@/lib/uploadPhotoPin';
 
 interface PinARajouter {
   airtable_id: string;
@@ -22,6 +24,55 @@ interface CollectionOption {
   id: string;
   title: string;
   handle: string;
+}
+
+/** Cellule photo d'une ligne "pin à rajouter" — cf. discussion 2026-08-29 : certains pins listés
+ * ici n'ont pas encore de photo, on peut maintenant en ajouter une directement depuis ce tableau
+ * plutôt que de devoir passer par l'écran "Pin's". Même mécanisme que là-bas (upload storage puis
+ * enregistrement de l'URL), juste un bouton en plus pour les pins sans photo. */
+function CellulePhoto({ airtableId, imageUrl }: { airtableId: string; imageUrl: string | null }) {
+  const [url, setUrl] = useState(imageUrl);
+  const [enCours, setEnCours] = useState(false);
+  const [erreur, setErreur] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const choisirFichier = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const fichier = e.target.files?.[0];
+    e.target.value = '';
+    if (!fichier) return;
+    setEnCours(true);
+    setErreur(null);
+    try {
+      const nouvelleUrl = await uploaderPhotoPinNavigateur(fichier);
+      await mettreAJourPhotoPin(airtableId, nouvelleUrl);
+      setUrl(nouvelleUrl);
+    } catch (err) {
+      setErreur(err instanceof Error ? err.message : 'Échec de l’envoi de la photo.');
+    } finally {
+      setEnCours(false);
+    }
+  };
+
+  if (url) {
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img src={url} alt="" className="h-9 w-9 rounded-md object-cover" />;
+  }
+
+  return (
+    <div className="flex flex-col items-start gap-1">
+      <button
+        type="button"
+        onClick={() => inputRef.current?.click()}
+        disabled={enCours}
+        title="Ajouter une photo"
+        className="flex h-9 w-9 items-center justify-center rounded-md border border-dashed border-slate-300 bg-slate-50 text-xs text-slate-400 hover:border-indigo-400 hover:text-indigo-500 disabled:opacity-50"
+      >
+        {enCours ? '…' : '+'}
+      </button>
+      <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={choisirFichier} />
+      {erreur && <p className="max-w-[140px] text-[10px] text-red-600">{erreur}</p>}
+    </div>
+  );
 }
 
 /** Réplique l'écran "Pin's à rajouter sur le site" de l'ancien admin (screen-to-add /
@@ -86,12 +137,7 @@ export function PinsUnitePageClient({
               pinsARajouter.map((p) => (
                 <tr key={p.airtable_id} className="border-b border-slate-50 last:border-0">
                   <td className="px-4 py-2.5">
-                    {p.image_url ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={p.image_url} alt="" className="h-9 w-9 rounded-md object-cover" />
-                    ) : (
-                      <div className="h-9 w-9 rounded-md bg-slate-100" />
-                    )}
+                    <CellulePhoto airtableId={p.airtable_id} imageUrl={p.image_url} />
                   </td>
                   <td className="px-4 py-2.5 font-medium text-slate-900">{p.name ?? '—'}</td>
                   <td className="px-4 py-2.5">

@@ -37,8 +37,51 @@ async function getToken(): Promise<string> {
   return cachedToken!;
 }
 
+// Débit partagé entre TOUS les appels REST Shopify du process (limite du plan : 2 requêtes/s) — un
+// verrou global espace le démarrage des requêtes, et un 429 relance après le délai indiqué par
+// Retry-After au lieu de planter l'écran. Nécessaire car le tableau de bord lance plusieurs
+// ventesShopifyDepuis() en parallèle (Promise.all), chacune paginant sur plusieurs pages : sans
+// throttle partagé le débit combiné dépasse largement la limite (cf. erreur 429 "Exceeded 2 calls
+// per second", 2026-08-29).
+let derniereRequeteShopify = 0;
+let fileAttenteShopify: Promise<void> = Promise.resolve();
+const DELAI_MIN_ENTRE_REQUETES_MS = 550;
+
+async function attendreSonTour(): Promise<void> {
+  const precedente = fileAttenteShopify;
+  let liberer!: () => void;
+  fileAttenteShopify = new Promise((resolve) => {
+    liberer = resolve;
+  });
+  await precedente;
+  const attente = DELAI_MIN_ENTRE_REQUETES_MS - (Date.now() - derniereRequeteShopify);
+  if (attente > 0) await new Promise((r) => setTimeout(r, attente));
+  derniereRequeteShopify = Date.now();
+  liberer();
+}
+
+async function shopifyRawFetch(url: string, token: string): Promise<Response> {
+  for (let tentative = 0; ; tentative++) {
+    await attendreSonTour();
+    const res = await fetch(url, { headers: { 'X-Shopify-Access-Token': token } });
+    if (res.status === 429 && tentative < 5) {
+      const retryAfter = Number(res.headers.get('Retry-After')) || 2;
+      await new Promise((r) => setTimeout(r, retryAfter * 1000));
+      continue;
+    }
+    return res;
+  }
+}
+
 export async function shopifyFetch(endpoint: string, method = 'GET', body: unknown = null) {
   const token = await getToken();
+  if (method === 'GET' && !body) {
+    const res = await shopifyRawFetch(`${BASE_URL}${endpoint}`, token);
+    if (!res.ok) throw new Error(`Shopify API ${res.status}: ${await res.text()}`);
+    return res.json();
+  }
+
+  await attendreSonTour();
   const options: RequestInit = {
     method,
     headers: { 'X-Shopify-Access-Token': token, 'Content-Type': 'application/json' },
@@ -451,7 +494,7 @@ export async function ventesShopifyDepuis(depuisIso: string): Promise<{ shopify:
     `${BASE_URL}/orders.json?status=any&financial_status=paid&created_at_min=${encodeURIComponent(depuisIso)}&fields=source_name,total_price&limit=250`;
 
   while (url) {
-    const res: Response = await fetch(url, { headers: { 'X-Shopify-Access-Token': token } });
+    const res: Response = await shopifyRawFetch(url, token);
     if (!res.ok) throw new Error(`Shopify API ${res.status}: ${await res.text()}`);
     const data = await res.json();
     for (const o of data.orders ?? []) {
@@ -473,7 +516,7 @@ export async function shopifyFetchAll<T = unknown>(endpoint: string, key: string
   let url: string | null = `${BASE_URL}${endpoint}`;
 
   while (url) {
-    const res: Response = await fetch(url, { headers: { 'X-Shopify-Access-Token': token } });
+    const res: Response = await shopifyRawFetch(url, token);
     if (!res.ok) throw new Error(`Shopify API ${res.status}`);
     const data = await res.json();
     results = results.concat(data[key] ?? []);

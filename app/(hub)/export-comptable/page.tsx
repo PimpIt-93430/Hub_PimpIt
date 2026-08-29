@@ -1,16 +1,19 @@
 import { creerClientSupabaseServeur } from '@/lib/supabase/server';
+import { exigerAdmin } from '@/lib/roles';
 import { dateEnISO } from '../planning/dateUtils';
 import { ExportComptableClient } from './ExportComptableClient';
 
 /** Export mensuel pour la compta (cf. discussion 2026-08-28) : par personne, les jours de congé
  * pris, les heures du dimanche (sauf "ne pas compter les heures du dimanche"), les heures école et
  * les heures travaillées. Toujours calculé en direct depuis le planning/les congés réels — jamais
- * de cache : la compta doit voir l'état à jour au moment de l'export. */
+ * de cache : la compta doit voir l'état à jour au moment de l'export. Réservée aux admins (cf.
+ * lib/roles.ts) : salaires/heures nominatives, pas pour le rôle "local". */
 export default async function ExportComptablePage({
   searchParams,
 }: {
   searchParams: Promise<{ mois?: string }>;
 }) {
+  await exigerAdmin();
   const { mois } = await searchParams;
   // `mois` est toujours une date ISO complète (YYYY-MM-DD, le 1er du mois) — même format que
   // moisPrecedent/moisSuivant côté client (ExportComptableClient.tsx), jamais "YYYY-MM" seul.

@@ -63,6 +63,14 @@ export default function LoginPage() {
         >
           {enCours ? 'Connexion…' : 'Se connecter'}
         </button>
+
+        <button
+          type="button"
+          onClick={() => router.push('/premiere-connexion')}
+          className="mt-4 w-full text-center text-sm font-semibold text-indigo-600"
+        >
+          Première connexion ?
+        </button>
       </form>
     </div>
   );

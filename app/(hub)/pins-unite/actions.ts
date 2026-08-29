@@ -5,6 +5,25 @@ import { revalidatePath } from 'next/cache';
 import { creerClientSupabaseServeur } from '@/lib/supabase/server';
 import { assignToLeversProfile, setHsCode, shopifyFetch, shopifyFetchAll } from '@/lib/shopify';
 
+/** Ajoute une photo à un pin qui n'en a pas encore, directement depuis "Pin's à rajouter sur le
+ * site" — cf. discussion 2026-08-29 : certains pins listés là n'ont pas de photo, pas besoin
+ * d'aller sur l'écran "Pin's" pour ça. Ne touche qu'image_url, contrairement à modifierPin (qui
+ * demande tous les champs) — .select() force PostgREST à signaler une RLS qui bloquerait
+ * silencieusement sinon (même piège que modifierPin/supprimerPin). */
+export async function mettreAJourPhotoPin(airtableId: string, imageUrl: string): Promise<void> {
+  const supabase = await creerClientSupabaseServeur();
+  const { data, error } = await supabase
+    .from('hub_pins')
+    .update({ image_url: imageUrl, synced_at: new Date().toISOString() })
+    .eq('airtable_id', airtableId)
+    .select();
+  if (error) throw new Error(error.message);
+  if (!data || data.length === 0) throw new Error('Modification bloquée (droits insuffisants ?)');
+
+  revalidatePath('/pins-unite');
+  revalidatePath('/pins');
+}
+
 function champTexte(formData: FormData, cle: string): string | null {
   const v = formData.get(cle);
   if (typeof v !== 'string' || v.trim() === '') return null;

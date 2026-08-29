@@ -67,13 +67,22 @@ const CATEGORIES: CategorieNav[] = [
   // taches, recommandations) — à rajouter ici en nouvelle catégorie le jour où ils sont repris.
 ];
 
-/** Le Hub (ce layout et tout ce qui est en-dessous) reste réservé aux admins — cf. discussion
- * 2026-08-26 : on construit un espace séparé par rôle plutôt que d'ouvrir le Hub tel quel à tout
- * le monde. Une personne connectée non-admin est renvoyée vers son espace (/local pour l'instant,
- * d'autres à venir), pas vers une page d'erreur — elle a un compte valide, juste pas ici. */
+/** Le Hub s'ouvre à deux rôles — cf. discussion 2026-08-29 : l'admin (accès complet) et "local"
+ * (l'équipe qui travaille au local, cf. determinerRoleHub) qui voit tout SAUF Finance, Export
+ * comptable et Équipe (salaires/infos RH nominatives — cf. exigerAdmin, appelé en plus sur ces 3
+ * pages : cacher le lien ici ne suffit pas, il faut aussi bloquer l'accès direct par URL). Un
+ * compte "inconnu" (connecté mais sans rôle Hub) est renvoyé vers /local, pas vers une page
+ * d'erreur — il a un compte valide, juste pas encore de rôle attribué ici. */
 export default async function HubLayout({ children }: { children: React.ReactNode }) {
   const { role, profil, enApercu } = await determinerRoleHub();
-  if (role !== 'admin') redirect('/local');
+  if (role === 'inconnu') redirect('/local');
+
+  const estAdmin = role === 'admin';
+  const categories = estAdmin
+    ? CATEGORIES
+    : CATEGORIES.filter((c) => c.titre !== 'Finance').map((c) =>
+        c.titre === 'Planning & RH' ? { ...c, liens: c.liens.filter((l) => l.href === '/planning') } : c,
+      );
 
   const nomAffiche = profil?.nom_complet ?? profil?.email ?? '';
   const initiale = (profil?.nom_complet || profil?.email || '?').slice(0, 1).toUpperCase();
@@ -103,7 +112,7 @@ export default async function HubLayout({ children }: { children: React.ReactNod
             <p className="text-base font-bold leading-tight text-white">Pimp It Hub</p>
           </div>
 
-          <SidebarNav epingles={[ACCUEIL]} categories={CATEGORIES} />
+          <SidebarNav epingles={[ACCUEIL]} categories={categories} />
 
           <div className="mt-2 border-t border-white/10 pt-2">
             <Link

@@ -186,19 +186,6 @@ export async function modifierPin(id: string, params: { seuil_cible?: number | n
   revalidatePath('/stock');
 }
 
-/** Envoie une photo (base64, lue côté navigateur via FileReader) vers le bucket public
- * "stock-pins" et renvoie son URL publique — cf. uploaderPhotoPin (src/api/stock.ts). */
-export async function uploaderPhotoPin(base64: string, contentType: string): Promise<string> {
-  const supabase = await creerClientSupabaseServeur();
-  const extension = contentType === 'image/png' ? 'png' : 'jpg';
-  const nomFichier = `${Date.now()}-${Math.random().toString(36).slice(2)}.${extension}`;
-  const buffer = Buffer.from(base64, 'base64');
-  const { error } = await supabase.storage.from('stock-pins').upload(nomFichier, buffer, { contentType });
-  if (error) throw new Error(error.message);
-  const { data } = supabase.storage.from('stock-pins').getPublicUrl(nomFichier);
-  return data.publicUrl;
-}
-
 /** Signale un pin trouvé physiquement mais absent du catalogue — cf. signalerPinInconnu. */
 export async function signalerPinInconnu(photoUrl: string, note: string | undefined): Promise<StockPin> {
   const supabase = await creerClientSupabaseServeur();

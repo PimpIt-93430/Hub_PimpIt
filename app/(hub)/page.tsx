@@ -74,11 +74,18 @@ function EtatVide({ texte }: { texte: string }) {
 
 export default async function DashboardPage() {
   const supabase = await creerClientSupabaseServeur();
-  const { profil } = await determinerRoleHub();
+  const { role, profil } = await determinerRoleHub();
+  // Le rôle "local" ne doit voir que le CA en ligne (Shopify/TikTok Shop), pas le détail des ventes
+  // pop-up (SumUp/espèces, par pop-up ou hors pop-up) ni le CA du mois qui les agrège — cf.
+  // discussion 2026-08-29. On évite carrément d'interroger ces tables pour ce rôle plutôt que de
+  // juste cacher l'affichage : pas de données sensibles chargées côté serveur pour rien.
+  const estAdmin = role === 'admin';
 
   const debutJour = new Date();
   debutJour.setHours(0, 0, 0, 0);
   const debutMois = new Date(debutJour.getFullYear(), debutJour.getMonth(), 1);
+
+  const requetePopUpVide = Promise.resolve({ data: null });
 
   const [
     { data: popUps },
@@ -94,12 +101,20 @@ export default async function DashboardPage() {
     tachesQuotidiennes,
     { data: syncSumUp },
   ] = await Promise.all([
-    supabase.from('pop_ups').select('id, nom').order('nom'),
-    supabase.from('sumup_emails_pop_up').select('email, pop_up_id'),
-    supabase.from('ventes_sumup').select('montant, statut, sumup_email').gte('horodatage', debutJour.toISOString()),
-    supabase.from('ventes_especes').select('montant, statut, pop_up_id').gte('created_at', debutJour.toISOString()),
-    supabase.from('ventes_sumup').select('montant, statut').gte('horodatage', debutMois.toISOString()),
-    supabase.from('ventes_especes').select('montant, statut').gte('created_at', debutMois.toISOString()),
+    estAdmin ? supabase.from('pop_ups').select('id, nom').order('nom') : requetePopUpVide,
+    estAdmin ? supabase.from('sumup_emails_pop_up').select('email, pop_up_id') : requetePopUpVide,
+    estAdmin
+      ? supabase.from('ventes_sumup').select('montant, statut, sumup_email').gte('horodatage', debutJour.toISOString())
+      : requetePopUpVide,
+    estAdmin
+      ? supabase.from('ventes_especes').select('montant, statut, pop_up_id').gte('created_at', debutJour.toISOString())
+      : requetePopUpVide,
+    estAdmin
+      ? supabase.from('ventes_sumup').select('montant, statut').gte('horodatage', debutMois.toISOString())
+      : requetePopUpVide,
+    estAdmin
+      ? supabase.from('ventes_especes').select('montant, statut').gte('created_at', debutMois.toISOString())
+      : requetePopUpVide,
     // Chiffres en ligne (Shopify + TikTok Shop) — cf. discussion 2026-08-27 : le tableau de bord ne
     // montrait que les ventes en pop-up (SumUp/espèces), pas la boutique en ligne.
     ventesShopifyDepuis(debutJour.toISOString()),
@@ -110,7 +125,9 @@ export default async function DashboardPage() {
     // cf. migration 0077 (App Pimp It) — dernière exécution (succès ou échec) de la synchro SumUp,
     // écrite par la fonction elle-même à chaque appel (cron ou manuel) : donne un signal de
     // fraîcheur vérifiable dans l'UI plutôt qu'une simple affirmation que "le cron tourne".
-    supabase.from('ventes_sumup_sync_etat').select('derniere_execution_le, ok, message, declenche_par').eq('id', true).maybeSingle(),
+    estAdmin
+      ? supabase.from('ventes_sumup_sync_etat').select('derniere_execution_le, ok, message, declenche_par').eq('id', true).maybeSingle()
+      : requetePopUpVide,
   ]);
 
   // Chiffres du jour séparés par pop-up (cf. discussion 2026-08-27 : "séparer les pop up"), et par
@@ -199,30 +216,32 @@ export default async function DashboardPage() {
             <h2 className="text-lg font-bold text-slate-900">Chiffres de la journée</h2>
           </div>
           <div className="flex flex-1 flex-col gap-3">
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {chiffresParPopUp.map((p) => (
-                <div key={p.nom} className="flex flex-col justify-center rounded-2xl bg-slate-50 p-5">
-                  <p className="truncate text-xs font-semibold uppercase tracking-wide text-slate-400">{p.nom}</p>
-                  <div className="mt-2 flex items-baseline gap-4">
-                    <div>
-                      <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">SumUp</p>
-                      <p className="text-2xl font-bold text-slate-900">{formatMontant(p.sumup)}</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Appli</p>
-                      <p className="text-2xl font-bold text-slate-900">{formatMontant(p.appli)}</p>
+            {estAdmin && (
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {chiffresParPopUp.map((p) => (
+                  <div key={p.nom} className="flex flex-col justify-center rounded-2xl bg-slate-50 p-5">
+                    <p className="truncate text-xs font-semibold uppercase tracking-wide text-slate-400">{p.nom}</p>
+                    <div className="mt-2 flex items-baseline gap-4">
+                      <div>
+                        <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">SumUp</p>
+                        <p className="text-2xl font-bold text-slate-900">{formatMontant(p.sumup)}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Appli</p>
+                        <p className="text-2xl font-bold text-slate-900">{formatMontant(p.appli)}</p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-              {chiffresParPopUp.length === 0 && (
-                <div className="flex flex-col justify-center rounded-2xl bg-slate-50 p-5 sm:col-span-2">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Pop-ups</p>
-                  <p className="mt-2 text-2xl font-bold text-slate-900">Aucune vente aujourd&apos;hui</p>
-                </div>
-              )}
-            </div>
-            <div className="grid grid-cols-3 gap-3">
+                ))}
+                {chiffresParPopUp.length === 0 && (
+                  <div className="flex flex-col justify-center rounded-2xl bg-slate-50 p-5 sm:col-span-2">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Pop-ups</p>
+                    <p className="mt-2 text-2xl font-bold text-slate-900">Aucune vente aujourd&apos;hui</p>
+                  </div>
+                )}
+              </div>
+            )}
+            <div className={`grid gap-3 ${estAdmin ? 'grid-cols-3' : 'grid-cols-2'}`}>
               <div className="flex flex-col justify-center rounded-2xl bg-sky-50 p-5">
                 <p className="text-xs font-semibold uppercase tracking-wide text-sky-700">Shopify</p>
                 <p className="mt-2 text-2xl font-bold text-sky-900">{formatMontant(ventesShopifyJour.shopify)}</p>
@@ -231,22 +250,28 @@ export default async function DashboardPage() {
                 <p className="text-xs font-semibold uppercase tracking-wide text-violet-700">TikTok Shop</p>
                 <p className="mt-2 text-2xl font-bold text-violet-900">{formatMontant(ventesShopifyJour.tiktok)}</p>
               </div>
-              <div className="flex flex-col justify-center rounded-2xl bg-amber-50 p-5">
-                <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">SumUp hors pop-up</p>
-                <p className="mt-2 text-2xl font-bold text-amber-900">{formatMontant(sumupHorsPopUp)}</p>
+              {estAdmin && (
+                <div className="flex flex-col justify-center rounded-2xl bg-amber-50 p-5">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">SumUp hors pop-up</p>
+                  <p className="mt-2 text-2xl font-bold text-amber-900">{formatMontant(sumupHorsPopUp)}</p>
+                </div>
+              )}
+            </div>
+            {estAdmin && (
+              <div className="flex flex-1 flex-col justify-center rounded-2xl bg-emerald-50 p-6">
+                <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">CA du mois (tous canaux)</p>
+                <p className="mt-2 text-4xl font-bold text-emerald-800">{formatMontant(caMois)}</p>
               </div>
-            </div>
-            <div className="flex flex-1 flex-col justify-center rounded-2xl bg-emerald-50 p-6">
-              <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">CA du mois (tous canaux)</p>
-              <p className="mt-2 text-4xl font-bold text-emerald-800">{formatMontant(caMois)}</p>
-            </div>
+            )}
           </div>
-          <p className={`mt-4 flex items-center gap-1.5 text-xs font-medium ${syncSumUpEnPanne ? 'text-red-500' : 'text-slate-400'}`}>
-            <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${syncSumUpEnPanne ? 'bg-red-500' : 'bg-emerald-500'}`} />
-            {syncSumUp
-              ? `Synchro SumUp ${syncSumUp.ok ? '' : '(échec) '}— ${tempsRelatif(syncSumUp.derniere_execution_le)}`
-              : 'Synchro SumUp — jamais exécutée'}
-          </p>
+          {estAdmin && (
+            <p className={`mt-4 flex items-center gap-1.5 text-xs font-medium ${syncSumUpEnPanne ? 'text-red-500' : 'text-slate-400'}`}>
+              <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${syncSumUpEnPanne ? 'bg-red-500' : 'bg-emerald-500'}`} />
+              {syncSumUp
+                ? `Synchro SumUp ${syncSumUp.ok ? '' : '(échec) '}— ${tempsRelatif(syncSumUp.derniere_execution_le)}`
+                : 'Synchro SumUp — jamais exécutée'}
+            </p>
+          )}
         </div>
 
         {/* Tâches quotidiennes — checklist récurrente cochée à la main, pas un calcul automatique

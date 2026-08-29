@@ -234,13 +234,18 @@ export async function creerEtiquetteEnvoi(params: CreerEnvoiParams): Promise<Env
     order_number: params.orderNumber,
     external_reference_id: params.externalReferenceId,
     total_order_price: params.totalCommande ? { value: String(params.totalCommande.value), currency: params.totalCommande.devise } : undefined,
+    // Cf. discussion 2026-08-29 : `to_service_point` est un champ RACINE de la requête (sibling de
+    // to_address/from_address/ship_with/parcels), pas un champ du parcel — erreur trouvée après un
+    // vrai échec 400 "A service point is required... (to_service_point)" sur la commande #26597
+    // alors qu'un point avait bien été fourni : il était imbriqué dans parcels[0] et donc jamais lu
+    // par Sendcloud, qui le considérait absent. Vérifié via la doc (shipment-request schema).
+    ...(params.pointRelaisId ? { to_service_point: { id: String(params.pointRelaisId) } } : {}),
     parcels: [
       {
         weight: { value: String(params.poidsKg), unit: 'kg' },
         dimensions: params.dimensionsCm
           ? { length: String(params.dimensionsCm.longueur), width: String(params.dimensionsCm.largeur), height: String(params.dimensionsCm.hauteur), unit: 'cm' }
           : undefined,
-        ...(params.pointRelaisId ? { to_service_point: { id: String(params.pointRelaisId) } } : {}),
       },
     ],
   });

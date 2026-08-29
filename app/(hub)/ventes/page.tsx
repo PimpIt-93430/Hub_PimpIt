@@ -1,4 +1,5 @@
 import { creerClientSupabaseServeur } from '@/lib/supabase/server';
+import { exigerAdmin } from '@/lib/roles';
 import { PeriodeSelecteur } from './PeriodeSelecteur';
 import { SyncButton } from './SyncButton';
 import { VentesClient } from './VentesClient';
@@ -64,12 +65,14 @@ function formatDateInput(d: Date): string {
  * d'origine. La synchro SumUp (bouton "Actualiser") est un Server Action déclenché uniquement au
  * clic, jamais au chargement de la page (cf. actions.ts / SyncButton.tsx) : c'est la seule
  * déviation volontaire par rapport à la version RN, qui synchronise aussi à l'ouverture de l'écran.
+ * Réservée aux admins (cf. lib/roles.ts) : chiffre d'affaires, pas pour le rôle "local".
  */
 export default async function VentesPage({
   searchParams,
 }: {
   searchParams: Promise<{ periode?: string; debut?: string; fin?: string }>;
 }) {
+  await exigerAdmin();
   const params = await searchParams;
   const aujourdhui = formatDateInput(new Date());
   const periode: PeriodePreset =

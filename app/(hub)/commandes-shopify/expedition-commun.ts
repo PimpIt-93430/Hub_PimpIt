@@ -35,14 +35,14 @@ export interface Expediteur {
 }
 
 export const EXPEDITEUR_VIDE: Expediteur = {
-  entreprise: 'Pimp It',
+  entreprise: 'Pimp It Store',
   prenom: '',
   nom: '',
   email: 'team@pimpitstore.com',
   telephone: '',
-  adresse1: '',
-  ville: '',
-  codePostal: '',
+  adresse1: '3 rue des Carrières',
+  ville: 'Epinay-sur-Seine',
+  codePostal: '93800',
   paysCode: 'FR',
 };
 

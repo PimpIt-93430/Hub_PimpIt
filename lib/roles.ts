@@ -1,4 +1,5 @@
 import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 
 import { creerClientSupabaseServeur } from './supabase/server';
 
@@ -83,4 +84,14 @@ export async function determinerRoleHub(): Promise<{
   }
 
   return { role: 'inconnu', profil: profilEffectif, enApercu, profilReel };
+}
+
+/** Garde-fou pour les 3 pages réservées aux admins (Finance/Ventes, Export comptable, Équipe) —
+ * cf. discussion 2026-08-29 : le reste du Hub s'ouvre au rôle "local", mais ces trois-là restent
+ * admin uniquement. Renvoie vers l'accueil du Hub plutôt qu'une page d'erreur : la personne a
+ * accès au Hub, juste pas à cette page précise. À appeler en première ligne des pages concernées —
+ * cacher le lien dans le menu (cf. layout.tsx) ne suffit pas, une personne peut taper l'URL. */
+export async function exigerAdmin(): Promise<void> {
+  const { role } = await determinerRoleHub();
+  if (role !== 'admin') redirect('/');
 }

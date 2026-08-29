@@ -27,7 +27,8 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const surPageConnexion = request.nextUrl.pathname.startsWith('/login');
+  const surPageConnexion =
+    request.nextUrl.pathname.startsWith('/login') || request.nextUrl.pathname.startsWith('/premiere-connexion');
 
   if (!user && !surPageConnexion) {
     const url = request.nextUrl.clone();

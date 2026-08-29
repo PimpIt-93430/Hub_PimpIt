@@ -2,24 +2,13 @@
 
 import { useEffect, useRef, useState, useTransition } from 'react';
 
-import { chargerProchainSku, creerPin, modifierPin, supprimerPin, uploaderPhotoPin, type PinParams } from './actions';
+import { chargerProchainSku, creerPin, modifierPin, supprimerPin, type PinParams } from './actions';
 import { BOITE_VALEURS, FOURNISSEUR_VALEURS, type HubPin } from './types';
+import { uploaderPhotoPinNavigateur } from '@/lib/uploadPhotoPin';
 
 const champLabel = 'mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-400';
 const champInput =
   'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none focus:border-slate-400';
-
-function lireFichierEnBase64(file: File): Promise<{ base64: string; contentType: string }> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const dataUrl = reader.result as string;
-      resolve({ base64: dataUrl.split(',')[1], contentType: file.type || 'image/jpeg' });
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
 
 /** Réplique le tiroir latéral "Nouveau pin / Modifier le pin" de l'ancien admin (new-pin-drawer
  * dans public/index.html) : mêmes champs, même ordre, SKU Pimpit auto-assigné et jamais
@@ -74,8 +63,7 @@ export function PinDrawer({ pin, onClose }: { pin: HubPin | null; onClose: () =>
     setPhotoEnCours(true);
     setErreur(null);
     try {
-      const { base64, contentType } = await lireFichierEnBase64(file);
-      const url = await uploaderPhotoPin(base64, contentType);
+      const url = await uploaderPhotoPinNavigateur(file);
       setImageUrl(url);
     } catch (e) {
       setErreur(e instanceof Error ? e.message : "Échec de l'envoi de la photo");

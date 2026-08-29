@@ -1,4 +1,5 @@
 import { creerClientSupabaseServeur } from '@/lib/supabase/server';
+import { exigerAdmin } from '@/lib/roles';
 import { EquipeClient } from './EquipeClient';
 import type { PopUp, Profile, ProfilPopUp } from './types';
 
@@ -7,8 +8,10 @@ import type { PopUp, Profile, ProfilPopUp } from './types';
  * réelles (profiles, pop_ups, profil_pop_ups...), via la session de l'admin connecté (RLS
  * existante, pas de service role). Seules les listes globales (profils actifs, pop-ups,
  * affectations) sont chargées ici ; le détail par personne (informations_rh, horaires, congés,
- * documents, droits) est chargé côté client au clic, cf. EquipeClient/FicheDetailMembre. */
+ * documents, droits) est chargé côté client au clic, cf. EquipeClient/FicheDetailMembre.
+ * Réservée aux admins (cf. lib/roles.ts) : infos RH/salaires, pas pour le rôle "local". */
 export default async function EquipePage() {
+  await exigerAdmin();
   const supabase = await creerClientSupabaseServeur();
 
   const [{ data: profils }, { data: popUps }, { data: affectations }] = await Promise.all([
