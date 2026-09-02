@@ -4,8 +4,10 @@ import { PeriodeSelecteur } from './PeriodeSelecteur';
 import { SyncButton } from './SyncButton';
 import { VentesClient } from './VentesClient';
 import type { PopUpLite, ProfilLite, VenteSumupLigneLite, VenteSumupLite } from './VentesClient';
+import { PerformanceClient } from './PerformanceClient';
+import type { ProfilAvecContrat, ShiftLite } from './PerformanceClient';
 
-type PeriodePreset = 'jour' | 'semaine' | 'mois' | 'personnalise';
+type PeriodePreset = 'jour' | 'semaine' | 'mois' | 'debut_mois' | 'personnalise';
 
 function debutDeJournee(d: Date): Date {
   const x = new Date(d);
@@ -46,6 +48,9 @@ function calculerPeriode(preset: PeriodePreset, debutPerso: string, finPerso: st
   const maintenant = new Date();
   if (preset === 'jour') return { debut: debutDeJournee(maintenant), fin: finDeJournee(maintenant) };
   if (preset === 'mois') return { debut: debutDeMois(maintenant), fin: finDeMois(maintenant) };
+  // "Début de mois" = mois en cours jusqu'à aujourd'hui (month-to-date) — distinct de "Ce mois",
+  // qui couvre tout le mois calendaire (dates futures comprises, vide en fin de période sinon).
+  if (preset === 'debut_mois') return { debut: debutDeMois(maintenant), fin: finDeJournee(maintenant) };
   if (preset === 'personnalise') {
     return { debut: new Date(`${debutPerso}T00:00:00`), fin: new Date(`${finPerso}T23:59:59`) };
   }
@@ -76,7 +81,7 @@ export default async function VentesPage({
   const params = await searchParams;
   const aujourdhui = formatDateInput(new Date());
   const periode: PeriodePreset =
-    params.periode === 'jour' || params.periode === 'mois' || params.periode === 'personnalise'
+    params.periode === 'jour' || params.periode === 'mois' || params.periode === 'debut_mois' || params.periode === 'personnalise'
       ? params.periode
       : 'semaine';
   const debutPerso = params.debut ?? aujourdhui;
@@ -85,21 +90,34 @@ export default async function VentesPage({
   const { debut, fin } = calculerPeriode(periode, debutPerso, finPerso);
 
   const supabase = await creerClientSupabaseServeur();
-  const [{ data: ventes, error: erreurVentes }, { data: lignes }, { data: popUps }, { data: profils }] = await Promise.all([
-    supabase
-      .from('ventes_sumup')
-      .select('id, pop_up_id, profile_id, montant, frais_montant, pourboire_montant, statut, horodatage')
-      .gte('horodatage', debut.toISOString())
-      .lte('horodatage', fin.toISOString())
-      .order('horodatage', { ascending: false }),
-    supabase
-      .from('ventes_sumup_lignes')
-      .select('id, vente_id, nom_produit, quantite')
-      .gte('horodatage', debut.toISOString())
-      .lte('horodatage', fin.toISOString()),
-    supabase.from('pop_ups').select('id, nom, couleur').eq('actif', true).order('nom'),
-    supabase.from('profiles').select('id, nom_complet, email, couleur').eq('actif', true).order('nom_complet'),
-  ]);
+  const [{ data: ventes, error: erreurVentes }, { data: lignes }, { data: popUps }, { data: profils }, { data: shifts }] =
+    await Promise.all([
+      supabase
+        .from('ventes_sumup')
+        .select('id, pop_up_id, profile_id, montant, frais_montant, pourboire_montant, statut, horodatage')
+        .gte('horodatage', debut.toISOString())
+        .lte('horodatage', fin.toISOString())
+        .order('horodatage', { ascending: false }),
+      supabase
+        .from('ventes_sumup_lignes')
+        .select('id, vente_id, nom_produit, quantite')
+        .gte('horodatage', debut.toISOString())
+        .lte('horodatage', fin.toISOString()),
+      supabase.from('pop_ups').select('id, nom, couleur').eq('actif', true).order('nom'),
+      supabase
+        .from('profiles')
+        .select('id, nom_complet, email, couleur, type_contrat')
+        .eq('actif', true)
+        .order('nom_complet'),
+      // Bornes en date locale (formatDateInput), pas horodatage : planning_shifts.date est une
+      // date "murale" du point de vente, sans notion de fuseau — cf. kpiLib.ts pour le rattachement
+      // heure par heure de chaque vente à son créneau.
+      supabase
+        .from('planning_shifts')
+        .select('id, profile_id, pop_up_id, date, heure_debut, heure_fin, pause_debut, pause_fin')
+        .gte('date', formatDateInput(debut))
+        .lte('date', formatDateInput(fin)),
+    ]);
 
   return (
     <div>
@@ -115,12 +133,22 @@ export default async function VentesPage({
       {erreurVentes ? (
         <p className="mt-6 text-sm text-red-600">Erreur de chargement des ventes : {erreurVentes.message}</p>
       ) : (
-        <VentesClient
-          ventes={(ventes ?? []) as VenteSumupLite[]}
-          lignes={(lignes ?? []) as VenteSumupLigneLite[]}
-          popUps={(popUps ?? []) as PopUpLite[]}
-          profils={(profils ?? []) as ProfilLite[]}
-        />
+        <>
+          <PerformanceClient
+            ventes={(ventes ?? []) as VenteSumupLite[]}
+            lignes={(lignes ?? []) as VenteSumupLigneLite[]}
+            shifts={(shifts ?? []) as ShiftLite[]}
+            popUps={(popUps ?? []) as PopUpLite[]}
+            profils={(profils ?? []) as ProfilAvecContrat[]}
+            periode={periode}
+          />
+          <VentesClient
+            ventes={(ventes ?? []) as VenteSumupLite[]}
+            lignes={(lignes ?? []) as VenteSumupLigneLite[]}
+            popUps={(popUps ?? []) as PopUpLite[]}
+            profils={(profils ?? []) as ProfilLite[]}
+          />
+        </>
       )}
     </div>
   );

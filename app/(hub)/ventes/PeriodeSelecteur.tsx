@@ -3,11 +3,12 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-type PeriodePreset = 'jour' | 'semaine' | 'mois' | 'personnalise';
+type PeriodePreset = 'jour' | 'semaine' | 'mois' | 'debut_mois' | 'personnalise';
 
 const PRESETS: { value: PeriodePreset; label: string }[] = [
   { value: 'jour', label: "Aujourd'hui" },
   { value: 'semaine', label: 'Cette semaine' },
+  { value: 'debut_mois', label: 'Début de mois' },
   { value: 'mois', label: 'Ce mois' },
   { value: 'personnalise', label: 'Personnalisé' },
 ];

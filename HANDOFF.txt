@@ -1,0 +1,6 @@
+On bosse sur C:\Users\USER\Documents\Pimp-It\Pimp It Hub (Next.js, admin interne Pimp It). Le serveur dev tourne déjà sur le port 3000 — vérifie avant d'en relancer un.
+
+En cours : la carte "Tâches quotidiennes" de l'accueil (app/(hub)/page.tsx + TachesQuotidiennesCard.tsx + taches-quotidiennes-actions.ts, table Supabase hub_taches_quotidiennes/hub_taches_quotidiennes_validations). Je veux que chaque tâche ait : une icône, un libellé cliquable qui ouvre la page concernée dans un nouvel onglet, et une case séparée à cocher qui passe au vert (indépendante du clic sur le lien).
+
+Il faut ajouter deux colonnes à hub_taches_quotidiennes : icone (emoji) et lien (url, nullable). Puis me demander les vrais liens pour les 5 tâches de départ : Gmail (vérifier les mails), Alibaba, TikTok Shop seller center (infractions), Shopify (commandes/étiquettes — le store est déjà dans SHOPIFY_STORE en env), et "se domicilier" (aucune idée du service, à demander).
+0820028002

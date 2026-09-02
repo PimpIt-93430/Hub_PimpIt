@@ -48,6 +48,21 @@ interface RegleHoraire {
 
 const champ = 'flex-1 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm focus:border-slate-400 focus:outline-none';
 
+// Normalise une saisie horaire libre ("20", "20:0", "20:00") vers "HH:MM:00".
+// Retourne null si le champ est vide (efface la valeur), undefined si le texte
+// n'est pas une heure valide (saisie en cours, faute de frappe) -- dans ce cas
+// l'appelant doit s'abstenir d'envoyer la valeur plutôt que de la tronquer.
+function normaliserHeure(v: string): string | null | undefined {
+  const t = v.trim();
+  if (!t) return null;
+  const m = t.match(/^(\d{1,2})(?::(\d{1,2}))?$/);
+  if (!m) return undefined;
+  const h = Number(m[1]);
+  const mi = m[2] ? Number(m[2]) : 0;
+  if (h > 23 || mi > 59) return undefined;
+  return `${String(h).padStart(2, '0')}:${String(mi).padStart(2, '0')}:00`;
+}
+
 function CreneauLigne({
   label,
   debut,
@@ -203,19 +218,22 @@ export function PopUpCard({ popUp, profils, popUpsParProfil }: { popUp: PopUp; p
     if (lon.trim() && Number.isNaN(lonN)) return;
     if (latN !== popUp.lat || lonN !== popUp.lon) demarrer(() => modifierCoordonneesPopUp(popUp.id, latN, lonN));
   };
-  const validerCreneaux = () =>
-    demarrer(() =>
-      modifierCreneauxPredefinisPopUp(popUp.id, {
-        matinDebut: matinDebut.trim() || null,
-        matinFin: matinFin.trim() || null,
-        matinPauseDebut: matinPauseActive ? matinPauseDebut.trim() || null : null,
-        matinPauseFin: matinPauseActive ? matinPauseFin.trim() || null : null,
-        apresMidiDebut: apresMidiDebut.trim() || null,
-        apresMidiFin: apresMidiFin.trim() || null,
-        apresMidiPauseDebut: apresMidiPauseActive ? apresMidiPauseDebut.trim() || null : null,
-        apresMidiPauseFin: apresMidiPauseActive ? apresMidiPauseFin.trim() || null : null,
-      }),
-    );
+  const validerCreneaux = () => {
+    const champs = {
+      matinDebut: normaliserHeure(matinDebut),
+      matinFin: normaliserHeure(matinFin),
+      matinPauseDebut: matinPauseActive ? normaliserHeure(matinPauseDebut) : null,
+      matinPauseFin: matinPauseActive ? normaliserHeure(matinPauseFin) : null,
+      apresMidiDebut: normaliserHeure(apresMidiDebut),
+      apresMidiFin: normaliserHeure(apresMidiFin),
+      apresMidiPauseDebut: apresMidiPauseActive ? normaliserHeure(apresMidiPauseDebut) : null,
+      apresMidiPauseFin: apresMidiPauseActive ? normaliserHeure(apresMidiPauseFin) : null,
+    };
+    // une heure mal formée (ex: saisie en cours, "20" au lieu de "20:00") renvoie
+    // undefined -- on n'envoie rien plutôt que de faire planter l'update en base
+    if (Object.values(champs).some((v) => v === undefined)) return;
+    demarrer(() => modifierCreneauxPredefinisPopUp(popUp.id, champs as Parameters<typeof modifierCreneauxPredefinisPopUp>[1]));
+  };
 
   const toggleHoraires = () => {
     const prochain = !horairesOuverts;
