@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { cache } from 'react';
 
 import { creerClientSupabaseServeur } from './supabase/server';
 
@@ -29,13 +30,19 @@ export const COOKIE_APERCU_PROFIL = 'apercu_profil_id';
  *  - 'inconnu' : connectée mais pas encore de rôle Hub défini (aucun accès, page d'attente).
  * Pas de rôle "manager pop-up" / "vendeur pop-up" pour l'instant — à ajouter au même endroit
  * quand ces espaces existeront (cf. discussion 2026-08-26 : on construit un rôle réel à la fois).
+ *
+ * Enveloppé dans React `cache()` (audit latence du 2026-09-02) : layout.tsx, page.tsx (accueil) et
+ * exigerAdmin() ci-dessous l'appellent chacun séparément dans la même requête — sans ça, c'est
+ * `getUser()` + 2-3 requêtes `profiles`/`pop_ups` refaites 3-4 fois par page pour le même résultat.
+ * `cache()` dédoublonne automatiquement les appels identiques (sans argument ici) le temps d'un
+ * seul rendu serveur, sans changer le comportement (toujours frais à chaque nouvelle requête).
  */
-export async function determinerRoleHub(): Promise<{
+export const determinerRoleHub = cache(async (): Promise<{
   role: RoleHub;
   profil: ProfilConnecte | null;
   enApercu: boolean;
   profilReel: ProfilConnecte | null;
-}> {
+}> => {
   const supabase = await creerClientSupabaseServeur();
   const {
     data: { user },
@@ -84,7 +91,7 @@ export async function determinerRoleHub(): Promise<{
   }
 
   return { role: 'inconnu', profil: profilEffectif, enApercu, profilReel };
-}
+});
 
 /** Garde-fou pour les 3 pages réservées aux admins (Finance/Ventes, Export comptable, Équipe) —
  * cf. discussion 2026-08-29 : le reste du Hub s'ouvre au rôle "local", mais ces trois-là restent

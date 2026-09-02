@@ -406,10 +406,83 @@ function deriveStatutExpedition(
   }
 }
 
+/** Commande mappée + `shopifyUpdatedAt` (champ `updated_at` brut Shopify, absent de CommandeShopify
+ * qui reste tourné affichage) — sert de curseur à la synchro incrémentale du cache, cf.
+ * lib/commandes-shopify-cache.ts. */
+export interface CommandeShopifyAvecMaj extends CommandeShopify {
+  shopifyUpdatedAt: string;
+}
+
+/** Mapping brut Shopify -> CommandeShopify, factorisé pour être partagé entre
+ * listerCommandesRecentes (snapshot complet) et listerCommandesMiseAJourDepuis (incrémental, cf.
+ * lib/commandes-shopify-cache.ts). */
+function mapperCommandeShopify(o: Record<string, any>): CommandeShopifyAvecMaj {
+  const fulfillments: FulfillmentCommande[] = (o.fulfillments ?? []).map((f: Record<string, any>) => ({
+    trackingCompany: f.tracking_company || null,
+    trackingNumber: f.tracking_number || null,
+    trackingUrl: f.tracking_url || null,
+    shipmentStatus: f.shipment_status || null,
+    creeLe: f.created_at,
+  }));
+  const dernierFulfillment = (o.fulfillments ?? [])[o.fulfillments?.length - 1];
+
+  const adresse = o.shipping_address
+    ? [o.shipping_address.address1, o.shipping_address.zip, o.shipping_address.city, o.shipping_address.country]
+        .filter(Boolean)
+        .join(', ')
+    : null;
+
+  const adresseLivraison: AdresseLivraison | null = o.shipping_address
+    ? {
+        prenom: o.shipping_address.first_name || null,
+        nom: o.shipping_address.last_name || null,
+        entreprise: o.shipping_address.company || null,
+        telephone: o.shipping_address.phone || o.phone || null,
+        adresse1: o.shipping_address.address1 || null,
+        adresse2: o.shipping_address.address2 || null,
+        ville: o.shipping_address.city || null,
+        codePostal: o.shipping_address.zip || null,
+        paysCode: o.shipping_address.country_code || null,
+      }
+    : null;
+
+  const nomClient =
+    [o.customer?.first_name, o.customer?.last_name].filter(Boolean).join(' ') ||
+    o.shipping_address?.name ||
+    o.email ||
+    'Client';
+
+  return {
+    id: o.id,
+    nom: o.name,
+    creeLe: o.created_at,
+    client: nomClient,
+    email: o.email ?? null,
+    statutPaiement: o.financial_status ?? null,
+    statutExpedition: deriveStatutExpedition(o.cancelled_at, o.closed_at, o.fulfillment_status, dernierFulfillment),
+    statutExpeditionBrut: dernierFulfillment?.shipment_status ?? null,
+    totalPrix: o.total_price ?? '0.00',
+    devise: o.currency ?? 'EUR',
+    adresse,
+    adresseLivraison,
+    moyenExpedition: o.shipping_lines?.[0]?.title ?? null,
+    lignes: (o.line_items ?? []).map((li: Record<string, any>) => ({
+      titre: li.title,
+      variante: li.variant_title || null,
+      sku: li.sku || null,
+      quantite: li.quantity,
+      productId: li.product_id ?? null,
+    })),
+    fulfillments,
+    shopifyUpdatedAt: o.updated_at,
+  } satisfies CommandeShopifyAvecMaj;
+}
+
 /** Liste les commandes les plus récentes (toutes statuts confondus) — un seul appel REST (limite
  * Shopify 250/page), triées côté client par date décroissante : l'API n'a pas de paramètre "order"
- * fiable sur cet endpoint. */
-export async function listerCommandesRecentes(limite = 200): Promise<CommandeShopify[]> {
+ * fiable sur cet endpoint. Sert au backfill initial du cache (cf. lib/commandes-shopify-cache.ts) —
+ * plus appelée directement par l'écran, qui passe maintenant par le cache. */
+export async function listerCommandesRecentes(limite = 200): Promise<CommandeShopifyAvecMaj[]> {
   const token = await getToken();
   const res = await fetch(`${BASE_URL}/orders.json?status=any&limit=${limite}`, {
     headers: { 'X-Shopify-Access-Token': token },
@@ -418,68 +491,31 @@ export async function listerCommandesRecentes(limite = 200): Promise<CommandeSho
   const data = await res.json();
   const commandes = (data.orders ?? []) as Array<Record<string, any>>;
 
-  return commandes
-    .map((o) => {
-      const fulfillments: FulfillmentCommande[] = (o.fulfillments ?? []).map((f: Record<string, any>) => ({
-        trackingCompany: f.tracking_company || null,
-        trackingNumber: f.tracking_number || null,
-        trackingUrl: f.tracking_url || null,
-        shipmentStatus: f.shipment_status || null,
-        creeLe: f.created_at,
-      }));
-      const dernierFulfillment = (o.fulfillments ?? [])[o.fulfillments?.length - 1];
+  return commandes.map(mapperCommandeShopify).sort((a, b) => (a.creeLe < b.creeLe ? 1 : -1));
+}
 
-      const adresse = o.shipping_address
-        ? [o.shipping_address.address1, o.shipping_address.zip, o.shipping_address.city, o.shipping_address.country]
-            .filter(Boolean)
-            .join(', ')
-        : null;
+/** Commandes modifiées depuis `depuisIso` (créées OU mises à jour — `updated_at_min`, `status=any`
+ * pour ne rater ni une nouvelle commande ni un changement de statut sur une ancienne), paginé via
+ * l'en-tête Link comme ventesShopifyDepuis. Sert à la synchro incrémentale du cache : plus besoin
+ * de retélécharger les 200 commandes à chaque visite, seulement ce qui a changé depuis la dernière
+ * fois (cf. lib/commandes-shopify-cache.ts pour la marge de sécurité appliquée à `depuisIso`). */
+export async function listerCommandesMiseAJourDepuis(depuisIso: string): Promise<CommandeShopifyAvecMaj[]> {
+  const token = await getToken();
+  let url: string | null = `${BASE_URL}/orders.json?status=any&updated_at_min=${encodeURIComponent(depuisIso)}&limit=250`;
+  const resultats: CommandeShopifyAvecMaj[] = [];
 
-      const adresseLivraison: AdresseLivraison | null = o.shipping_address
-        ? {
-            prenom: o.shipping_address.first_name || null,
-            nom: o.shipping_address.last_name || null,
-            entreprise: o.shipping_address.company || null,
-            telephone: o.shipping_address.phone || o.phone || null,
-            adresse1: o.shipping_address.address1 || null,
-            adresse2: o.shipping_address.address2 || null,
-            ville: o.shipping_address.city || null,
-            codePostal: o.shipping_address.zip || null,
-            paysCode: o.shipping_address.country_code || null,
-          }
-        : null;
+  while (url) {
+    const res: Response = await shopifyRawFetch(url, token);
+    if (!res.ok) throw new Error(`Shopify API ${res.status}: ${await res.text()}`);
+    const data = await res.json();
+    for (const o of data.orders ?? []) resultats.push(mapperCommandeShopify(o));
 
-      const nomClient =
-        [o.customer?.first_name, o.customer?.last_name].filter(Boolean).join(' ') ||
-        o.shipping_address?.name ||
-        o.email ||
-        'Client';
+    const link = res.headers.get('link') ?? '';
+    const next = link.match(/<([^>]+)>;\s*rel="next"/);
+    url = next ? next[1] : null;
+  }
 
-      return {
-        id: o.id,
-        nom: o.name,
-        creeLe: o.created_at,
-        client: nomClient,
-        email: o.email ?? null,
-        statutPaiement: o.financial_status ?? null,
-        statutExpedition: deriveStatutExpedition(o.cancelled_at, o.closed_at, o.fulfillment_status, dernierFulfillment),
-        statutExpeditionBrut: dernierFulfillment?.shipment_status ?? null,
-        totalPrix: o.total_price ?? '0.00',
-        devise: o.currency ?? 'EUR',
-        adresse,
-        adresseLivraison,
-        moyenExpedition: o.shipping_lines?.[0]?.title ?? null,
-        lignes: (o.line_items ?? []).map((li: Record<string, any>) => ({
-          titre: li.title,
-          variante: li.variant_title || null,
-          sku: li.sku || null,
-          quantite: li.quantity,
-          productId: li.product_id ?? null,
-        })),
-        fulfillments,
-      } satisfies CommandeShopify;
-    })
-    .sort((a, b) => (a.creeLe < b.creeLe ? 1 : -1));
+  return resultats.sort((a, b) => (a.creeLe < b.creeLe ? 1 : -1));
 }
 
 /** Somme les commandes payées depuis `depuisIso`, séparées Shopify (source_name "web", boutique

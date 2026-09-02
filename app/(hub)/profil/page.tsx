@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers';
 
-import { COOKIE_APERCU_PROFIL } from '@/lib/roles';
+import { COOKIE_APERCU_PROFIL, determinerRoleHub } from '@/lib/roles';
 import { creerClientSupabaseServeur } from '@/lib/supabase/server';
 import { ApercuProfilSelect } from './ApercuProfilSelect';
 import { InviterBouton } from './InviterBouton';
@@ -13,32 +13,32 @@ const LIBELLE_ROLE: Record<string, string> = {
 /** Petite page "Profil" pour le Hub — infos de l'admin connecté, invitation, et "Se connecter en
  * tant que" (cf. ApercuProfilSelect) pour prévisualiser le Hub avec les yeux d'un autre profil,
  * notamment pour vérifier les espaces réservés aux rôles non-admin (ex. /local) sans avoir besoin
- * de leurs identifiants. */
+ * de leurs identifiants.
+ *
+ * Passe par `determinerRoleHub()` (déjà appelé par layout.tsx, donc gratuit ici grâce au `cache()`
+ * de React, cf. lib/roles.ts) au lieu de refaire son propre `getUser()` + requête `profiles` — audit
+ * latence du 2026-09-02. `profilReel` (jamais celui prévisualisé) : cette page montre bien l'admin
+ * réellement connecté, pas le profil qu'il est en train de prévisualiser. */
 export default async function ProfilPage() {
+  const { profilReel } = await determinerRoleHub();
   const supabase = await creerClientSupabaseServeur();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
 
-  const { data: profil } = user
-    ? await supabase.from('profiles').select('nom_complet, email, role, couleur').eq('id', user.id).maybeSingle()
-    : { data: null };
+  const [{ data: autresProfils }, jar] = await Promise.all([
+    profilReel
+      ? supabase
+          .from('profiles')
+          .select('id, nom_complet, email, type_contrat')
+          .eq('actif', true)
+          .neq('id', profilReel.id)
+          .order('nom_complet')
+      : Promise.resolve({ data: null }),
+    cookies(),
+  ]);
 
-  const email = profil?.email ?? user?.email ?? '';
-  const initiale = (profil?.nom_complet || email || '?').slice(0, 1).toUpperCase();
-  const couleur = profil?.couleur ?? '#6366F1';
-
-  const jar = await cookies();
+  const email = profilReel?.email ?? '';
+  const initiale = (profilReel?.nom_complet || email || '?').slice(0, 1).toUpperCase();
+  const couleur = profilReel?.couleur ?? '#6366F1';
   const apercuActuelId = jar.get(COOKIE_APERCU_PROFIL)?.value ?? null;
-
-  const { data: autresProfils } = user
-    ? await supabase
-        .from('profiles')
-        .select('id, nom_complet, email, type_contrat')
-        .eq('actif', true)
-        .neq('id', user.id)
-        .order('nom_complet')
-    : { data: null };
 
   return (
     <div className="max-w-md">
@@ -51,11 +51,11 @@ export default async function ProfilPage() {
         <span className="text-xl font-bold text-white">{initiale}</span>
       </div>
 
-      <p className="text-lg font-bold text-slate-900">{profil?.nom_complet || 'Sans nom'}</p>
+      <p className="text-lg font-bold text-slate-900">{profilReel?.nom_complet || 'Sans nom'}</p>
       <p className="mb-2 text-sm text-slate-500">{email}</p>
-      {profil?.role && (
+      {profilReel?.role && (
         <span className="mb-6 inline-block rounded-full bg-indigo-50 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-indigo-700">
-          {LIBELLE_ROLE[profil.role] ?? profil.role}
+          {LIBELLE_ROLE[profilReel.role] ?? profilReel.role}
         </span>
       )}
 
