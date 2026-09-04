@@ -38,6 +38,18 @@ export interface PopUp {
   couleur: string;
   actif: boolean;
   date_debut: string | null;
+  /** Créneaux Matin/Après-midi propres à ce lieu (écran Pop-up), cf. retour utilisateur du
+   * 2026-09-05 : "dans le hub dans le planing il faut pouvoir mettre matin et après midi les
+   * horaires configurées" — même champs que App PIMP IT (PanneauEditionShiftEquipe.tsx), absent =
+   * repli sur des horaires génériques (cf. PRESETS_GENERIQUES dans PanneauShift.tsx). */
+  matin_debut: string | null;
+  matin_fin: string | null;
+  matin_pause_debut: string | null;
+  matin_pause_fin: string | null;
+  apres_midi_debut: string | null;
+  apres_midi_fin: string | null;
+  apres_midi_pause_debut: string | null;
+  apres_midi_pause_fin: string | null;
 }
 
 export interface PlanningShift {

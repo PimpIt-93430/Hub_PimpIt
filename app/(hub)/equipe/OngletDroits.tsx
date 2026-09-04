@@ -2,8 +2,15 @@
 
 import { useEffect, useState } from 'react';
 
-import { ajouterDroit, ajouterLieuAttribue, obtenirDroits, retirerLieuAttribue, supprimerDroit } from './actions';
-import { Section, TexteAlerte } from './ui';
+import {
+  ajouterDroit,
+  ajouterLieuAttribue,
+  definirAccesComptableHub,
+  obtenirDroits,
+  retirerLieuAttribue,
+  supprimerDroit,
+} from './actions';
+import { ChampBool, Section, TexteAlerte } from './ui';
 import type { DroitEmploye, Fonctionnalite, PopUp, Profile } from './types';
 
 function nomPopUpOuTous(popUps: PopUp[], popUpId: string | null): string {
@@ -69,6 +76,20 @@ function SectionDroit({
 export function OngletDroits({ profil, popUps, lieuxAttribues }: { profil: Profile; popUps: PopUp[]; lieuxAttribues: PopUp[] }) {
   const [droits, setDroits] = useState<DroitEmploye[] | null>(null);
   const [popUpAjoutLieu, setPopUpAjoutLieu] = useState('');
+  // État local plutôt que profil.hub_role_comptable directement : `profil` vient d'une liste
+  // chargée une seule fois côté page (Server Component), pas re-fetchée après ce toggle — même
+  // limitation que le reste de cet onglet (droits_employe se recharge lui via chargerDroits, mais
+  // ce flag vit sur profiles, pas droits_employe).
+  const [accesComptable, setAccesComptable] = useState(profil.hub_role_comptable);
+  const [enregistrementComptable, setEnregistrementComptable] = useState(false);
+
+  const toggleAccesComptable = (valeur: boolean) => {
+    setAccesComptable(valeur);
+    setEnregistrementComptable(true);
+    definirAccesComptableHub(profil.id, valeur)
+      .catch(() => setAccesComptable(!valeur))
+      .finally(() => setEnregistrementComptable(false));
+  };
 
   const chargerDroits = () => {
     obtenirDroits(profil.id).then(setDroits);
@@ -77,6 +98,7 @@ export function OngletDroits({ profil, popUps, lieuxAttribues }: { profil: Profi
   useEffect(() => {
     setDroits(null);
     chargerDroits();
+    setAccesComptable(profil.hub_role_comptable);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profil.id]);
 
@@ -133,6 +155,20 @@ export function OngletDroits({ profil, popUps, lieuxAttribues }: { profil: Profi
               </button>
             </div>
           )}
+        </div>
+      </Section>
+
+      <Section titre="Accès Hub">
+        <div className="w-full">
+          <p className="mb-2 text-xs text-slate-400">
+            Accès au Hub distinct des droits ci-dessous : lecture seule, limité à Planning (tous les pop-up, toute
+            l&apos;équipe) — pour un comptable externe qui gère la paie, sans les autres écrans du Hub.
+          </p>
+          <ChampBool
+            label={enregistrementComptable ? 'Comptable (enregistrement...)' : 'Comptable (lecture seule, Planning uniquement)'}
+            valeur={accesComptable}
+            onChange={toggleAccesComptable}
+          />
         </div>
       </Section>
 

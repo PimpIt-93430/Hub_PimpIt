@@ -185,6 +185,16 @@ export async function supprimerDocument(id: string, cheminStockage: string) {
   revalidatePath('/equipe');
 }
 
+// --- Accès Hub "comptable" (cf. migration 0092, lib/roles.ts) — flag direct sur profiles, pas une
+// ligne droits_employe : c'est un accès Hub, pas un droit côté app mobile. ---
+
+export async function definirAccesComptableHub(profileId: string, valeur: boolean) {
+  const supabase = await creerClientSupabaseServeur();
+  const { error } = await supabase.from('profiles').update({ hub_role_comptable: valeur }).eq('id', profileId);
+  if (error) throw new Error(error.message);
+  revalidatePath('/equipe');
+}
+
 // --- droits_employe (Calendrier / Équipe) ---
 
 export async function obtenirDroits(profileId: string): Promise<DroitEmploye[]> {

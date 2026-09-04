@@ -17,6 +17,9 @@ export interface Profile {
   couleur: string;
   heures_max_semaine: number | null;
   actif: boolean;
+  /** Accès Hub restreint en lecture seule au Planning uniquement (cf. migration 0092, lib/roles.ts
+   * côté Hub) — indépendant de role/type_contrat, réservé à un comptable externe (paie). */
+  hub_role_comptable: boolean;
 }
 
 export interface PopUp {

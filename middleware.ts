@@ -42,6 +42,28 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // Rôle Hub "comptable" (cf. lib/roles.ts, migration 0092) : accès restreint au Planning en
+  // lecture seule (+ Profil pour se déconnecter) — bloqué ici, avant même le rendu de la page,
+  // plutôt que de rajouter un exigerAdmin-like sur chacune des ~15 autres routes du Hub. Une seule
+  // requête profiles de plus, uniquement pour une personne connectée qui vise une page hors de
+  // cette liste.
+  if (user && !surPageConnexion) {
+    const autorise =
+      request.nextUrl.pathname.startsWith('/planning') || request.nextUrl.pathname.startsWith('/profil');
+    if (!autorise) {
+      const { data: profil } = await supabase
+        .from('profiles')
+        .select('role, hub_role_comptable')
+        .eq('id', user.id)
+        .maybeSingle();
+      if (profil && profil.role !== 'admin' && profil.hub_role_comptable) {
+        const url = request.nextUrl.clone();
+        url.pathname = '/planning';
+        return NextResponse.redirect(url);
+      }
+    }
+  }
+
   return response;
 }
 

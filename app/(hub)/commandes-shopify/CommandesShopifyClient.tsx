@@ -4,13 +4,14 @@ import { useEffect, useMemo, useState } from 'react';
 
 import type { ClassificationCommande } from '@/lib/classification-produits';
 import type { ExpeditionSendcloud } from '@/lib/expeditions-sendcloud';
+import { PRIX_LETTRE_VERTE_SUIVIE_HT } from '@/lib/laposte';
 import { chargerReglesLivraison, type RegleLivraison } from '@/lib/regles-livraison';
-import type { OptionExpedition } from '@/lib/sendcloud';
 import type { CommandeShopify, StatutExpeditionCommande } from '@/lib/shopify';
-import { rafraichirSuivisLivraison } from './actions';
-import { chargerExpediteur, type Expediteur, meilleureOffre, POIDS_PAR_DEFAUT_KG, prixInconnu } from './expedition-commun';
+import { rafraichirSuivisLivraison, verifierCommandesEnSuspens } from './actions';
+import { chargerExpediteur, type Expediteur, POIDS_PAR_DEFAUT_KG, prixInconnu, resoudreExpedition, type ResultatRoutage } from './expedition-commun';
 import { PanneauCodesTransporteurs } from './PanneauCodesTransporteurs';
 import { PanneauExpedition } from './PanneauExpedition';
+import { PanneauExpeditionLaPoste } from './PanneauExpeditionLaPoste';
 import { PanneauImpressionMasse } from './PanneauImpressionMasse';
 import { ReglesLivraisonPanel } from './ReglesLivraisonPanel';
 
@@ -116,11 +117,37 @@ export function CommandesShopifyClient({
   const [expeditions, setExpeditions] = useState<Map<number, ExpeditionSendcloud>>(new Map(expeditionsInitiales));
   const [rafraichissementEnCours, setRafraichissementEnCours] = useState(false);
   const [expediteur, setExpediteur] = useState<Expediteur | null>(null);
+  // Cf. retour utilisateur du 2026-09-05 : "je veux même pas qu'elle descende dans le hub tant
+  // qu'elles sont suspendu" — une commande "Shipped by Seller" suspendue côté Shopify (ON_HOLD) ne
+  // doit même pas apparaître dans la liste tant que ce n'est pas levé, pas seulement être bloquée à
+  // la création. Vérifié uniquement pour les commandes "pas encore créée"/"partielle" (une poignée
+  // à la fois, jamais les 300+ de la liste complète — cf. lib/shopify.ts commandesEnSuspens).
+  const [idsEnSuspens, setIdsEnSuspens] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     setRegles(chargerReglesLivraison());
     setExpediteur(chargerExpediteur());
   }, []);
+
+  useEffect(() => {
+    let annule = false;
+    const aVerifier = commandesInitiales.filter((cmd) => cmd.statutExpedition === 'a_creer' || cmd.statutExpedition === 'partielle');
+    verifierCommandesEnSuspens(aVerifier.map((cmd) => cmd.id))
+      .then((ids) => {
+        if (!annule) setIdsEnSuspens(new Set(ids));
+      })
+      .catch(() => {
+        if (!annule) setIdsEnSuspens(new Set());
+      });
+    return () => {
+      annule = true;
+    };
+  }, [commandesInitiales]);
+
+  const commandesVisibles = useMemo(
+    () => commandesInitiales.filter((cmd) => !idsEnSuspens.has(cmd.id)),
+    [commandesInitiales, idsEnSuspens],
+  );
 
   /** Statut affiché en tenant compte du suivi Sendcloud (cf. discussion 2026-08-29) — Shopify ne
    * remonte jamais "livrée" pour ces envois (constaté sur #26382 avec Boxtal, même limitation côté
@@ -143,27 +170,27 @@ export function CommandesShopifyClient({
 
   const compteurs = useMemo(() => {
     const c: Partial<Record<StatutExpeditionCommande, number>> = {};
-    for (const cmd of commandesInitiales) {
+    for (const cmd of commandesVisibles) {
       const s = statutAffiche(cmd);
       c[s] = (c[s] ?? 0) + 1;
     }
     return c;
-  }, [commandesInitiales, expeditions]);
+  }, [commandesVisibles, expeditions]);
 
   const commandesFiltrees = useMemo(() => {
     const r = recherche.trim().toLowerCase();
-    return commandesInitiales.filter((cmd) => {
+    return commandesVisibles.filter((cmd) => {
       if (onglet !== 'tous' && statutAffiche(cmd) !== onglet) return false;
       if (r && !`${cmd.nom} ${cmd.client} ${cmd.email ?? ''}`.toLowerCase().includes(r)) return false;
       return true;
     });
-  }, [commandesInitiales, recherche, onglet, expeditions]);
+  }, [commandesVisibles, recherche, onglet, expeditions]);
 
-  // Cf. discussion 2026-08-29 : migration Boxtal → Sendcloud, meilleureOffre() est devenue async
-  // (appel réseau en direct, plus de grille tarifaire statique locale) — chargement progressif
+  // Cf. discussion 2026-08-29 : migration Boxtal → Sendcloud, resoudreExpedition() est devenue
+  // async (appel réseau en direct, plus de grille tarifaire statique locale) — chargement progressif
   // plutôt qu'un calcul synchrone, avec le cache interne de expedition-commun.ts qui évite de
   // refaire le même appel pour des commandes qui partagent règle/poids/pays.
-  const [estimationsExpedition, setEstimationsExpedition] = useState<Map<number, OptionExpedition & { viaRegle: boolean }>>(new Map());
+  const [estimationsExpedition, setEstimationsExpedition] = useState<Map<number, ResultatRoutage>>(new Map());
 
   useEffect(() => {
     if (!expediteur) return;
@@ -172,13 +199,13 @@ export function CommandesShopifyClient({
     Promise.all(
       aCalculer.map(async (cmd) => {
         const estLeger = classification.get(cmd.id) === 'leger';
-        const offre = await meilleureOffre(cmd, regles, poidsConnus.get(cmd.id) ?? POIDS_ESTIMATION_GRAMMES, estLeger, expediteur);
-        return [cmd.id, offre] as const;
+        const resultat = await resoudreExpedition(cmd, regles, poidsConnus.get(cmd.id) ?? POIDS_ESTIMATION_GRAMMES, estLeger, expediteur);
+        return [cmd.id, resultat] as const;
       }),
     ).then((paires) => {
       if (annule) return;
-      const map = new Map<number, OptionExpedition & { viaRegle: boolean }>();
-      for (const [id, offre] of paires) if (offre) map.set(id, offre);
+      const map = new Map<number, ResultatRoutage>();
+      for (const [id, resultat] of paires) if (resultat) map.set(id, resultat);
       setEstimationsExpedition(map);
     });
     return () => {
@@ -190,8 +217,13 @@ export function CommandesShopifyClient({
     <div>
       <h1 className="mb-1 text-2xl font-bold text-slate-900">Commandes Shopify</h1>
       <p className="mb-6 text-sm text-slate-400">
-        Les {commandesInitiales.length} commandes les plus récentes, en direct depuis Shopify. Ouvre une commande
+        Les {commandesVisibles.length} commandes les plus récentes, en direct depuis Shopify. Ouvre une commande
         pas encore expédiée pour créer son étiquette (Sendcloud).
+        {idsEnSuspens.size > 0 && (
+          <span className="ml-1 text-amber-600">
+            ({idsEnSuspens.size} suspendue{idsEnSuspens.size > 1 ? 's' : ''} sur Shopify, masquée{idsEnSuspens.size > 1 ? 's' : ''} ici)
+          </span>
+        )}
       </p>
 
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -306,9 +338,13 @@ export function CommandesShopifyClient({
                         {fulfillment.trackingCompany ?? 'Suivi'} — {fulfillment.trackingNumber}
                       </a>
                     ) : estimation ? (
-                      <span title={estimation.viaRegle ? 'Choisi par une règle de livraison' : 'Moins cher, tous transporteurs'}>
-                        {estimation.viaRegle && '⚙ '}
-                        {estimation.transporteurNom} — {prixInconnu(estimation) ? 'prix connu après création' : `${estimation.prix!.value.toFixed(2)} €`}
+                      <span title="Choisi par une règle de livraison">
+                        ⚙{' '}
+                        {estimation.transporteur === 'laposte'
+                          ? `Lettre Suivie (La Poste) — ${PRIX_LETTRE_VERTE_SUIVIE_HT.toFixed(2)} €`
+                          : `${estimation.offre.transporteurNom} — ${
+                              prixInconnu(estimation.offre) ? 'prix connu après création' : `${estimation.offre.prix!.value.toFixed(2)} €`
+                            }`}
                       </span>
                     ) : (
                       '—'
@@ -358,13 +394,32 @@ export function CommandesShopifyClient({
               <dd className="font-semibold text-slate-700">{formatPrix(commandeOuverte.totalPrix, commandeOuverte.devise)}</dd>
             </dl>
 
-            {(commandeOuverte.statutExpedition === 'a_creer' || commandeOuverte.statutExpedition === 'partielle') && (
-              <PanneauExpedition
-                commande={commandeOuverte}
-                poidsConnuGrammes={poidsConnus.get(commandeOuverte.id)}
-                classification={classification.get(commandeOuverte.id)}
-              />
-            )}
+            {
+              // Cf. retour utilisateur du 2026-09-05 : "quand jappuie sur tout ouvrir imprimer ca
+              // fait un pdf quavec une etiquette" / "quand je clique sur la commande il faut
+              // pouvoir la réimprimer" — avant, ce panneau disparaissait dès que Shopify montrait
+              // la commande "Expédiée", rendant l'étiquette déjà créée irrécupérable depuis le Hub
+              // (seul le numéro de suivi Shopify restait visible, pas le PDF). On l'affiche donc
+              // aussi pour une commande déjà expédiée — chaque panneau (cf. `dejaExpediee` ci-
+              // dessous) n'affiche alors QUE la réimpression d'une étiquette déjà enregistrée chez
+              // nous, jamais le formulaire de création, pour ne jamais risquer un second envoi réel
+              // sur une commande que Shopify considère déjà expédiée par un autre biais.
+              (classification.get(commandeOuverte.id) === 'leger' &&
+              commandeOuverte.adresseLivraison?.paysCode?.toUpperCase() === 'FR' ? (
+                <PanneauExpeditionLaPoste
+                  commande={commandeOuverte}
+                  poidsConnuGrammes={poidsConnus.get(commandeOuverte.id)}
+                  dejaExpediee={commandeOuverte.statutExpedition === 'expediee'}
+                />
+              ) : (
+                <PanneauExpedition
+                  commande={commandeOuverte}
+                  poidsConnuGrammes={poidsConnus.get(commandeOuverte.id)}
+                  classification={classification.get(commandeOuverte.id)}
+                  dejaExpediee={commandeOuverte.statutExpedition === 'expediee'}
+                />
+              ))
+            }
 
             {commandeOuverte.fulfillments.length > 0 && (
               <div className="mb-4">

@@ -1,3 +1,4 @@
+import { determinerRoleHub } from '@/lib/roles';
 import { creerClientSupabaseServeur } from '@/lib/supabase/server';
 import { dateEnISO, dateDepuisISO, joursDeLaSemaine } from './dateUtils';
 import { PlanningClient } from './PlanningClient';
@@ -17,6 +18,11 @@ export default async function PlanningPage({
   searchParams: Promise<{ semaine?: string }>;
 }) {
   const params = await searchParams;
+  const { role } = await determinerRoleHub();
+  // Rôle "comptable" (cf. lib/roles.ts, migration 0092) : mêmes données, mais sans les actions
+  // d'édition côté client (cf. PlanningClient) — l'écriture reste de toute façon bloquée côté
+  // serveur (exigerAccesEcriture) si jamais quelqu'un contournait l'UI.
+  const lectureSeule = role === 'comptable';
   const supabase = await creerClientSupabaseServeur();
 
   const dateReference = params.semaine ? dateDepuisISO(params.semaine) : new Date();
@@ -26,7 +32,13 @@ export default async function PlanningPage({
 
   const [{ data: popUps }, { data: profils }, { data: affectations }, { data: shifts }, { data: conges }, { data: joursEcole }] =
     await Promise.all([
-      supabase.from('pop_ups').select('id, nom, couleur, actif, date_debut').eq('actif', true).order('nom'),
+      supabase
+        .from('pop_ups')
+        .select(
+          'id, nom, couleur, actif, date_debut, matin_debut, matin_fin, matin_pause_debut, matin_pause_fin, apres_midi_debut, apres_midi_fin, apres_midi_pause_debut, apres_midi_pause_fin',
+        )
+        .eq('actif', true)
+        .order('nom'),
       supabase
         .from('profiles')
         .select('id, nom_complet, email, role, type_contrat, couleur, heures_max_semaine, actif')
@@ -41,6 +53,7 @@ export default async function PlanningPage({
   return (
     <div className="flex h-[calc(100vh-4rem)] min-h-0 flex-col">
       <PlanningClient
+        lectureSeule={lectureSeule}
         semaineIso={dateDebut}
         popUps={(popUps ?? []) as PopUp[]}
         profils={(profils ?? []) as Profile[]}

@@ -2,16 +2,37 @@
 
 import { useEffect, useMemo, useState } from 'react';
 
-import { sauvegarderReglesLivraison, type RegleLivraison } from '@/lib/regles-livraison';
+import { PRIX_LETTRE_VERTE_SUIVIE_HT } from '@/lib/laposte';
+import { sauvegarderReglesLivraison, type ClassePoids, type ClasseDestination, type RegleLivraison } from '@/lib/regles-livraison';
 import type { OptionExpedition } from '@/lib/sendcloud';
-import { chargerOptionsExpeditionCompte } from './actions';
+import type { PossibiliteExpedition } from '@/lib/shopify';
+import { chargerOptionsExpeditionCompte, chargerPossibilitesExpedition } from './actions';
 import { chargerExpediteur, versSendcloudAddress } from './expedition-commun';
 
-/** Éditeur des règles "mot-clé du mode de livraison → offre Sendcloud précise" (cf. discussion
- * 2026-08-28/29, migré de Boxtal). Le choix se fait dans la liste des offres disponibles sur le
- * compte (interrogée en direct, cf. actions.ts chargerOptionsExpeditionCompte) plutôt qu'en tapant
- * un code à la main — "faudrait mettre le code transporteur comme ça on est sûr y'a pas de
- * problème" : impossible de choisir un code inexistant. */
+const LABEL_POIDS: Record<ClassePoids, string> = { leger: 'Léger', lourd: 'Lourd', tous: 'Tous poids' };
+const LABEL_DESTINATION: Record<ClasseDestination, string> = { france: 'France', international: 'International', tous: 'Toutes destinations' };
+
+const VALEUR_LAPOSTE = '__laposte__';
+const VALEUR_VIDE = '';
+
+/** Une ligne = une possibilité réelle de la boutique Shopify (mode de livraison × poids ×
+ * destination, cf. actions.ts chargerPossibilitesExpedition) ou une possibilité ajoutée à la main
+ * pour un cas non couvert par la config Shopify actuelle (ex. commande créée manuellement). */
+interface Ligne {
+  cle: string;
+  moyenExpedition: string;
+  poids: ClassePoids;
+  destination: ClasseDestination;
+  manuelle: boolean;
+}
+
+/** Éditeur des règles de livraison (cf. retour utilisateur du 2026-09-05 : "il faudrait que tu
+ * mettes toutes les possibilités shopify avec poids et destination et moi je match avec mes règles
+ * comme ça c'est simple et tout le reste de la logique tu enlèves") — toutes les combinaisons
+ * réelles (mode de livraison Shopify × poids × destination) sont listées automatiquement (interrogé
+ * en direct, cf. lib/shopify.ts listerPossibilitesExpedition), l'utilisateur choisit juste le
+ * transporteur pour chacune. Plus de mot-clé à taper, plus de zone/legerUniquement séparés — le
+ * poids et la destination sont déjà ceux de la vraie commande. */
 export function ReglesLivraisonPanel({
   regles,
   onChange,
@@ -22,30 +43,76 @@ export function ReglesLivraisonPanel({
   onFermer: () => void;
 }) {
   const [brouillon, setBrouillon] = useState(regles);
-  const [options, setOptions] = useState<OptionExpedition[]>([]);
+  const [possibilites, setPossibilites] = useState<PossibiliteExpedition[]>([]);
+  const [optionsFrance, setOptionsFrance] = useState<OptionExpedition[]>([]);
+  const [optionsInternational, setOptionsInternational] = useState<OptionExpedition[]>([]);
   const [chargement, setChargement] = useState(true);
+  const [ajoutManuel, setAjoutManuel] = useState(false);
+  const [nouveauMoyen, setNouveauMoyen] = useState('');
+  const [nouveauPoids, setNouveauPoids] = useState<ClassePoids>('tous');
+  const [nouvelleDestination, setNouvelleDestination] = useState<ClasseDestination>('tous');
 
   useEffect(() => {
     const expediteur = chargerExpediteur();
-    if (!expediteur.adresse1) {
-      setChargement(false);
-      return;
+    const chargements: Promise<void>[] = [
+      chargerPossibilitesExpedition()
+        .then(setPossibilites)
+        .catch(() => setPossibilites([])),
+    ];
+    if (expediteur.adresse1) {
+      const adresse = versSendcloudAddress(expediteur);
+      chargements.push(
+        Promise.all([
+          chargerOptionsExpeditionCompte(adresse, 'france').catch(() => []),
+          chargerOptionsExpeditionCompte(adresse, 'international').catch(() => []),
+        ]).then(([france, international]) => {
+          setOptionsFrance(france);
+          setOptionsInternational(international);
+        }),
+      );
     }
-    chargerOptionsExpeditionCompte(versSendcloudAddress(expediteur))
-      .then(setOptions)
-      .catch(() => setOptions([]))
-      .finally(() => setChargement(false));
+    Promise.all(chargements).finally(() => setChargement(false));
   }, []);
 
-  const parTransporteur = useMemo(() => {
+  const grouperParTransporteur = (liste: OptionExpedition[]) => {
     const groupes = new Map<string, OptionExpedition[]>();
-    for (const o of options) {
-      const liste = groupes.get(o.transporteurNom) ?? [];
-      liste.push(o);
-      groupes.set(o.transporteurNom, liste);
+    for (const o of liste) {
+      const offres = groupes.get(o.transporteurNom) ?? [];
+      offres.push(o);
+      groupes.set(o.transporteurNom, offres);
     }
     return [...groupes.entries()];
-  }, [options]);
+  };
+  const parTransporteurFrance = useMemo(() => grouperParTransporteur(optionsFrance), [optionsFrance]);
+  const parTransporteurInternational = useMemo(() => grouperParTransporteur(optionsInternational), [optionsInternational]);
+
+  // Fusionne les possibilités réelles (Shopify) avec les règles manuelles existantes qui ne
+  // correspondent à aucune possibilité live (ex. "Expédition" — texte vu sur de vraies commandes
+  // mais absent de la config actuelle des profils d'expédition, cf. commande créée à la main) —
+  // jamais perdues silencieusement, affichées à part avec un badge "ajoutée à la main".
+  const lignes = useMemo<Ligne[]>(() => {
+    // Filtre défensif : jamais une ligne sans texte de mode de livraison (donnée malformée en amont,
+    // ex. ancien format localStorage pas complètement nettoyé) — mieux vaut l'ignorer que produire
+    // une ligne vide ou une clé React dupliquée.
+    const clesVues = new Set<string>();
+    const deLaBoutique: Ligne[] = [];
+    for (const p of possibilites) {
+      if (!p.moyenExpedition) continue;
+      const cle = `${p.moyenExpedition}|${p.poids}|${p.destination}`;
+      if (clesVues.has(cle)) continue;
+      clesVues.add(cle);
+      deLaBoutique.push({ cle, moyenExpedition: p.moyenExpedition, poids: p.poids, destination: p.destination, manuelle: false });
+    }
+    const manuelles: Ligne[] = [];
+    for (const r of brouillon) {
+      if (!r.moyenExpedition) continue;
+      const cle = `${r.moyenExpedition}|${r.poids}|${r.destination}`;
+      if (clesVues.has(cle)) continue;
+      clesVues.add(cle);
+      manuelles.push({ cle, moyenExpedition: r.moyenExpedition, poids: r.poids, destination: r.destination, manuelle: true });
+    }
+    return [...deLaBoutique, ...manuelles];
+  }, [possibilites, brouillon]);
 
   const sauvegarder = (suivant: RegleLivraison[]) => {
     setBrouillon(suivant);
@@ -53,20 +120,53 @@ export function ReglesLivraisonPanel({
     sauvegarderReglesLivraison(suivant);
   };
 
-  const modifier = (id: string, patch: Partial<RegleLivraison>) => {
-    sauvegarder(brouillon.map((r) => (r.id === id ? { ...r, ...patch } : r)));
+  const regleDe = (l: Ligne) => brouillon.find((r) => r.moyenExpedition === l.moyenExpedition && r.poids === l.poids && r.destination === l.destination);
+
+  const definirTransporteur = (l: Ligne, valeur: string) => {
+    const existante = regleDe(l);
+    if (valeur === VALEUR_VIDE) {
+      if (existante) sauvegarder(brouillon.filter((r) => r.id !== existante.id));
+      return;
+    }
+    const transporteur = valeur === VALEUR_LAPOSTE ? 'laposte' : 'sendcloud';
+    const code = valeur === VALEUR_LAPOSTE ? '' : valeur;
+    if (existante) {
+      sauvegarder(brouillon.map((r) => (r.id === existante.id ? { ...r, transporteur, code } : r)));
+    } else {
+      sauvegarder([
+        ...brouillon,
+        { id: `regle-${Date.now()}-${Math.random()}`, moyenExpedition: l.moyenExpedition, poids: l.poids, destination: l.destination, transporteur, code },
+      ]);
+    }
   };
 
-  const supprimer = (id: string) => sauvegarder(brouillon.filter((r) => r.id !== id));
+  const supprimerLigneManuelle = (l: Ligne) => {
+    sauvegarder(brouillon.filter((r) => !(r.moyenExpedition === l.moyenExpedition && r.poids === l.poids && r.destination === l.destination)));
+  };
 
-  const ajouter = () => {
-    sauvegarder([...brouillon, { id: `regle-${Date.now()}`, motCle: '', code: '' }]);
+  const ajouterManuelle = () => {
+    if (!nouveauMoyen.trim()) return;
+    sauvegarder([
+      ...brouillon,
+      {
+        id: `regle-${Date.now()}`,
+        moyenExpedition: nouveauMoyen.trim(),
+        poids: nouveauPoids,
+        destination: nouvelleDestination,
+        transporteur: 'sendcloud',
+        code: '',
+      },
+    ]);
+    setNouveauMoyen('');
+    setNouveauPoids('tous');
+    setNouvelleDestination('tous');
+    setAjoutManuel(false);
   };
 
   return (
     <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/20" onClick={onFermer}>
       <div
-        className="max-h-[85vh] w-full max-w-2xl overflow-y-auto overflow-x-hidden rounded-2xl bg-white p-6 shadow-xl"
+        className="max-h-[85vh] w-full max-w-3xl overflow-y-auto overflow-x-hidden rounded-2xl bg-white p-6 shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-1 flex items-center justify-between">
@@ -76,39 +176,53 @@ export function ReglesLivraisonPanel({
           </button>
         </div>
         <p className="mb-4 text-sm text-slate-400">
-          Si le mode de livraison choisi par le client contient ce mot-clé, cette offre précise est utilisée (au lieu
-          du simplement moins cher tous transporteurs confondus). Choisie dans la liste des offres Sendcloud
-          disponibles sur le compte — pas de saisie libre, donc pas d&apos;erreur possible. Une règle peut être
-          réservée aux produits légers (cf. profils d&apos;expédition Shopify).
+          Chaque ligne est une combinaison réelle de ta boutique (mode de livraison Shopify, poids, destination) —
+          choisis le transporteur pour chacune. Une commande dont la combinaison exacte n&apos;a pas de transporteur
+          choisi n&apos;est jamais proposée en création automatique.
         </p>
 
-        {chargement && <p className="mb-3 text-xs text-slate-400">Chargement des offres disponibles…</p>}
-        {!chargement && options.length === 0 && (
+        {chargement && <p className="mb-3 text-xs text-slate-400">Chargement…</p>}
+        {!chargement && possibilites.length === 0 && (
           <p className="mb-3 rounded-lg bg-amber-50 p-2.5 text-xs text-amber-800">
-            Aucune offre trouvée — renseigne d&apos;abord ton adresse expéditeur (ouvre une commande, section
-            &quot;Expéditeur&quot;), puis reviens ici.
+            Aucune possibilité trouvée côté Shopify — vérifie la configuration des profils d&apos;expédition.
+          </p>
+        )}
+        {!chargement && optionsFrance.length === 0 && optionsInternational.length === 0 && (
+          <p className="mb-3 rounded-lg bg-amber-50 p-2.5 text-xs text-amber-800">
+            Aucune offre Sendcloud trouvée — renseigne d&apos;abord ton adresse expéditeur (ouvre une commande,
+            section &quot;Expéditeur&quot;), puis reviens ici.
           </p>
         )}
 
-        <div className="mb-4 flex flex-col gap-3">
-          {brouillon.map((r) => (
-            <div key={r.id} className="rounded-xl border border-slate-100 p-2.5">
-              <div className="flex items-center gap-3">
-                <input
-                  value={r.motCle}
-                  onChange={(e) => modifier(r.id, { motCle: e.target.value })}
-                  placeholder="mot-clé (ex. domicile)"
-                  className="w-40 shrink-0 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-base focus:border-indigo-300 focus:bg-white focus:outline-none"
-                />
-                <span className="text-sm text-slate-400">→</span>
+        <div className="mb-4 flex flex-col gap-2">
+          {lignes.map((l) => {
+            const existante = regleDe(l);
+            const valeurActuelle = existante ? (existante.transporteur === 'laposte' ? VALEUR_LAPOSTE : existante.code) : VALEUR_VIDE;
+            const parTransporteur = l.destination === 'international' ? parTransporteurInternational : parTransporteurFrance;
+            return (
+              <div key={l.cle} className="rounded-xl border border-slate-100 p-2.5">
+                <div className="mb-1.5 flex flex-wrap items-center gap-1.5 text-xs">
+                  <span className="font-semibold text-slate-700">{l.moyenExpedition}</span>
+                  <span className="rounded-full bg-slate-100 px-2 py-0.5 text-slate-500">{LABEL_POIDS[l.poids]}</span>
+                  <span className="rounded-full bg-slate-100 px-2 py-0.5 text-slate-500">{LABEL_DESTINATION[l.destination]}</span>
+                  {l.manuelle && (
+                    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-amber-700" title="Vu sur une commande mais absent de la config Shopify actuelle">
+                      ajoutée à la main
+                    </span>
+                  )}
+                  {l.manuelle && (
+                    <button type="button" onClick={() => supprimerLigneManuelle(l)} className="ml-auto text-slate-300 hover:text-red-500">
+                      ✕
+                    </button>
+                  )}
+                </div>
                 <select
-                  value={r.code}
-                  onChange={(e) => modifier(r.id, { code: e.target.value })}
-                  className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-base focus:border-indigo-300 focus:bg-white focus:outline-none"
+                  value={valeurActuelle}
+                  onChange={(e) => definirTransporteur(l, e.target.value)}
+                  className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm focus:border-indigo-300 focus:bg-white focus:outline-none"
                 >
-                  <option value="" disabled>
-                    Choisir une offre…
-                  </option>
+                  <option value={VALEUR_VIDE}>— Non configuré (jamais proposée en création) —</option>
+                  <option value={VALEUR_LAPOSTE}>La Poste — Lettre Verte Suivie ({PRIX_LETTRE_VERTE_SUIVIE_HT.toFixed(2)} € fixe)</option>
                   {parTransporteur.map(([transporteur, offres]) => (
                     <optgroup key={transporteur} label={transporteur}>
                       {offres.map((o) => (
@@ -119,36 +233,61 @@ export function ReglesLivraisonPanel({
                     </optgroup>
                   ))}
                 </select>
-                <button
-                  type="button"
-                  onClick={() => supprimer(r.id)}
-                  title="Supprimer cette règle"
-                  className="rounded-lg px-2.5 py-1.5 text-lg text-slate-300 hover:bg-red-50 hover:text-red-500"
-                >
-                  ✕
-                </button>
               </div>
-              <label className="mt-2 flex items-center gap-1.5 pl-0.5 text-xs text-slate-500">
-                <input
-                  type="checkbox"
-                  checked={Boolean(r.legerUniquement)}
-                  onChange={(e) => modifier(r.id, { legerUniquement: e.target.checked })}
-                  className="rounded border-slate-300"
-                />
-                Uniquement si produit léger (profil Shopify &quot;Produits Légers&quot;) — sinon colis normal
-              </label>
-            </div>
-          ))}
-          {brouillon.length === 0 && <p className="text-sm text-slate-400">Aucune règle — le moins cher est toujours proposé.</p>}
+            );
+          })}
         </div>
 
-        <button
-          type="button"
-          onClick={ajouter}
-          className="rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-200"
-        >
-          + Ajouter une règle
-        </button>
+        {ajoutManuel ? (
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+            <p className="mb-2 text-xs font-semibold text-slate-500">
+              Pour un mode de livraison vu sur une commande mais absent de la liste ci-dessus (ex. commande créée à la
+              main).
+            </p>
+            <div className="mb-2 flex flex-wrap gap-2">
+              <input
+                value={nouveauMoyen}
+                onChange={(e) => setNouveauMoyen(e.target.value)}
+                placeholder="Texte exact du mode de livraison"
+                className="min-w-[220px] flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-indigo-300 focus:outline-none"
+              />
+              <select
+                value={nouveauPoids}
+                onChange={(e) => setNouveauPoids(e.target.value as ClassePoids)}
+                className="rounded-lg border border-slate-200 bg-white px-2 py-2 text-sm focus:border-indigo-300 focus:outline-none"
+              >
+                <option value="tous">Tous poids</option>
+                <option value="leger">Léger</option>
+                <option value="lourd">Lourd</option>
+              </select>
+              <select
+                value={nouvelleDestination}
+                onChange={(e) => setNouvelleDestination(e.target.value as ClasseDestination)}
+                className="rounded-lg border border-slate-200 bg-white px-2 py-2 text-sm focus:border-indigo-300 focus:outline-none"
+              >
+                <option value="tous">Toutes destinations</option>
+                <option value="france">France</option>
+                <option value="international">International</option>
+              </select>
+            </div>
+            <div className="flex gap-2">
+              <button type="button" onClick={ajouterManuelle} className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-500">
+                Ajouter
+              </button>
+              <button type="button" onClick={() => setAjoutManuel(false)} className="text-xs font-semibold text-slate-500 hover:underline">
+                Annuler
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setAjoutManuel(true)}
+            className="rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-200"
+          >
+            + Ajouter une possibilité imprévue
+          </button>
+        )}
       </div>
     </div>
   );

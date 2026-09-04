@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 
 import { genererPlanning } from '@/lib/generationPlanning';
+import { exigerAccesEcriture } from '@/lib/roles';
 import { creerClientSupabaseServeur } from '@/lib/supabase/server';
 import type { TypeConge } from './types';
 
@@ -33,6 +34,7 @@ export interface NouveauShift {
 }
 
 export async function creerShifts(lignes: NouveauShift[]) {
+  await exigerAccesEcriture();
   if (lignes.length === 0) return;
   const supabase = await creerClientSupabaseServeur();
   const adminId = await idUtilisateurConnecte(supabase);
@@ -59,6 +61,7 @@ export async function modifierShift(
     etiquette?: string | null;
   },
 ) {
+  await exigerAccesEcriture();
   const supabase = await creerClientSupabaseServeur();
   // Un shift touché à la main ne doit plus jamais être considéré comme un simple brouillon
   // auto-généré : sinon une régénération ultérieure le supprime et le recrée depuis l'horaire
@@ -74,6 +77,7 @@ export async function modifierShift(
 }
 
 export async function supprimerShifts(ids: string[]) {
+  await exigerAccesEcriture();
   if (ids.length === 0) return;
   const supabase = await creerClientSupabaseServeur();
   // Une suppression bloquée par une policy RLS ne renvoie jamais d'erreur côté Supabase (0 ligne
@@ -97,6 +101,7 @@ export async function creerConge(params: {
   type: TypeConge;
   note: string;
 }) {
+  await exigerAccesEcriture();
   const supabase = await creerClientSupabaseServeur();
   const { error } = await supabase.from('conges').insert({
     profile_id: params.profileId,
@@ -125,6 +130,7 @@ export async function creerConge(params: {
 }
 
 export async function supprimerConge(id: string) {
+  await exigerAccesEcriture();
   const supabase = await creerClientSupabaseServeur();
   const { data, error } = await supabase.from('conges').delete().eq('id', id).select('id');
   if (error) throw new Error(error.message);
@@ -136,6 +142,7 @@ export async function supprimerConge(id: string) {
 // main plutôt qu'en silence au montage, plus simple à raisonner côté Next.js) ---
 
 export async function genererEtInsererPlanning(dateDebut: string, dateFin: string) {
+  await exigerAccesEcriture();
   const supabase = await creerClientSupabaseServeur();
   const adminId = await idUtilisateurConnecte(supabase);
 

@@ -24,6 +24,7 @@ const CATEGORIES: CategorieNav[] = [
       { href: '/pins-unite', label: "Pin's à l'unité", icone: '🔗' },
       { href: '/packs', label: "Packs de pin's", icone: '🎁' },
       { href: '/profil-expedition', label: "Profil d'expédition", icone: '🚚' },
+      { href: '/tiktok-shop', label: 'TikTok Shop', icone: '🎵' },
     ],
   },
   {
@@ -67,10 +68,12 @@ const CATEGORIES: CategorieNav[] = [
   // taches, recommandations) — à rajouter ici en nouvelle catégorie le jour où ils sont repris.
 ];
 
-/** Le Hub s'ouvre à deux rôles — cf. discussion 2026-08-29 : l'admin (accès complet) et "local"
+/** Le Hub s'ouvre à trois rôles — cf. discussion 2026-08-29 : l'admin (accès complet), "local"
  * (l'équipe qui travaille au local, cf. determinerRoleHub) qui voit tout SAUF Finance, Export
  * comptable et Équipe (salaires/infos RH nominatives — cf. exigerAdmin, appelé en plus sur ces 3
- * pages : cacher le lien ici ne suffit pas, il faut aussi bloquer l'accès direct par URL). Un
+ * pages : cacher le lien ici ne suffit pas, il faut aussi bloquer l'accès direct par URL), et
+ * "comptable" (cf. migration 0092, retour utilisateur du 2026-09-04) qui ne voit que Planning, en
+ * lecture seule (bloqué en plus côté middleware et actions serveur, cf. leurs en-têtes). Un
  * compte "inconnu" (connecté mais sans rôle Hub) est renvoyé vers /local, pas vers une page
  * d'erreur — il a un compte valide, juste pas encore de rôle attribué ici. */
 export default async function HubLayout({ children }: { children: React.ReactNode }) {
@@ -78,11 +81,18 @@ export default async function HubLayout({ children }: { children: React.ReactNod
   if (role === 'inconnu') redirect('/local');
 
   const estAdmin = role === 'admin';
+  const estComptable = role === 'comptable';
+  const seulementPlanning = (liens: CategorieNav['liens']) => liens.filter((l) => l.href === '/planning');
   const categories = estAdmin
     ? CATEGORIES
-    : CATEGORIES.filter((c) => c.titre !== 'Finance').map((c) =>
-        c.titre === 'Planning & RH' ? { ...c, liens: c.liens.filter((l) => l.href === '/planning') } : c,
-      );
+    : estComptable
+      ? CATEGORIES.filter((c) => c.titre === 'Planning & RH').map((c) => ({ ...c, liens: seulementPlanning(c.liens) }))
+      : CATEGORIES.filter((c) => c.titre !== 'Finance').map((c) =>
+          c.titre === 'Planning & RH' ? { ...c, liens: seulementPlanning(c.liens) } : c,
+        );
+  // Pas de "Tableau de bord" pour un comptable : le middleware le renverrait de toute façon vers
+  // /planning, autant ne pas afficher un lien mort.
+  const epingles = estComptable ? [] : [ACCUEIL];
 
   const nomAffiche = profil?.nom_complet ?? profil?.email ?? '';
   const initiale = (profil?.nom_complet || profil?.email || '?').slice(0, 1).toUpperCase();
@@ -112,7 +122,7 @@ export default async function HubLayout({ children }: { children: React.ReactNod
             <p className="text-base font-bold leading-tight text-white">Pimp It Hub</p>
           </div>
 
-          <SidebarNav epingles={[ACCUEIL]} categories={categories} />
+          <SidebarNav epingles={epingles} categories={categories} />
 
           <div className="mt-2 border-t border-white/10 pt-2">
             <Link

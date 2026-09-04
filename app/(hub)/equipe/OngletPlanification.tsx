@@ -25,6 +25,12 @@ export function OngletPlanification({
   onChange: (patch: FormRh) => void;
 }) {
   const [horaires, setHoraires] = useState<HoraireRecurrentProfil[] | null>(null);
+  // Cf. retour utilisateur du 2026-09-05 : "j'ai modifié le planing de delca... ça a pas fait la
+  // modif" — enregistrer()/supprimer() ci-dessous étaient appelés sans await ni try/catch depuis
+  // HoraireJourCard (bouton "Enregistrer" synchrone), donc un échec (heure mal formée, contrainte
+  // Supabase...) devenait une rejection de promesse non gérée : aucune erreur visible, la carte
+  // semblait juste ne rien faire. Erreur maintenant capturée et affichée.
+  const [erreur, setErreur] = useState<string | null>(null);
 
   const charger = () => {
     obtenirHorairesRecurrents(profil.id).then(setHoraires);
@@ -41,16 +47,27 @@ export function OngletPlanification({
   const totalHeures = totalHeuresRecurrentesParSemaine(horaires);
 
   const enregistrer = async (horaire: HoraireAEnregistrer) => {
-    await enregistrerHoraireRecurrent(horaire);
-    charger();
+    setErreur(null);
+    try {
+      await enregistrerHoraireRecurrent(horaire);
+      charger();
+    } catch (e) {
+      setErreur(e instanceof Error ? e.message : "Échec de l'enregistrement de cet horaire.");
+    }
   };
   const supprimer = async (id: string) => {
-    await supprimerHoraireRecurrent(id);
-    charger();
+    setErreur(null);
+    try {
+      await supprimerHoraireRecurrent(id);
+      charger();
+    } catch (e) {
+      setErreur(e instanceof Error ? e.message : 'Échec de la suppression de cet horaire.');
+    }
   };
 
   return (
     <div className="pb-6">
+      {erreur && <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm font-semibold text-red-600">{erreur}</p>}
       <div className="mb-4">
         <ChampDate
           label="Date de début (l'horaire ci-dessous ne génère aucun créneau avant cette date)"

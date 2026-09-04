@@ -35,6 +35,7 @@ interface PanneauContexte {
 }
 
 export function PlanningClient({
+  lectureSeule = false,
   semaineIso,
   popUps,
   profils,
@@ -43,6 +44,10 @@ export function PlanningClient({
   conges,
   joursEcole,
 }: {
+  /** Rôle Hub "comptable" (cf. lib/roles.ts) : consultation uniquement — pas de panneau d'édition
+   * au clic sur une cellule, pas de suppression de congé, pas de bouton "Générer". L'écriture reste
+   * de toute façon bloquée côté serveur (exigerAccesEcriture) si jamais l'UI était contournée. */
+  lectureSeule?: boolean;
   semaineIso: string;
   popUps: PopUp[];
   profils: Profile[];
@@ -94,6 +99,7 @@ export function PlanningClient({
   const revenirAujourdhui = () => allerA(dateEnISO(joursDeLaSemaine(new Date())[0]));
 
   function ouvrirPourEmploye(profil: Profile, dateIso: string, shiftsCellule: PlanningShift[]) {
+    if (lectureSeule) return;
     setPanneau({
       date: dateIso,
       profil,
@@ -105,6 +111,7 @@ export function PlanningClient({
   }
 
   function ouvrirPourPopUp(popUp: PopUp, dateIso: string, shiftsCellule: PlanningShift[]) {
+    if (lectureSeule) return;
     setPanneau({
       date: dateIso,
       profil: shiftsCellule[0] ? (profilParId.get(shiftsCellule[0].profile_id) ?? null) : null,
@@ -123,6 +130,7 @@ export function PlanningClient({
   };
 
   async function handlePressCelluleConge(conge: Conge, profilCible: Profile) {
+    if (lectureSeule) return;
     const confirme = window.confirm(
       `Supprimer ${LIBELLE_SUPPRESSION_CONGE[conge.type]} de ${profilCible.nom_complet || profilCible.email} ? Cette action est irréversible.`,
     );
@@ -185,16 +193,18 @@ export function PlanningClient({
           </select>
         </div>
 
-        <div className="flex flex-1 justify-end">
-          <button
-            type="button"
-            onClick={handleGenerer}
-            disabled={generationEnCours}
-            className="rounded-[10px] bg-indigo-600 px-4 py-2 text-[13px] font-semibold text-white shadow-sm hover:bg-indigo-500 disabled:opacity-60"
-          >
-            {generationEnCours ? 'Génération...' : 'Générer depuis les horaires récurrents'}
-          </button>
-        </div>
+        {!lectureSeule && (
+          <div className="flex flex-1 justify-end">
+            <button
+              type="button"
+              onClick={handleGenerer}
+              disabled={generationEnCours}
+              className="rounded-[10px] bg-indigo-600 px-4 py-2 text-[13px] font-semibold text-white shadow-sm hover:bg-indigo-500 disabled:opacity-60"
+            >
+              {generationEnCours ? 'Génération...' : 'Générer depuis les horaires récurrents'}
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="mb-3 flex flex-wrap items-center gap-2 px-1">

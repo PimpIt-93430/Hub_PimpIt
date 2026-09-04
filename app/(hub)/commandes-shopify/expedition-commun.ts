@@ -7,11 +7,24 @@
 // deux appelants (CommandesShopifyClient.tsx pour la liste, PanneauImpressionMasse.tsx pour le
 // lot) gèrent ça avec un cache en mémoire (cf. cacheOffres ci-dessous) pour ne pas refaire un appel
 // réseau par commande à chaque rendu.
-import { listerOptionsExpedition, type OptionExpedition, type SendcloudAddress } from '@/lib/sendcloud';
-import { trouverCodeRegle, type RegleLivraison } from '@/lib/regles-livraison';
+import type { AdresseLaPoste } from '@/lib/laposte';
+import type { OptionExpedition, SendcloudAddress } from '@/lib/sendcloud';
+import { trouverRegle, type RegleLivraison } from '@/lib/regles-livraison';
 import type { AdresseLivraison, CommandeShopify } from '@/lib/shopify';
+import { chargerOptionsExpedition } from './actions';
 
 export const CLE_EXPEDITEUR = 'expedition-sendcloud:expediteur';
+
+/** Chrome (et les autres navigateurs) bloquent la navigation directe vers une URL `data:` cliquée
+ * en `target="_blank"` (restriction de sécurité) — la page reste blanche sans erreur visible. Il
+ * faut convertir en `blob:` (créé côté client) pour que "Ouvrir l'étiquette" fonctionne vraiment —
+ * utile pour La Poste (PDF renvoyé en base64, pas d'URL toute faite comme Sendcloud). */
+export function base64VersBlobUrl(base64: string, type: string): string {
+  const octets = atob(base64);
+  const tableau = new Uint8Array(octets.length);
+  for (let i = 0; i < octets.length; i++) tableau[i] = octets.charCodeAt(i);
+  return URL.createObjectURL(new Blob([tableau], { type }));
+}
 
 // Bijoux fantaisie — description de contenu par défaut (Sendcloud ne demande pas de catégorie
 // figée comme Boxtal, juste une description libre par article si besoin de douane).
@@ -82,6 +95,19 @@ export function versSendcloudAddress(e: Expediteur): SendcloudAddress {
   };
 }
 
+export function versAdresseLaPoste(e: Expediteur): AdresseLaPoste {
+  return {
+    nom: [e.prenom, e.nom].filter(Boolean).join(' ') || e.entreprise || '—',
+    adresse: e.adresse1,
+    complement: e.entreprise && (e.prenom || e.nom) ? e.entreprise : undefined,
+    ville: e.ville,
+    codePostal: e.codePostal,
+    paysCode: e.paysCode,
+    email: e.email,
+    telephone: e.telephone,
+  };
+}
+
 /** Adresse destinataire minimalement exploitable — rue, ville et code postal renseignés. Les
  * commandes sans ça (adresse Shopify incomplète) ne doivent pas être proposées en création
  * automatique. */
@@ -107,65 +133,52 @@ function clePaysIso(cmd: CommandeShopify): string | undefined {
   return cmd.adresseLivraison?.paysCode?.toUpperCase();
 }
 
-/** Type de livraison déduit du mode d'expédition Shopify (cf. bug constaté le 2026-08-29 : une
- * règle "domicile → Colissimo" avait choisi une offre en point relais, la moins chère du
- * transporteur, alors que le client avait choisi la livraison à domicile — il fallait aussi
- * respecter le type de livraison, pas seulement le transporteur). null = pas de préférence
- * détectée, ne filtre rien. */
-function pointRelaisPrefere(moyenExpedition: string | null): boolean | null {
-  if (!moyenExpedition) return null;
-  const texte = moyenExpedition.toLowerCase();
-  if (texte.includes('domicile') || texte.includes('home delivery')) return false;
-  if (texte.includes('relais') || texte.includes('retrait') || texte.includes('point delivery') || texte.includes('pickup')) return true;
-  return null;
-}
+export type ResultatRoutage = { transporteur: 'laposte' } | { transporteur: 'sendcloud'; offre: OptionExpedition };
 
-/** Meilleure offre pour une commande (cf. discussion 2026-08-28/29) : l'offre exacte d'une règle de
- * livraison si son mot-clé correspond au mode de livraison du client, sinon la moins chère parmi
- * les offres disponibles pour ce poids/cette destination. Contrairement à l'ancienne version
- * (Boxtal, grille tarifaire statique), interroge Sendcloud en direct — async, undefined tant que ce
- * n'est pas calculable (adresse manquante, aucune offre trouvée, erreur réseau) plutôt qu'un état
- * "pays sans grille" qui n'a plus de sens ici (Sendcloud n'a pas de notion de grille déposée par
- * pays). */
-export async function meilleureOffre(
+/** Résout la commande vers un transporteur, uniquement via une correspondance EXACTE dans les
+ * règles de livraison (cf. retour utilisateur du 2026-09-05 : "il faudrait que tu mettes toutes les
+ * possibilités shopify avec poids et destination et moi je match avec mes règles comme ça c'est
+ * simple et tout le reste de la logique tu enlèves") — plus de mot-clé approximatif, plus de repli
+ * "léger + France → La Poste par défaut", plus de "moins cher tous transporteurs confondus" : sans
+ * règle exacte (mode de livraison, poids, destination), undefined, point final. Pour La Poste, pas
+ * d'appel réseau (tarif contractuel fixe) ; pour Sendcloud, prix vérifié en direct — si le code de
+ * la règle ne correspond plus à aucune offre réelle, undefined aussi (jamais une offre devinée). */
+export async function resoudreExpedition(
   cmd: CommandeShopify,
   regles: RegleLivraison[],
   poidsGrammes: number,
   estLeger: boolean,
   expediteur: Expediteur,
-): Promise<(OptionExpedition & { viaRegle: boolean }) | undefined> {
+): Promise<ResultatRoutage | undefined> {
   const paysIso = clePaysIso(cmd);
   const destinataire = adresseLivraisonVersDestinataire(cmd.adresseLivraison, cmd.email);
   if (!paysIso || !destinataireExploitable(destinataire) || !destinataireExploitable(expediteur)) return undefined;
 
-  const codeRegle = trouverCodeRegle(regles, cmd.moyenExpedition, estLeger);
+  const regle = trouverRegle(regles, cmd.moyenExpedition, estLeger ? 'leger' : 'lourd', paysIso);
+  if (!regle) return undefined;
+  if (regle.transporteur === 'laposte') return { transporteur: 'laposte' };
+
   const poidsKg = poidsGrammes / 1000;
-  const cle = `${codeRegle ?? '*'}|${poidsKg}|${paysIso}|${expediteur.paysCode}`;
+  const cle = `${regle.code}|${poidsKg}|${paysIso}|${expediteur.paysCode}`;
   let promesse = cacheOffres.get(cle);
   if (!promesse) {
-    promesse = listerOptionsExpedition({
+    promesse = chargerOptionsExpedition({
       fromAddress: versSendcloudAddress(expediteur),
       toAddress: versSendcloudAddress(destinataire),
       poidsKg,
-      shippingOptionCode: codeRegle ?? undefined,
-    }).catch(() => []);
+      shippingOptionCode: regle.code,
+    }).catch((e) => {
+      // Ne fait jamais planter l'appelant (undefined reste le contrat), mais logue la vraie cause
+      // au lieu de l'avaler silencieusement — cf. retour utilisateur du 2026-09-04 (commande
+      // #26963 : "aucune offre trouvée" alors que l'API Sendcloud répondait bien en direct, sans
+      // moyen de savoir si c'était une vraie absence d'offre ou une erreur masquée).
+      console.warn(`Sendcloud shipping-options échoué pour ${cle} :`, e instanceof Error ? e.message : e);
+      return [];
+    });
     cacheOffres.set(cle, promesse);
   }
 
   const options = await promesse;
-  if (options.length === 0) return undefined;
-
-  if (codeRegle) {
-    const parRegle = options.find((o) => o.code === codeRegle);
-    return parRegle ? { ...parRegle, viaRegle: true } : undefined;
-  }
-
-  // Pas de règle (ou règle dont le code n'existe pas du tout) : on retombe sur le moins cher, en ne
-  // filtrant par type de livraison que si ça laisse au moins une offre — un mode Shopify mal reconnu
-  // ne doit jamais faire disparaître toutes les offres, juste ne pas affiner le choix.
-  const preference = pointRelaisPrefere(cmd.moyenExpedition);
-  const filtrees = preference === null ? options : options.filter((o) => o.pointRelaisRequis === preference);
-  const candidates = filtrees.length > 0 ? filtrees : options;
-  const triees = [...candidates].sort((a, b) => (a.prix?.value ?? Infinity) - (b.prix?.value ?? Infinity));
-  return { ...triees[0], viaRegle: false };
+  const offre = options.find((o) => o.code === regle.code);
+  return offre ? { transporteur: 'sendcloud', offre } : undefined;
 }

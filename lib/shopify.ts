@@ -131,6 +131,80 @@ async function getLeversProfileId(): Promise<string | null> {
   return cachedLeversProfileId;
 }
 
+export interface PossibiliteExpedition {
+  moyenExpedition: string;
+  poids: 'leger' | 'lourd' | 'tous';
+  destination: 'france' | 'international';
+}
+
+/** Toutes les combinaisons (mode de livraison Shopify, poids, destination) réellement configurées
+ * sur la boutique — cf. retour utilisateur du 2026-09-05 : "il faudrait que tu mettes toutes les
+ * possibilités shopify avec poids et destination et moi je match avec mes règles". Interrogé en
+ * direct (jamais codé en dur) pour rester juste si la config Shopify change. Le poids vient du nom
+ * du profil d'expédition (Produits Légers/Lourds, même regex que getLeversProfileId — 'tous' pour
+ * un profil qui ne matche ni l'un ni l'autre, ex. le profil général par défaut) ; la destination est
+ * 'france' seulement si TOUS les pays de la zone sont la France, 'international' sinon (même
+ * simplification que côté règles — pas de distinction par pays précis). Dédoublonné : Shopify peut
+ * renvoyer deux fois la même définition de méthode dans une même zone. */
+export async function listerPossibilitesExpedition(): Promise<PossibiliteExpedition[]> {
+  const data = await shopifyGraphQL<{
+    deliveryProfiles: {
+      edges: {
+        node: {
+          name: string;
+          profileLocationGroups: {
+            locationGroupZones: {
+              edges: {
+                node: {
+                  zone: { countries: { code: { countryCode: string } }[] };
+                  methodDefinitions: { edges: { node: { name: string; active: boolean } }[] };
+                };
+              }[];
+            };
+          }[];
+        };
+      }[];
+    };
+  }>(
+    `query {
+      deliveryProfiles(first: 30) {
+        edges { node {
+          name
+          profileLocationGroups {
+            locationGroupZones(first: 20) {
+              edges { node {
+                zone { countries { code { countryCode } } }
+                methodDefinitions(first: 20) { edges { node { name active } } }
+              } }
+            }
+          }
+        } }
+      }
+    }`,
+  );
+
+  const vues = new Set<string>();
+  const resultat: PossibiliteExpedition[] = [];
+  for (const { node: profil } of data.deliveryProfiles.edges) {
+    const poids: PossibiliteExpedition['poids'] = /l[ée]ger/i.test(profil.name) ? 'leger' : /lourd/i.test(profil.name) ? 'lourd' : 'tous';
+    for (const groupe of profil.profileLocationGroups) {
+      for (const { node: zoneNode } of groupe.locationGroupZones.edges) {
+        const destination: PossibiliteExpedition['destination'] = zoneNode.zone.countries.every((c) => c.code.countryCode === 'FR')
+          ? 'france'
+          : 'international';
+        for (const { node: methode } of zoneNode.methodDefinitions.edges) {
+          if (!methode.active) continue;
+          const cle = `${methode.name}|${poids}|${destination}`;
+          if (vues.has(cle)) continue;
+          vues.add(cle);
+          resultat.push({ moyenExpedition: methode.name, poids, destination });
+        }
+      }
+    }
+  }
+  return resultat;
+}
+
 /** Assigne le produit au profil d'expédition "Produits légers" — même logique que l'ancien site
  * (recherche par nom insensible à la casse/accents, échoue silencieusement si absent). */
 export async function assignToLeversProfile(productId: number | string): Promise<void> {
@@ -606,6 +680,38 @@ function trackingInfoInput(trackingNumber: string | null, trackingUrl: string | 
         ...(trackingCompany ? { company: trackingCompany } : {}),
       }
     : undefined;
+}
+
+/** Ids de commande dont le fulfillment order est ON_HOLD côté Shopify (retenue/risque, cf. retour
+ * utilisateur du 2026-09-05 : "il y a un problème avec les shipped by seller elles arrivent en
+ * suspendu sur le shopify et tant qu'elles sont en suspendu faut pas qu'elles sortent sur le hub")
+ * — le champ REST `fulfillment_status` (utilisé pour lister les commandes, cf.
+ * listerCommandesRecentes) ne distingue pas "vraiment pas encore expédiée" de "bloquée par Shopify"
+ * : les deux valent `null`. Un vrai statut ON_HOLD n'existe qu'en GraphQL (FulfillmentOrder.status),
+ * d'où cet appel à part — limité aux commandes "pas encore créée"/"partielle" (une poignée à la
+ * fois), jamais aux 300+ de la liste complète. Un id absent du fulfillmentOrders (déjà annulée/
+ * archivée) n'est jamais compté comme suspendu. */
+export async function commandesEnSuspens(commandeShopifyIds: number[]): Promise<Set<number>> {
+  if (commandeShopifyIds.length === 0) return new Set();
+  const data = await shopifyGraphQL<{
+    nodes: ({ id: string; fulfillmentOrders: { edges: { node: { status: string } }[] } } | null)[];
+  }>(
+    `query($ids: [ID!]!) {
+      nodes(ids: $ids) {
+        ... on Order {
+          id
+          fulfillmentOrders(first: 10) { edges { node { status } } }
+        }
+      }
+    }`,
+    { ids: commandeShopifyIds.map((id) => `gid://shopify/Order/${id}`) },
+  );
+  const suspendues = new Set<number>();
+  data.nodes.forEach((node, i) => {
+    const enSuspens = node?.fulfillmentOrders.edges.some((e) => e.node.status === 'ON_HOLD');
+    if (enSuspens) suspendues.add(commandeShopifyIds[i]);
+  });
+  return suspendues;
 }
 
 /** Marque la commande comme traitée sur Shopify (fulfillment) avec le suivi transporteur, juste

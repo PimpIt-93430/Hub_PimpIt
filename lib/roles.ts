@@ -4,7 +4,7 @@ import { cache } from 'react';
 
 import { creerClientSupabaseServeur } from './supabase/server';
 
-export type RoleHub = 'admin' | 'local' | 'inconnu';
+export type RoleHub = 'admin' | 'local' | 'comptable' | 'inconnu';
 
 export interface ProfilConnecte {
   id: string;
@@ -13,6 +13,7 @@ export interface ProfilConnecte {
   role: string;
   type_contrat: string;
   couleur: string | null;
+  hub_role_comptable: boolean;
 }
 
 export const COOKIE_APERCU_PROFIL = 'apercu_profil_id';
@@ -27,6 +28,10 @@ export const COOKIE_APERCU_PROFIL = 'apercu_profil_id';
  *  - 'admin' : role = 'admin', accès complet au Hub.
  *  - 'local' : pas admin, mais attribuée (profil_pop_ups) au pop-up marqué est_local — l'équipe du
  *    local (préparation des commandes envoyées aux pop-up, pesée du stock général, catalogue).
+ *  - 'comptable' : profiles.hub_role_comptable = true (cf. migration 0092, toggle dans
+ *    Équipe > Droits) — accès Hub restreint en lecture seule au Planning uniquement, pour un
+ *    comptable externe qui gère la paie (cf. retour utilisateur du 2026-09-04). Bloqué côté
+ *    middleware (redirection vers /planning) et côté actions serveur (exigerAccesEcriture).
  *  - 'inconnu' : connectée mais pas encore de rôle Hub défini (aucun accès, page d'attente).
  * Pas de rôle "manager pop-up" / "vendeur pop-up" pour l'instant — à ajouter au même endroit
  * quand ces espaces existeront (cf. discussion 2026-08-26 : on construit un rôle réel à la fois).
@@ -51,7 +56,7 @@ export const determinerRoleHub = cache(async (): Promise<{
 
   const { data: profilReel } = await supabase
     .from('profiles')
-    .select('id, nom_complet, email, role, type_contrat, couleur')
+    .select('id, nom_complet, email, role, type_contrat, couleur, hub_role_comptable')
     .eq('id', user.id)
     .maybeSingle();
   if (!profilReel) return { role: 'inconnu', profil: null, enApercu: false, profilReel: null };
@@ -65,7 +70,7 @@ export const determinerRoleHub = cache(async (): Promise<{
     if (apercuId && apercuId !== profilReel.id) {
       const { data: profilApercu } = await supabase
         .from('profiles')
-        .select('id, nom_complet, email, role, type_contrat, couleur')
+        .select('id, nom_complet, email, role, type_contrat, couleur, hub_role_comptable')
         .eq('id', apercuId)
         .maybeSingle();
       if (profilApercu) {
@@ -76,6 +81,8 @@ export const determinerRoleHub = cache(async (): Promise<{
   }
 
   if (profilEffectif.role === 'admin') return { role: 'admin', profil: profilEffectif, enApercu, profilReel };
+
+  if (profilEffectif.hub_role_comptable) return { role: 'comptable', profil: profilEffectif, enApercu, profilReel };
 
   // En deux requêtes simples plutôt qu'un filtre sur ressource imbriquée (pop_ups.est_local) —
   // plus facile à vérifier/déboguer, et pop_ups est une toute petite table (4 lignes).
@@ -101,4 +108,15 @@ export const determinerRoleHub = cache(async (): Promise<{
 export async function exigerAdmin(): Promise<void> {
   const { role } = await determinerRoleHub();
   if (role !== 'admin') redirect('/');
+}
+
+/** Garde-fou pour les Server Actions qui écrivent sur le Planning (créer/modifier/supprimer un
+ * shift ou un congé, générer depuis les horaires récurrents) — le rôle 'comptable' ne voit /planning
+ * qu'en lecture (cf. déterminerRoleHub, migration 0092). Masquer les boutons côté client (cf.
+ * PlanningClient) ne suffit pas : il faut aussi bloquer l'action serveur elle-même, appelable
+ * directement. Ne redirige pas (contrairement à exigerAdmin) : ces actions sont appelées depuis un
+ * transition/formulaire, une erreur normale est le bon comportement. */
+export async function exigerAccesEcriture(): Promise<void> {
+  const { role } = await determinerRoleHub();
+  if (role === 'comptable') throw new Error('Accès en lecture seule.');
 }

@@ -20,29 +20,65 @@ import {
   rafraichirStatutsExpeditionsSendcloud,
   type ExpeditionSendcloud,
 } from '@/lib/expeditions-sendcloud';
-import { creerFulfillmentShopify } from '@/lib/shopify';
+import {
+  chargerExpeditionLaPostePourCommande,
+  enregistrerExpeditionLaPoste,
+  marquerExpeditionLaPosteAnnulee,
+  type ExpeditionLaPoste,
+} from '@/lib/expeditions-laposte';
+import { annulerEtiquetteLettre, creerEtiquetteLettre, type AdresseLaPoste, type ProduitLettre } from '@/lib/laposte';
+import { commandesEnSuspens, creerFulfillmentShopify, listerPossibilitesExpedition, type PossibiliteExpedition } from '@/lib/shopify';
+
+export async function chargerPossibilitesExpedition(): Promise<PossibiliteExpedition[]> {
+  return listerPossibilitesExpedition();
+}
+
+/** Commandes (parmi celles données) dont le fulfillment order est ON_HOLD côté Shopify — cf.
+ * lib/shopify.ts commandesEnSuspens, retour utilisateur du 2026-09-05. À vérifier avant de proposer
+ * une commande "pas encore créée"/"partielle" à la création (panneau seul ou en masse) : tant
+ * qu'elle est suspendue côté Shopify, ne jamais tenter de créer une étiquette dessus. */
+export async function verifierCommandesEnSuspens(commandeShopifyIds: number[]): Promise<number[]> {
+  return [...(await commandesEnSuspens(commandeShopifyIds))];
+}
 
 /** Offres d'expédition disponibles pour une destination/un poids précis, prix en direct (cf.
- * discussion 2026-08-29 : remplace lib/boxtal-tarifs.ts, plus de grille statique à maintenir). */
+ * discussion 2026-08-29 : remplace lib/boxtal-tarifs.ts, plus de grille statique à maintenir).
+ *
+ * DOIT rester une server action (fichier 'use server') : lib/sendcloud.ts lit
+ * SENDCLOUD_SECRET_KEY (secret serveur, jamais inliné côté client) et appelle
+ * https://panel.sendcloud.sc en cross-origin — appelé depuis le navigateur ça échoue toujours
+ * silencieusement ("Failed to fetch", clé absente + pas de CORS), jamais une vraie absence
+ * d'offre. Bug découvert le 2026-09-05 : expedition-commun.ts meilleureOffre() important et
+ * appelant listerOptionsExpedition() directement depuis des composants 'use client' — aucune
+ * règle de livraison Sendcloud n'a donc jamais pu matcher en pratique, cf. shippingOptionCode
+ * ci-dessous ajouté pour que meilleureOffre() puisse passer par cette action à la place. */
 export async function chargerOptionsExpedition(params: {
   fromAddress: SendcloudAddress;
   toAddress: SendcloudAddress;
   poidsKg: number;
+  shippingOptionCode?: string;
 }): Promise<OptionExpedition[]> {
   return listerOptionsExpedition(params);
 }
 
 /** Options disponibles pour le compte (cf. ReglesLivraisonPanel.tsx, PanneauCodesTransporteurs.tsx)
  * — pas d'endpoint "liste tous les codes" indépendant d'une adresse côté Sendcloud, donc interrogé
- * avec l'adresse expéditeur réelle et une destination FR représentative (Paris) : suffisant pour
- * lister les codes/transporteurs disponibles sur le compte, même si le prix affiché ne reflète pas
- * toutes les destinations réelles. */
-export async function chargerOptionsExpeditionCompte(fromAddress: SendcloudAddress): Promise<OptionExpedition[]> {
-  return listerOptionsExpedition({
-    fromAddress,
-    toAddress: { name: '—', addressLine1: '1 rue de Rivoli', postalCode: '75001', city: 'Paris', countryIsoCode: 'FR' },
-    poidsKg: 0.2,
-  });
+ * avec l'adresse expéditeur réelle et une destination représentative : suffisant pour lister les
+ * codes/transporteurs disponibles sur le compte, même si le prix affiché ne reflète pas toutes les
+ * destinations réelles. Deux destinations possibles (cf. retour utilisateur du 2026-09-04, commande
+ * #26963 : un code domestique FR comme "colissimo:home/fr" ne dessert pas l'étranger, et
+ * inversement un code international comme "colissimo:international/home_delivery" n'apparaît pas
+ * dans une recherche vers une destination FR) : `zone` sélectionne laquelle interroger, pour que le
+ * panneau de règles puisse proposer les bons codes selon la zone de la règle éditée. */
+export async function chargerOptionsExpeditionCompte(
+  fromAddress: SendcloudAddress,
+  zone: 'france' | 'international' = 'france',
+): Promise<OptionExpedition[]> {
+  const toAddress: SendcloudAddress =
+    zone === 'france'
+      ? { name: '—', addressLine1: '1 rue de Rivoli', postalCode: '75001', city: 'Paris', countryIsoCode: 'FR' }
+      : { name: '—', addressLine1: 'Rue Julien Mullie 60', postalCode: '7711', city: 'Mouscron', countryIsoCode: 'BE' };
+  return listerOptionsExpedition({ fromAddress, toAddress, poidsKg: 0.2 });
 }
 
 /** Points relais disponibles autour de l'adresse du destinataire — utilisé seulement en secours
@@ -87,7 +123,7 @@ export interface ParamsCreerEtiquette {
  * clic explicite de confirmation côté client (PanneauExpedition.tsx). */
 export async function creerEtiquette(
   params: ParamsCreerEtiquette,
-): Promise<{ envoi: Envoi; etiquetteUrl: string | null }> {
+): Promise<{ envoi: Envoi; etiquetteUrl: string | null; fulfillmentShopifyId: string | null }> {
   const envoi = await creerEtiquetteEnvoi({
     shippingOptionCode: params.shippingOptionCode,
     fromAddress: params.fromAddress,
@@ -123,7 +159,7 @@ export async function creerEtiquette(
     fulfillmentShopifyId,
   });
 
-  return { envoi, etiquetteUrl: `/api/etiquette-sendcloud/${envoi.parcelId}` };
+  return { envoi, etiquetteUrl: `/api/etiquette-sendcloud/${envoi.parcelId}`, fulfillmentShopifyId };
 }
 
 export async function annulerEtiquette(id: string): Promise<void> {
@@ -148,4 +184,61 @@ export async function chargerEtiquetteExistante(sendcloudShipmentId: string): Pr
  * clic explicite ("Vérifier les livraisons"), jamais automatiquement. Ne touche pas à Shopify. */
 export async function rafraichirSuivisLivraison(): Promise<[number, ExpeditionSendcloud][]> {
   return [...(await rafraichirStatutsExpeditionsSendcloud())];
+}
+
+// ---- La Poste (Lettre Suivie, produits "léger") — retour utilisateur du 2026-09-02, compte de
+// RECETTE (étiquettes fictives) tant que le passage en production n'a pas été demandé. ----
+
+export async function verifierExpeditionLaPosteExistante(commandeShopifyId: number): Promise<ExpeditionLaPoste | null> {
+  return chargerExpeditionLaPostePourCommande(commandeShopifyId);
+}
+
+/** Génère une étiquette La Poste (recette) puis pousse le tracking sur Shopify — même principe que
+ * creerEtiquette (Sendcloud) : la création elle-même ne doit jamais échouer à cause d'un souci
+ * côté fulfillment Shopify (best-effort, cf. incident Boxtal #26586). */
+export async function creerEtiquetteLaPoste(params: {
+  produit: ProduitLettre;
+  poidsGrammes: number;
+  expediteur: AdresseLaPoste;
+  destinataire: AdresseLaPoste;
+  commandeShopifyId: number;
+  commandeNom: string;
+}): Promise<ExpeditionLaPoste> {
+  const etiquette = await creerEtiquetteLettre({
+    produit: params.produit,
+    poidsGrammes: params.poidsGrammes,
+    expediteur: params.expediteur,
+    destinataire: params.destinataire,
+    reference: params.commandeNom,
+  });
+
+  let fulfillmentShopifyId: string | null = null;
+  try {
+    const fulfillment = await creerFulfillmentShopify({
+      commandeShopifyId: params.commandeShopifyId,
+      trackingNumber: etiquette.itemId,
+      trackingUrl: `https://www.laposte.fr/outils/suivre-vos-envois?code=${etiquette.itemId}`,
+      trackingCompany: 'La Poste',
+    });
+    fulfillmentShopifyId = fulfillment.fulfillmentId;
+  } catch (e) {
+    console.warn(`Fulfillment Shopify échoué pour ${params.commandeNom}:`, e instanceof Error ? e.message : e);
+  }
+
+  await enregistrerExpeditionLaPoste({
+    commandeShopifyId: params.commandeShopifyId,
+    commandeNom: params.commandeNom,
+    etiquette,
+    produit: params.produit,
+    fulfillmentShopifyId,
+  });
+
+  const enregistree = await chargerExpeditionLaPostePourCommande(params.commandeShopifyId);
+  if (!enregistree) throw new Error('Étiquette créée mais introuvable juste après enregistrement.');
+  return enregistree;
+}
+
+export async function annulerEtiquetteLaPoste(itemId: string): Promise<void> {
+  await annulerEtiquetteLettre(itemId);
+  await marquerExpeditionLaPosteAnnulee(itemId);
 }

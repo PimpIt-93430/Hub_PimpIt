@@ -19,6 +19,43 @@ import type { Conge, PlanningShift, PopUp, Profile, TypeConge } from './types';
 
 type ModePanneau = 'shift' | 'absence';
 type ModeDureeAbsence = 'journee' | 'creneau';
+type Preset = 'matin' | 'apres_midi';
+
+type DefinitionPreset = { label: string; debut: string; pauseDebut: string; pauseFin: string; fin: string };
+
+// Port de App PIMP IT/src/components/calendrier/PanneauEditionShiftEquipe.tsx (PRESETS_GENERIQUES/
+// presetsPourPopUp) — cf. retour utilisateur du 2026-09-05 : "dans le hub dans le planing il faut
+// pouvoir mettre matin et après midi les horaires configurées". Génériques, utilisés seulement
+// quand le pop-up n'a pas ses propres créneaux réglés (écran Pop-up, colonnes matin_debut/
+// matin_fin/apres_midi_debut/apres_midi_fin).
+const PRESETS_GENERIQUES: Record<Preset, DefinitionPreset> = {
+  matin: { label: 'Matin (10h-18h)', debut: '10:00', pauseDebut: '13:00', pauseFin: '14:00', fin: '18:00' },
+  apres_midi: { label: 'Après-midi (13h-20h30)', debut: '13:00', pauseDebut: '16:00', pauseFin: '16:30', fin: '20:30' },
+};
+
+function presetsPourPopUp(popUp: PopUp | undefined): Record<Preset, DefinitionPreset> {
+  const matin =
+    popUp?.matin_debut && popUp?.matin_fin
+      ? {
+          label: `Matin (${popUp.matin_debut.slice(0, 5)}-${popUp.matin_fin.slice(0, 5)})`,
+          debut: popUp.matin_debut.slice(0, 5),
+          fin: popUp.matin_fin.slice(0, 5),
+          pauseDebut: (popUp.matin_pause_debut ?? PRESETS_GENERIQUES.matin.pauseDebut).slice(0, 5),
+          pauseFin: (popUp.matin_pause_fin ?? PRESETS_GENERIQUES.matin.pauseFin).slice(0, 5),
+        }
+      : PRESETS_GENERIQUES.matin;
+  const apresMidi =
+    popUp?.apres_midi_debut && popUp?.apres_midi_fin
+      ? {
+          label: `Après-midi (${popUp.apres_midi_debut.slice(0, 5)}-${popUp.apres_midi_fin.slice(0, 5)})`,
+          debut: popUp.apres_midi_debut.slice(0, 5),
+          fin: popUp.apres_midi_fin.slice(0, 5),
+          pauseDebut: (popUp.apres_midi_pause_debut ?? PRESETS_GENERIQUES.apres_midi.pauseDebut).slice(0, 5),
+          pauseFin: (popUp.apres_midi_pause_fin ?? PRESETS_GENERIQUES.apres_midi.pauseFin).slice(0, 5),
+        }
+      : PRESETS_GENERIQUES.apres_midi;
+  return { matin, apres_midi: apresMidi };
+}
 
 function nomAffiche(p: Profile): string {
   return p.nom_complet || p.email;
@@ -91,6 +128,19 @@ export function PanneauShift({
   }, [onClose]);
 
   const pauseValide = heureFinPause > heureDebutPause && heureDebutPause >= heureDebut && heureFinPause <= heureFin;
+
+  // Un clic sur "Matin"/"Après-midi" remplit les 4 horaires d'un coup avec les créneaux propres au
+  // pop-up sélectionné (repli générique sinon) — recalculé à chaque clic pour suivre le lieu choisi
+  // à ce moment-là, pas figé au pop-up initial.
+  const appliquerPreset = (preset: Preset) => {
+    const popUpChoisi = popUps.find((p) => p.id === popUpChoisiId);
+    const p = presetsPourPopUp(popUpChoisi)[preset];
+    setHeureDebut(p.debut);
+    setHeureDebutPause(p.pauseDebut);
+    setHeureFinPause(p.pauseFin);
+    setHeureFin(p.fin);
+    setPauseActive(true);
+  };
 
   const candidatsShift = profils.filter((p) => {
     if (profilsChoisis.some((s) => s.id === p.id)) return false;
@@ -303,6 +353,8 @@ export function PanneauShift({
               setHeureDebutPause={setHeureDebutPause}
               heureFinPause={heureFinPause}
               setHeureFinPause={setHeureFinPause}
+              presets={presetsPourPopUp(popUps.find((p) => p.id === popUpChoisiId))}
+              onAppliquerPreset={appliquerPreset}
             />
 
             <div className="mt-5 flex gap-3">
@@ -408,6 +460,8 @@ export function PanneauShift({
                   setHeureDebutPause={setHeureDebutPause}
                   heureFinPause={heureFinPause}
                   setHeureFinPause={setHeureFinPause}
+                  presets={presetsPourPopUp(popUps.find((p) => p.id === popUpChoisiId))}
+                  onAppliquerPreset={appliquerPreset}
                 />
 
                 <div className="mt-5 flex gap-3">
@@ -624,6 +678,8 @@ function HorairesEtPause({
   setHeureDebutPause,
   heureFinPause,
   setHeureFinPause,
+  presets,
+  onAppliquerPreset,
 }: {
   heureDebut: string;
   heureFin: string;
@@ -635,10 +691,26 @@ function HorairesEtPause({
   setHeureDebutPause: (v: string) => void;
   heureFinPause: string;
   setHeureFinPause: (v: string) => void;
+  /** Créneaux Matin/Après-midi du pop-up actuellement sélectionné (cf. presetsPourPopUp) — un clic
+   * remplit les 4 horaires d'un coup, cf. retour utilisateur du 2026-09-05. */
+  presets: Record<Preset, DefinitionPreset>;
+  onAppliquerPreset: (preset: Preset) => void;
 }) {
   return (
     <>
       <p className="mb-1.5 mt-4 text-[13px] font-semibold text-slate-700">Horaires</p>
+      <div className="mb-3 flex flex-wrap gap-2">
+        {(Object.keys(presets) as Preset[]).map((preset) => (
+          <button
+            key={preset}
+            type="button"
+            onClick={() => onAppliquerPreset(preset)}
+            className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:border-indigo-300 hover:text-indigo-600"
+          >
+            {presets[preset].label}
+          </button>
+        ))}
+      </div>
       <div className="flex gap-3">
         <Champ label="De">
           <input type="time" value={heureDebut} onChange={(e) => setHeureDebut(e.target.value)} className="champ-input" />

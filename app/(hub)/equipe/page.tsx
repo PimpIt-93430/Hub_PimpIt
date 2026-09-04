@@ -17,7 +17,7 @@ export default async function EquipePage() {
   const [{ data: profils }, { data: popUps }, { data: affectations }] = await Promise.all([
     supabase
       .from('profiles')
-      .select('id, nom_complet, email, role, type_contrat, couleur, heures_max_semaine, actif')
+      .select('id, nom_complet, email, role, type_contrat, couleur, heures_max_semaine, actif, hub_role_comptable')
       .eq('actif', true)
       .order('nom_complet', { ascending: true }),
     supabase.from('pop_ups').select('*').eq('actif', true).order('nom'),

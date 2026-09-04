@@ -14,6 +14,7 @@ import {
   chargerPointEtCarrierConnu,
   chargerPointsRelais,
   creerEtiquette,
+  verifierCommandesEnSuspens,
   verifierExpeditionExistante,
 } from './actions';
 import {
@@ -55,6 +56,7 @@ export function PanneauExpedition({
   commande,
   poidsConnuGrammes,
   classification,
+  dejaExpediee,
 }: {
   commande: CommandeShopify;
   /** Poids réel de la commande (grammes), résolu depuis stock_pins.poids_unitaire (cf.
@@ -64,6 +66,10 @@ export function PanneauExpedition({
   /** 'leger'/'lourd' selon les profils d'expédition Shopify (cf. lib/classification-produits.ts) —
    * undefined si la commande n'a pas pu être classée. */
   classification?: ClassificationCommande;
+  /** true si Shopify montre déjà cette commande comme expédiée — cf. retour utilisateur du
+   * 2026-09-05 : n'affiche alors QUE la réimpression d'un envoi déjà enregistré chez nous
+   * (ci-dessous), jamais le formulaire de création, pour ne jamais risquer un second envoi réel. */
+  dejaExpediee?: boolean;
 }) {
   const [expediteur, setExpediteur] = useState<Expediteur>(EXPEDITEUR_VIDE);
   const [destinataire, setDestinataire] = useState<Expediteur>(() =>
@@ -76,7 +82,12 @@ export function PanneauExpedition({
   const [confirmer, setConfirmer] = useState(false);
   const [enCours, setEnCours] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
-  const [resultat, setResultat] = useState<{ id: string; etiquetteUrl: string | null } | null>(null);
+  const [resultat, setResultat] = useState<{ id: string; etiquetteUrl: string | null; fulfillmentShopifyId?: string | null } | null>(null);
+  // Cf. retour utilisateur du 2026-09-05 : "il faut pouvoir dupliquer une commande, cest a dire
+  // recréer une nouvelle etiquette si jamais un jour il y a un probleme" — échappatoire volontaire
+  // et explicite (jamais automatique) pour forcer un nouvel envoi même quand un existe déjà, ex.
+  // colis perdu. Reste à false par défaut : le flux normal (réimpression) prime toujours.
+  const [forcerNouvelle, setForcerNouvelle] = useState(false);
   // undefined = chargement, tableau = offres triées moins cher en premier (vide = aucune trouvée).
   const [options, setOptions] = useState<OptionExpedition[] | undefined>(undefined);
   const [optionChoisie, setOptionChoisie] = useState<OptionExpedition | null>(null);
@@ -95,12 +106,20 @@ export function PanneauExpedition({
   // undefined = vérification en cours (cf. incident #26586 avec Boxtal) — tant que c'est undefined,
   // le formulaire de création reste caché.
   const [verificationExpedition, setVerificationExpedition] = useState<ExpeditionSendcloud | null | undefined>(undefined);
+  // Cf. retour utilisateur du 2026-09-05 : "il y a un problème avec les shipped by seller elles
+  // arrivent en suspendu sur le shopify et tant qu'elles sont en suspendu faut pas qu'elles sortent
+  // sur le hub" — undefined = vérification en cours, jamais le formulaire de création tant que ce
+  // n'est pas confirmé.
+  const [enSuspens, setEnSuspens] = useState<boolean | undefined>(undefined);
 
   useEffect(() => {
     setExpediteur(chargerExpediteur());
     chargerPointEtCarrierConnu(commande.nom)
       .then(setConnuSendcloud)
       .catch(() => setConnuSendcloud(null));
+    verifierCommandesEnSuspens([commande.id])
+      .then((ids) => setEnSuspens(ids.includes(commande.id)))
+      .catch(() => setEnSuspens(false));
     verifierExpeditionExistante(commande.id)
       .then((existante) => {
         setVerificationExpedition(existante ?? null);
@@ -216,7 +235,7 @@ export function PanneauExpedition({
     setEnCours(true);
     setErreur(null);
     try {
-      const { envoi, etiquetteUrl } = await creerEtiquette({
+      const { envoi, etiquetteUrl, fulfillmentShopifyId } = await creerEtiquette({
         shippingOptionCode: optionChoisie.code,
         fromAddress: versSendcloudAddress(expediteur),
         toAddress: versSendcloudAddress(destinataire),
@@ -227,7 +246,8 @@ export function PanneauExpedition({
         commandeShopifyId: commande.id,
         commandeNom: commande.nom,
       });
-      setResultat({ id: envoi.id, etiquetteUrl });
+      setResultat({ id: envoi.id, etiquetteUrl, fulfillmentShopifyId });
+      setForcerNouvelle(false);
     } catch (e) {
       setErreur(e instanceof Error ? e.message : 'Échec de la création.');
     } finally {
@@ -254,10 +274,37 @@ export function PanneauExpedition({
     return <p className="mb-4 text-xs text-slate-400">Vérification d&apos;une expédition existante…</p>;
   }
 
-  if (resultat) {
+  // Commande déjà expédiée côté Shopify mais aucun envoi Sendcloud enregistré chez nous (expédiée
+  // par un autre biais) — jamais le formulaire de création ici, cf. commentaire du prop.
+  if (!resultat && dejaExpediee) return null;
+
+  if (!resultat && enSuspens === undefined) {
+    return <p className="mb-4 text-xs text-slate-400">Vérification du statut Shopify…</p>;
+  }
+
+  if (!resultat && enSuspens) {
+    return (
+      <p className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-3.5 text-xs font-semibold text-amber-800">
+        Commande suspendue sur Shopify (fulfillment ON_HOLD) — pas de création d&apos;étiquette tant que le blocage
+        n&apos;est pas levé côté Shopify.
+      </p>
+    );
+  }
+
+  if (resultat && !forcerNouvelle) {
     return (
       <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3.5">
         <p className="mb-1 text-sm font-bold text-emerald-800">Étiquette créée — envoi {resultat.id}</p>
+        {resultat.fulfillmentShopifyId === null && (
+          // Cf. retour utilisateur du 2026-09-05 (commande #27024) — la création de l'étiquette a
+          // réussi (facturée) mais la synchro Shopify a échoué silencieusement côté serveur : sans
+          // ce message, la commande reste "à créer" dans le Hub sans qu'on sache pourquoi, avec le
+          // risque de recréer une 2ᵉ étiquette réelle par erreur en pensant que rien n'a été fait.
+          <p className="mb-2 rounded-lg bg-amber-100 px-2.5 py-1.5 text-xs font-semibold text-amber-800">
+            ⚠ Étiquette bien créée et facturée, mais la synchro Shopify a échoué — la commande va rester
+            &quot;à créer&quot; dans le Hub. Ne recrée pas d&apos;étiquette pour cette commande, contacte le support si besoin.
+          </p>
+        )}
         {pointRelaisChoisi && (
           <p className="mb-2 text-xs text-emerald-700">
             Envoyé au point relais : <span className="font-semibold">{pointRelaisChoisi.nom}</span> — {pointRelaisChoisi.adresse}
@@ -287,12 +334,28 @@ export function PanneauExpedition({
         >
           {enCours ? 'Annulation…' : 'Annuler cette expédition (créée par erreur)'}
         </button>
+        <button
+          type="button"
+          onClick={() => setForcerNouvelle(true)}
+          className="mt-1 block text-xs font-semibold text-slate-500 hover:underline"
+        >
+          Un problème avec ce colis ? Créer une nouvelle étiquette
+        </button>
       </div>
     );
   }
 
   return (
     <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50 p-3.5">
+      {resultat && forcerNouvelle && (
+        <p className="mb-3 rounded-lg bg-red-50 p-2.5 text-xs font-semibold text-red-700">
+          Une étiquette existe déjà pour cette commande (envoi {resultat.id}) — vérifie que c&apos;est justifié
+          (colis perdu, erreur…) avant de continuer : ceci facture une 2ᵉ fois.{' '}
+          <button type="button" onClick={() => setForcerNouvelle(false)} className="underline">
+            Annuler, revenir à l&apos;étiquette existante
+          </button>
+        </p>
+      )}
       <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
         Expédition (Sendcloud)
         {classification && (

@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useTransition } from 'react';
 
-import { peserStockGeneral } from './actions';
+import { definirStockGeneral } from './actions';
 import { CatalogueTab } from './CatalogueTab';
 import { PanneauPreparationCommande } from './PanneauPreparationCommande';
 import { formatEmplacement } from './stockLib';
@@ -23,30 +23,29 @@ function LigneLocalPin({
   popUpLocalId: string;
   onChanged: () => void;
 }) {
-  const enRupture = pin.seuil_cible !== null && pin.stock_general < pin.seuil_cible;
-  const [poids, setPoids] = useState('');
+  const [quantite, setQuantite] = useState('');
   const [erreur, setErreur] = useState<string | null>(null);
   const [enCours, demarrer] = useTransition();
 
-  const poidsNum = Number(poids.trim().replace(',', '.'));
-  const poidsValide = poids.trim() !== '' && Number.isFinite(poidsNum) && poidsNum >= 0;
+  const quantiteNum = Number(quantite.trim().replace(',', '.'));
+  const quantiteValide = quantite.trim() !== '' && Number.isFinite(quantiteNum) && quantiteNum >= 0;
 
   const confirmer = () => {
-    if (!poidsValide) return;
+    if (!quantiteValide) return;
     setErreur(null);
     demarrer(async () => {
       try {
-        await peserStockGeneral({ pinId: pin.id, popUpLocalId, poidsPese: poidsNum });
-        setPoids('');
+        await definirStockGeneral({ pinId: pin.id, popUpLocalId, quantite: quantiteNum });
+        setQuantite('');
         onChanged();
       } catch (e) {
-        setErreur(e instanceof Error ? e.message : "Impossible d'enregistrer la pesée.");
+        setErreur(e instanceof Error ? e.message : "Impossible d'enregistrer la quantité.");
       }
     });
   };
 
   return (
-    <div className={`mb-2.5 flex items-center gap-3 rounded-2xl p-3 shadow-sm ${enRupture ? 'border border-red-200 bg-red-50' : 'border border-slate-100 bg-white'}`}>
+    <div className="mb-2.5 flex items-center gap-3 rounded-2xl border border-slate-100 bg-white p-3 shadow-sm">
       {pin.photo_url ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={pin.photo_url} alt={pin.nom} className="h-12 w-12 rounded-xl bg-slate-100 object-cover" />
@@ -59,36 +58,29 @@ function LigneLocalPin({
           SKU {pin.sku_pimpit ?? pin.sku_fournisseur ?? '—'}
           {formatEmplacement(pin) ? ` · ${formatEmplacement(pin)}` : ''}
         </p>
-        <p className={`text-xs ${enRupture ? 'font-bold text-red-600' : 'text-slate-400'}`}>
-          {pin.stock_general} en stock{pin.seuil_cible !== null ? ` · seuil ${pin.seuil_cible}` : ''}
-        </p>
+        <p className="text-xs text-slate-400">{pin.stock_general} en stock</p>
         {demandeurs.length > 0 && (
           <p className="line-clamp-1 text-[11px] text-amber-600">Demandé par {demandeurs.map((d) => d.popUpNom).join(', ')}</p>
         )}
-        {pin.poids_unitaire === null && (
-          <p className="mt-1 text-[11px] text-amber-600">Poids unité (g) manquant — à renseigner dans Catalogue avant de peser.</p>
-        )}
         {erreur && <p className="mt-1 text-[11px] font-semibold text-red-600">{erreur}</p>}
       </div>
-      {pin.poids_unitaire !== null && (
-        <div className="flex items-center gap-1.5">
-          <input
-            value={poids}
-            onChange={(e) => setPoids(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && confirmer()}
-            inputMode="decimal"
-            placeholder="Poids (g)"
-            className="w-20 rounded-xl border border-slate-200 px-2.5 py-2 text-sm focus:outline-none"
-          />
-          <button
-            onClick={confirmer}
-            disabled={!poidsValide || enCours}
-            className={`rounded-xl px-3 py-2 text-xs font-bold text-white ${poidsValide ? 'bg-indigo-600' : 'bg-slate-200 text-slate-500'}`}
-          >
-            OK
-          </button>
-        </div>
-      )}
+      <div className="flex items-center gap-1.5">
+        <input
+          value={quantite}
+          onChange={(e) => setQuantite(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && confirmer()}
+          inputMode="numeric"
+          placeholder="Quantité"
+          className="w-20 rounded-xl border border-slate-200 px-2.5 py-2 text-sm focus:outline-none"
+        />
+        <button
+          onClick={confirmer}
+          disabled={!quantiteValide || enCours}
+          className={`rounded-xl px-3 py-2 text-xs font-bold text-white ${quantiteValide ? 'bg-indigo-600' : 'bg-slate-200 text-slate-500'}`}
+        >
+          OK
+        </button>
+      </div>
     </div>
   );
 }
@@ -210,13 +202,13 @@ export function LocalView({
         <div className="mx-auto w-full max-w-[960px]">
           <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">Stock local</p>
           <p className="mb-3 text-xs text-slate-400">
-            En rouge : sous le seuil cible. &laquo; Demandé par &raquo; : au moins une case pop-up a coché &laquo; Commander &raquo;
-            pour ce pin. Pèse ce qu&apos;il reste après avoir servi une commande pour recalculer le stock automatiquement.
+            &laquo; Demandé par &raquo; : au moins une case pop-up a coché &laquo; Commander &raquo; pour ce pin. Compte ce
+            qu&apos;il reste (en paquets de 100 c&apos;est rapide) pour mettre à jour le stock.
           </p>
           <input
             value={rechercheLocal}
             onChange={(e) => setRechercheLocal(e.target.value)}
-            placeholder="Rechercher un pin à peser…"
+            placeholder="Rechercher un pin à compter…"
             className="mb-3 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm focus:outline-none"
           />
           {pinsTries.length === 0 ? (

@@ -386,24 +386,19 @@ export async function validerCommandePrete(params: {
   revalidatePath('/stock');
 }
 
-/** Pesée du stock local — quantité recalculée depuis le poids unitaire du pin, pas saisie à la
- * main. `popUpLocalId` (pas null) pour rester cohérent avec le mouvement de stock déjà en base,
- * cf. peserStockGeneral (src/api/stock.ts). */
-export async function peserStockGeneral(params: { pinId: string; popUpLocalId: string; poidsPese: number }): Promise<number> {
+/** Comptage du stock local — quantité saisie directement (paquets de 100 faciles à compter),
+ * remplace l'ancienne pesée/poids_unitaire (retour utilisateur du 2026-09-02 : plus pratique une
+ * fois les pins reçus en paquets de quantité connue). `popUpLocalId` (pas null) pour rester
+ * cohérent avec le mouvement de stock déjà en base, même principe que l'ancien peserStockGeneral. */
+export async function definirStockGeneral(params: { pinId: string; popUpLocalId: string; quantite: number }): Promise<void> {
   const supabase = await creerClientSupabaseServeur();
   const profileId = await idUtilisateurCourant(supabase);
 
-  const { data: pin, error: errPin } = await supabase.from('stock_pins').select('*').eq('id', params.pinId).single();
-  if (errPin) throw new Error(errPin.message);
-  if (!pin.poids_unitaire || pin.poids_unitaire <= 0) {
-    throw new Error('Poids unité manquant pour ce pin — renseigne-le dans le Catalogue avant de peser.');
-  }
-
-  const quantiteCalculee = Math.max(0, Math.round(params.poidsPese / pin.poids_unitaire));
+  const quantite = Math.max(0, Math.round(params.quantite));
 
   const { data: dataMaj, error: errorMaj } = await supabase
     .from('stock_pins')
-    .update({ stock_general: quantiteCalculee, updated_at: new Date().toISOString() })
+    .update({ stock_general: quantite, updated_at: new Date().toISOString() })
     .eq('id', params.pinId)
     .select();
   if (errorMaj) throw new Error(errorMaj.message);
@@ -412,13 +407,11 @@ export async function peserStockGeneral(params: { pinId: string; popUpLocalId: s
   const { error: errorMouvement } = await supabase.from('stock_mouvements').insert({
     pin_id: params.pinId,
     pop_up_id: params.popUpLocalId,
-    type: 'pesee',
-    poids_pese: params.poidsPese,
-    quantite_calculee: quantiteCalculee,
+    type: 'ajustement',
+    quantite_calculee: quantite,
     profile_id: profileId,
   });
   if (errorMouvement) throw new Error(errorMouvement.message);
 
   revalidatePath('/stock');
-  return quantiteCalculee;
 }
