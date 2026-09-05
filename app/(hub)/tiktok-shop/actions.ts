@@ -125,17 +125,18 @@ export async function creerProduitTikTok(formData: FormData) {
   if (pinIds.length === 0) throw new Error("Sélectionne au moins un pin's");
   if (pinIds.length > 100) throw new Error('TikTok Shop refuse plus de 100 variantes par produit');
 
+  // stock_pins (table de l'app Pimp It) plutôt que hub_pins depuis la fusion — cf. migration 0096.
   const { data: pinsData } = await supabase
-    .from('hub_pins')
-    .select('airtable_id, name, sku_pimpit, stock, image_url')
-    .in('airtable_id', pinIds);
-  const pinsById = Object.fromEntries((pinsData ?? []).map((p) => [p.airtable_id, p]));
+    .from('stock_pins')
+    .select('airtable_record_id, nom, sku_pimpit, stock_general, photo_url')
+    .in('airtable_record_id', pinIds);
+  const pinsById = Object.fromEntries((pinsData ?? []).map((p) => [p.airtable_record_id, p]));
 
   const pinVariants = pinIds.map((id) => {
     const p = pinsById[id];
     const prix = champTexteNombre(prixParPin[id]) ?? prixGlobal;
     return {
-      option1: p?.name || id,
+      option1: p?.nom || id,
       sku: p?.sku_pimpit != null ? String(p.sku_pimpit) : '',
       price: prix,
       inventory_policy: 'continue',
@@ -183,7 +184,7 @@ export async function creerProduitTikTok(formData: FormData) {
     if (v.inventory_item_id) await setHsCode(v.inventory_item_id);
 
     if (locationId && v.inventory_item_id) {
-      const qte = pin?.stock != null ? Math.round(Number(pin.stock)) : 0;
+      const qte = pin?.stock_general != null ? Math.round(Number(pin.stock_general)) : 0;
       try {
         await shopifyFetch('/inventory_levels/set.json', 'POST', {
           location_id: locationId,
@@ -195,10 +196,10 @@ export async function creerProduitTikTok(formData: FormData) {
       }
     }
 
-    if (pin?.image_url) {
+    if (pin?.photo_url) {
       try {
         await shopifyFetch(`/products/${productId}/images.json`, 'POST', {
-          image: { src: pin.image_url, variant_ids: [v.id] },
+          image: { src: pin.photo_url, variant_ids: [v.id] },
         });
       } catch (e) {
         console.warn(`Image error variant ${v.id}:`, e instanceof Error ? e.message : e);

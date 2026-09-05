@@ -16,13 +16,20 @@ function versNombre(v: number | string | null): number {
 export default async function TikTokShopPage() {
   const supabase = await creerClientSupabaseServeur();
   const [{ data: pinsData }, produitsExistants] = await Promise.all([
-    supabase.from('hub_pins').select('airtable_id, name, sku_pimpit, image_url, stock').order('name'),
+    // stock_pins (table de l'app Pimp It) plutôt que hub_pins depuis la fusion — cf. migration 0096.
+    supabase.from('stock_pins').select('airtable_record_id, nom, sku_pimpit, photo_url, stock_general').order('nom'),
     chargerProduitsTikTokExistants().catch(() => []),
   ]);
 
-  const pins: PinOption[] = ((pinsData ?? []) as { airtable_id: string; name: string | null; sku_pimpit: string | null; image_url: string | null; stock: number | string | null }[]).map(
-    (p) => ({ ...p, stock: versNombre(p.stock) }),
-  );
+  const pins: PinOption[] = (
+    (pinsData ?? []) as { airtable_record_id: string; nom: string | null; sku_pimpit: string | null; photo_url: string | null; stock_general: number | string | null }[]
+  ).map((p) => ({
+    airtable_id: p.airtable_record_id,
+    name: p.nom,
+    sku_pimpit: p.sku_pimpit,
+    image_url: p.photo_url,
+    stock: versNombre(p.stock_general),
+  }));
 
   return <TikTokShopClient pins={pins} produitsExistants={produitsExistants} />;
 }

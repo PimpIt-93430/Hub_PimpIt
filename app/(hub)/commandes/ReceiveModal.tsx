@@ -36,11 +36,11 @@ export function ReceiveModal({
     setExclus(exclureTout ? new Set(commande.items.map((i) => i.airtableId)) : new Set());
   }
 
-  function valider() {
+  function valider(incrementerStock: boolean) {
     setErreur(null);
     demarrer(async () => {
       try {
-        const r = await receptionnerCommande(commande.id, [...exclus]);
+        const r = await receptionnerCommande(commande.id, [...exclus], incrementerStock);
         onReceptionne(r.received);
       } catch (e) {
         setErreur(e instanceof Error ? e.message : 'Erreur inconnue');
@@ -101,17 +101,30 @@ export function ReceiveModal({
 
         {erreur && <p className="px-6 text-sm text-red-600">{erreur}</p>}
 
-        <div className="flex justify-end gap-2.5 border-t border-slate-100 px-6 py-4">
-          <button onClick={onClose} className="rounded-lg border border-slate-200 px-3.5 py-2 text-sm font-medium text-slate-500 hover:bg-slate-50">
-            Annuler
-          </button>
-          <button
-            onClick={valider}
-            disabled={enCours}
-            className="rounded-lg bg-emerald-600 px-3.5 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
-          >
-            {enCours ? 'Réception…' : 'Valider la réception'}
-          </button>
+        {/* Cf. retour utilisateur du 2026-09-05 : "voulez-vous incrémenter le stock local oui ou
+            non" — choix explicite à chaque réception plutôt qu'un incrément systématique,
+            réversible ensuite (cf. bascule "Incrémenter/Décrémenter" dans l'historique). */}
+        <div className="flex flex-col gap-2 border-t border-slate-100 px-6 py-4">
+          <p className="text-sm font-medium text-slate-700">Incrémenter le stock local de ces pins ?</p>
+          <div className="flex justify-end gap-2.5">
+            <button onClick={onClose} className="mr-auto rounded-lg border border-slate-200 px-3.5 py-2 text-sm font-medium text-slate-500 hover:bg-slate-50">
+              Annuler
+            </button>
+            <button
+              onClick={() => valider(false)}
+              disabled={enCours}
+              className="rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+            >
+              Non — reçue seulement
+            </button>
+            <button
+              onClick={() => valider(true)}
+              disabled={enCours}
+              className="rounded-lg bg-emerald-600 px-3.5 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+            >
+              {enCours ? 'Réception…' : 'Oui — incrémenter'}
+            </button>
+          </div>
         </div>
       </div>
     </div>

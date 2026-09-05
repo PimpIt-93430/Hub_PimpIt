@@ -59,6 +59,10 @@ export interface CommandeFournisseur {
   items: ArticleCommande[];
   nbArticles: number;
   quantiteTotale: number;
+  /** cf. migration 0095 (App PIMP IT) — le stock local est-il actuellement incrémenté par cette
+   * commande ? Indépendant de `status` : une commande reçue peut avoir été reçue sans incrément
+   * (choix explicite à la réception), ou incrémentée puis décrémentée (rollback). */
+  stockIncremente: boolean;
 }
 
 export interface HubPinLite {

@@ -135,16 +135,69 @@ export async function supprimerCommande(id: string): Promise<void> {
   revalidatePath('/commandes');
 }
 
-/** Réceptionne une commande : bascule son statut à "recu", bumpe hub_pins.stock pour chaque
- * article non exclu et non nul (même sémantique que l'ancien receivePO : les articles décochés ne
- * sont ni comptés ni retirés de la commande, juste exclus du bump de stock), et répercute le
- * nouveau stock sur l'inventaire Shopify de la variante correspondante (mode normal/b2b
- * uniquement — jamais en mode pop-up, comme l'ancien code). Le mode pop-up ne bumpe aucun stock
- * Supabase : l'ancien équivalent Airtable "Stock Pop UP" n'a pas de colonne Supabase (cf. rapport
- * de tâche) — on marque quand même la commande reçue pour garder un historique correct. */
+/** Applique (`sens: 1`) ou retire (`sens: -1`) le stock d'une liste d'articles sur stock_pins
+ * (table de l'app Pimp It, cf. migration 0096 — fusion avec hub_pins qui avait dérivé) +
+ * best-effort Shopify — factorisé entre receptionnerCommande (incrément à la réception) et
+ * basculerIncrementStock (rollback/ré-application a posteriori, cf. retour utilisateur du
+ * 2026-09-05 : "faut un rollback possible"). Jamais appelé en mode popup (cf. commentaires
+ * plus bas) : l'équivalent Airtable "Stock Pop UP" n'a pas de colonne Supabase. */
+async function appliquerDeltaStock(items: ArticleCommande[], sens: 1 | -1): Promise<void> {
+  if (!items.length) return;
+  const supabase = await creerClientSupabaseServeur();
+  const ids = items.map((i) => i.airtableId);
+  const { data: pins, error: errPins } = await supabase
+    .from('stock_pins')
+    .select('airtable_record_id, stock_general')
+    .in('airtable_record_id', ids);
+  if (errPins) throw new Error(errPins.message);
+  const stockParId = new Map((pins ?? []).map((p) => [p.airtable_record_id as string, Number(p.stock_general ?? 0)]));
+
+  const nouveauStockParId = new Map<string, number>();
+  for (const item of items) {
+    const stockActuel = stockParId.get(item.airtableId) ?? 0;
+    nouveauStockParId.set(item.airtableId, Math.max(0, stockActuel + sens * (item.qty || 0)));
+  }
+  for (const [airtableId, nouveauStock] of nouveauStockParId) {
+    const { error: errMaj } = await supabase.from('stock_pins').update({ stock_general: nouveauStock }).eq('airtable_record_id', airtableId);
+    if (errMaj) throw new Error(errMaj.message);
+  }
+
+  // Shopify : best-effort, comme l'ancien code (une erreur d'API Shopify ne doit jamais bloquer la
+  // mise à jour Supabase, qui est la donnée qui compte pour le staff).
+  try {
+    const locData = await shopifyFetch('/locations.json');
+    const locId = locData.locations?.[0]?.id;
+    const variants = await shopifyFetchAll<{ sku?: string; inventory_item_id?: number }>(
+      '/variants.json?fields=sku,inventory_item_id&limit=250',
+      'variants',
+    );
+    const invIdParSku = new Map<string, number>();
+    for (const v of variants) if (v.sku && v.inventory_item_id) invIdParSku.set(String(v.sku), v.inventory_item_id);
+
+    if (locId) {
+      for (const item of items) {
+        const invId = item.skuPimpit ? invIdParSku.get(String(item.skuPimpit)) : undefined;
+        if (!invId) continue;
+        const nouveauStock = nouveauStockParId.get(item.airtableId);
+        if (nouveauStock == null) continue;
+        await shopifyFetch('/inventory_levels/set.json', 'POST', { location_id: locId, inventory_item_id: invId, available: nouveauStock });
+      }
+    }
+  } catch (e) {
+    console.warn('Shopify inventory skip:', e instanceof Error ? e.message : e);
+  }
+}
+
+/** Réceptionne une commande : bascule son statut à "recu" et, seulement si `incrementerStock` est
+ * vrai (choix explicite proposé à l'écran — cf. retour utilisateur du 2026-09-05 : "voulez-vous
+ * incrémenter le stock local oui ou non"), bumpe hub_pins.stock pour chaque article non exclu et
+ * non nul (les articles décochés ne sont ni comptés ni retirés de la commande, juste exclus du
+ * bump). Jamais d'incrément en mode pop-up (cf. appliquerDeltaStock). Le choix est mémorisé
+ * (`stock_incremente`) et reste modifiable ensuite via basculerIncrementStock. */
 export async function receptionnerCommande(
   id: string,
   articlesExclus: string[],
+  incrementerStock: boolean,
 ): Promise<{ received: number; excluded: number }> {
   const supabase = await creerClientSupabaseServeur();
 
@@ -161,59 +214,12 @@ export async function receptionnerCommande(
   const type = ((commande.type as TypeCommande) ?? 'normal') as TypeCommande;
   const aReceptionner = items.filter((i) => !articlesExclus.includes(i.airtableId) && (i.qty || 0) > 0);
 
-  if (type !== 'popup' && aReceptionner.length) {
-    const ids = aReceptionner.map((i) => i.airtableId);
-    const { data: pins, error: errPins } = await supabase
-      .from('hub_pins')
-      .select('airtable_id, stock')
-      .in('airtable_id', ids);
-    if (errPins) throw new Error(errPins.message);
-    const stockParId = new Map((pins ?? []).map((p) => [p.airtable_id as string, Number(p.stock ?? 0)]));
-
-    const nouveauStockParId = new Map<string, number>();
-    for (const item of aReceptionner) {
-      const stockActuel = stockParId.get(item.airtableId) ?? 0;
-      nouveauStockParId.set(item.airtableId, stockActuel + item.qty);
-    }
-
-    for (const [airtableId, nouveauStock] of nouveauStockParId) {
-      const { error: errMaj } = await supabase.from('hub_pins').update({ stock: nouveauStock }).eq('airtable_id', airtableId);
-      if (errMaj) throw new Error(errMaj.message);
-    }
-
-    // Shopify : best-effort, comme l'ancien code (une erreur d'API Shopify ne doit pas bloquer la
-    // réception côté Supabase, qui est la donnée qui compte pour le staff).
-    try {
-      const locData = await shopifyFetch('/locations.json');
-      const locId = locData.locations?.[0]?.id;
-      const variants = await shopifyFetchAll<{ sku?: string; inventory_item_id?: number }>(
-        '/variants.json?fields=sku,inventory_item_id&limit=250',
-        'variants',
-      );
-      const invIdParSku = new Map<string, number>();
-      for (const v of variants) if (v.sku && v.inventory_item_id) invIdParSku.set(String(v.sku), v.inventory_item_id);
-
-      if (locId) {
-        for (const item of aReceptionner) {
-          const invId = item.skuPimpit ? invIdParSku.get(String(item.skuPimpit)) : undefined;
-          if (!invId) continue;
-          const nouveauStock = nouveauStockParId.get(item.airtableId);
-          if (nouveauStock == null) continue;
-          await shopifyFetch('/inventory_levels/set.json', 'POST', {
-            location_id: locId,
-            inventory_item_id: invId,
-            available: nouveauStock,
-          });
-        }
-      }
-    } catch (e) {
-      console.warn('Shopify inventory skip:', e instanceof Error ? e.message : e);
-    }
-  }
+  const incrementReel = incrementerStock && type !== 'popup' && aReceptionner.length > 0;
+  if (incrementReel) await appliquerDeltaStock(aReceptionner, 1);
 
   const { data: commandeMaj, error: errMajCommande } = await supabase
     .from('hub_purchase_orders')
-    .update({ statut: 'recu', date_reception: new Date().toISOString() })
+    .update({ statut: 'recu', date_reception: new Date().toISOString(), stock_incremente: incrementReel })
     .eq('airtable_id', id)
     .select();
   if (errMajCommande) throw new Error(errMajCommande.message);
@@ -222,4 +228,32 @@ export async function receptionnerCommande(
   revalidatePath('/commandes');
   revalidatePath('/pins');
   return { received: aReceptionner.length, excluded: articlesExclus.length };
+}
+
+/** Rollback (ou ré-application) de l'incrément de stock d'une commande DÉJÀ reçue — cf. retour
+ * utilisateur du 2026-09-05 : "faut un rollback possible si t'as incrémenté... voulez-vous la
+ * décrémenter et inversement". Ne touche jamais au statut "reçue" ni aux articles de la commande,
+ * uniquement au stock hub_pins (+ Shopify best-effort) et au flag stock_incremente. */
+export async function basculerIncrementStock(id: string, incrementer: boolean): Promise<void> {
+  const supabase = await creerClientSupabaseServeur();
+
+  const { data: commande, error: errLecture } = await supabase
+    .from('hub_purchase_orders')
+    .select('*')
+    .eq('airtable_id', id)
+    .single();
+  if (errLecture) throw new Error(errLecture.message);
+  if (!commande) throw new Error('Commande introuvable');
+  if (commande.statut !== 'recu') throw new Error('Commande pas encore reçue');
+  if (Boolean(commande.stock_incremente) === incrementer) return; // déjà dans l'état demandé
+
+  const items = ((commande.items as ArticleCommande[]) ?? []).filter((i) => (i.qty || 0) > 0);
+  const type = ((commande.type as TypeCommande) ?? 'normal') as TypeCommande;
+  if (type !== 'popup' && items.length) await appliquerDeltaStock(items, incrementer ? 1 : -1);
+
+  const { error: errMaj } = await supabase.from('hub_purchase_orders').update({ stock_incremente: incrementer }).eq('airtable_id', id);
+  if (errMaj) throw new Error(errMaj.message);
+
+  revalidatePath('/commandes');
+  revalidatePath('/pins');
 }

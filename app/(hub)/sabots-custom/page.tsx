@@ -17,11 +17,13 @@ interface HubSabotCustom {
  * Les sabots personnalisés déjà synchronisés depuis Airtable restent affichés normalement. */
 export default async function SabotsCustomPage() {
   const supabase = await creerClientSupabaseServeur();
-  const [{ data }, { data: pins }] = await Promise.all([
+  const [{ data }, { data: pinsBrut }] = await Promise.all([
     supabase.from('hub_sabots_custom').select('*').order('nom'),
-    supabase.from('hub_pins').select('airtable_id, name').order('name'),
+    // stock_pins (table de l'app Pimp It) plutôt que hub_pins depuis la fusion — cf. migration 0096.
+    supabase.from('stock_pins').select('airtable_record_id, nom').order('nom'),
   ]);
   const sabotsCustom = (data ?? []) as HubSabotCustom[];
+  const pins = (pinsBrut ?? []).map((p) => ({ airtable_id: p.airtable_record_id, name: p.nom }));
 
   return (
     <div>

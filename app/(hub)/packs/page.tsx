@@ -8,13 +8,19 @@ import type { HubPack, PinOption } from './types';
  * vers Airtable (cf. actions.ts). */
 export default async function PacksPage() {
   const supabase = await creerClientSupabaseServeur();
-  const [{ data: packsData }, { data: pinsData }] = await Promise.all([
+  const [{ data: packsData }, { data: pinsBrut }] = await Promise.all([
     supabase.from('hub_packs').select('*').order('nom_du_pack'),
-    supabase.from('hub_pins').select('airtable_id, name, sku_pimpit, image_url').order('name'),
+    // stock_pins (table de l'app Pimp It) plutôt que hub_pins depuis la fusion — cf. migration 0096.
+    supabase.from('stock_pins').select('airtable_record_id, nom, sku_pimpit, photo_url').order('nom'),
   ]);
 
   const packs = (packsData ?? []) as HubPack[];
-  const pins = (pinsData ?? []) as PinOption[];
+  const pins: PinOption[] = (pinsBrut ?? []).map((p) => ({
+    airtable_id: p.airtable_record_id,
+    name: p.nom,
+    sku_pimpit: p.sku_pimpit,
+    image_url: p.photo_url,
+  }));
 
   return <PacksClient packsInitiaux={packs} pins={pins} />;
 }

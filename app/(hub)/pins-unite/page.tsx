@@ -18,20 +18,35 @@ function versNombre(v: number | string | null): number {
 }
 
 /** Réplique l'écran "Pin's à rajouter sur le site" de l'ancien admin : liste les pin's encore
- * cochés "pas dans pin's unité" (recensés depuis Supabase — Airtable n'est plus la base d'origine
- * du Hub côté catalogue), avec la même création de produit Shopify que sur l'ancien site. */
+ * cochés "pas dans pin's unité" (recensés depuis stock_pins, table de l'app Pimp It — cf. migration
+ * 0096, fusion avec hub_pins qui avait dérivé), avec la même création de produit Shopify que sur
+ * l'ancien site. */
 export default async function PinsUnitePage() {
   const supabase = await creerClientSupabaseServeur();
-  const { data: pinsARajouterData } = await supabase
-    .from('hub_pins')
-    .select('airtable_id, name, sku_pimpit, fournisseur, stock, image_url')
+  const { data: pinsARajouterBrut } = await supabase
+    .from('stock_pins')
+    .select('airtable_record_id, nom, sku_pimpit, fournisseur, stock_general, photo_url')
     .eq('pas_dans_unite', true)
-    .order('name');
-  const { data: autresPinsData } = await supabase
-    .from('hub_pins')
-    .select('airtable_id, name, sku_pimpit, image_url')
+    .order('nom');
+  const pinsARajouterData = (pinsARajouterBrut ?? []).map((p) => ({
+    airtable_id: p.airtable_record_id,
+    name: p.nom,
+    sku_pimpit: p.sku_pimpit,
+    fournisseur: p.fournisseur,
+    stock: p.stock_general,
+    image_url: p.photo_url,
+  }));
+  const { data: autresPinsBrut } = await supabase
+    .from('stock_pins')
+    .select('airtable_record_id, nom, sku_pimpit, photo_url')
     .or('pas_dans_unite.eq.false,pas_dans_unite.is.null')
-    .order('name');
+    .order('nom');
+  const autresPinsData = (autresPinsBrut ?? []).map((p) => ({
+    airtable_id: p.airtable_record_id,
+    name: p.nom,
+    sku_pimpit: p.sku_pimpit,
+    image_url: p.photo_url,
+  }));
 
   // Comme /api/unite/collections de l'ancien site : custom_collections ET smart_collections
   // (collections automatiques) — un seul des deux types manquait ici, ce qui cachait certaines

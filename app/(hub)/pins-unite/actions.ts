@@ -13,9 +13,9 @@ import { assignToLeversProfile, setHsCode, shopifyFetch, shopifyFetchAll } from 
 export async function mettreAJourPhotoPin(airtableId: string, imageUrl: string): Promise<void> {
   const supabase = await creerClientSupabaseServeur();
   const { data, error } = await supabase
-    .from('hub_pins')
-    .update({ image_url: imageUrl, synced_at: new Date().toISOString() })
-    .eq('airtable_id', airtableId)
+    .from('stock_pins')
+    .update({ photo_url: imageUrl, updated_at: new Date().toISOString() })
+    .eq('airtable_record_id', airtableId)
     .select();
   if (error) throw new Error(error.message);
   if (!data || data.length === 0) throw new Error('Modification bloquée (droits insuffisants ?)');
@@ -74,13 +74,16 @@ export async function creerProduitUnite(formData: FormData) {
     collectionIds = [];
   }
 
-  const { data: pinsData } = await supabase.from('hub_pins').select('airtable_id, name, sku_pimpit, stock').in('airtable_id', pinIds);
-  const pinsById = Object.fromEntries((pinsData ?? []).map((p) => [p.airtable_id, p]));
+  const { data: pinsData } = await supabase
+    .from('stock_pins')
+    .select('airtable_record_id, nom, sku_pimpit, stock_general')
+    .in('airtable_record_id', pinIds);
+  const pinsById = Object.fromEntries((pinsData ?? []).map((p) => [p.airtable_record_id, p]));
 
   const pinVariants = pinIds.map((id) => {
     const p = pinsById[id];
     return {
-      option1: p?.name || id,
+      option1: p?.nom || id,
       sku: p?.sku_pimpit != null ? String(p.sku_pimpit) : '',
       inventory_policy: 'continue',
       weight: 0.6,
@@ -116,7 +119,7 @@ export async function creerProduitUnite(formData: FormData) {
   const stockBySku: Record<string, number> = {};
   for (const id of pinIds) {
     const p = pinsById[id];
-    if (p?.sku_pimpit != null) stockBySku[String(p.sku_pimpit)] = p.stock != null ? Math.round(Number(p.stock)) : 0;
+    if (p?.sku_pimpit != null) stockBySku[String(p.sku_pimpit)] = p.stock_general != null ? Math.round(Number(p.stock_general)) : 0;
   }
 
   for (const v of (result.product.variants ?? []) as ShopifyVariant[]) {
@@ -183,7 +186,7 @@ export async function creerProduitUnite(formData: FormData) {
 
   for (let i = 0; i < pinIds.length; i += 10) {
     const batch = pinIds.slice(i, i + 10);
-    await supabase.from('hub_pins').update({ pas_dans_unite: false }).in('airtable_id', batch);
+    await supabase.from('stock_pins').update({ pas_dans_unite: false }).in('airtable_record_id', batch);
   }
 
   revalidatePath('/pins-unite');
@@ -236,17 +239,17 @@ export async function ajouterVarianteAProduitExistant(
   const supabase = await creerClientSupabaseServeur();
 
   const { data: pin } = await supabase
-    .from('hub_pins')
-    .select('name, sku_pimpit, stock')
-    .eq('airtable_id', pinAirtableId)
+    .from('stock_pins')
+    .select('nom, sku_pimpit, stock_general')
+    .eq('airtable_record_id', pinAirtableId)
     .single();
   if (!pin) throw new Error('Pin introuvable');
 
-  const stock = pin.stock != null ? Math.round(Number(pin.stock)) : 0;
+  const stock = pin.stock_general != null ? Math.round(Number(pin.stock_general)) : 0;
 
   const varResult = await shopifyFetch(`/products/${productId}/variants.json`, 'POST', {
     variant: {
-      option1: pin.name || '',
+      option1: pin.nom || '',
       sku: pin.sku_pimpit != null ? String(pin.sku_pimpit) : '',
       price: '2.00',
       inventory_policy: 'continue',
@@ -283,7 +286,7 @@ export async function ajouterVarianteAProduitExistant(
 
   await assignToLeversProfile(productId);
 
-  await supabase.from('hub_pins').update({ pas_dans_unite: false }).eq('airtable_id', pinAirtableId);
+  await supabase.from('stock_pins').update({ pas_dans_unite: false }).eq('airtable_record_id', pinAirtableId);
 
   revalidatePath('/pins-unite');
   revalidatePath('/pins');
