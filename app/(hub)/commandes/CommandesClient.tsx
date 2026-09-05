@@ -36,6 +36,17 @@ function palierPrecedent(v: number): number {
   return arrondi === v ? v - 100 : arrondi - 100;
 }
 
+/** Miniature légère plutôt que l'image d'origine — cf. retour utilisateur du 2026-09-05 : un aperçu
+ * PDF avec 400+ références (donc 400+ images) mettait ~10 min à charger. Les photos sont hébergées
+ * sur Supabase Storage, qui sait re-générer une version réduite à la volée (endpoint
+ * /render/image/, cf. doc Supabase Storage) : ~7,5 Ko contre ~100 Ko en pleine résolution pour la
+ * même image, largement suffisant pour une vignette 64×64 imprimée. Retombe sur l'URL d'origine si
+ * ce n'est pas une URL Supabase Storage reconnue (autre hébergeur, ou vide). */
+function miniature(url: string): string {
+  if (!url.includes('/storage/v1/object/public/')) return url;
+  return `${url.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/')}?width=80&quality=60`;
+}
+
 /** Bon de commande fournisseur imprimable (image, SKU interne, SKU fournisseur, quantité) — même
  * gabarit que l'ancien admin (server.js /api/orders/:id/print), généré ici côté client puisque le
  * Hub n'a pas de route serveur dédiée pour ça. Attend le chargement des images avant de proposer
@@ -46,7 +57,7 @@ function imprimerCommande(c: { ref: string; label: string; createdAt: string; it
     .map((i) => {
       const photo = photoParId.get(i.airtableId) ?? '';
       return `<tr>
-        <td>${photo ? `<img src="${photo}" style="width:64px;height:64px;object-fit:cover;border-radius:6px">` : ''}</td>
+        <td>${photo ? `<img src="${miniature(photo)}" style="width:64px;height:64px;object-fit:cover;border-radius:6px">` : ''}</td>
         <td>${i.name}</td>
         <td>${i.skuPimpit ?? '—'}</td>
         <td>${i.skuFournisseur || '—'}</td>
@@ -71,6 +82,11 @@ function imprimerCommande(c: { ref: string; label: string; createdAt: string; it
     thead th{background:#f3f4f6;padding:10px 12px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:#666}
     thead th:last-child{text-align:right}
     tbody td{padding:8px 12px;border-bottom:1px solid #f0f0f0;vertical-align:middle}
+    .addresses{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px}
+    .addr-block{padding:14px 16px;border:1px solid #e5e7eb;border-radius:8px}
+    .addr-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#999;margin-bottom:6px}
+    .addr-name{font-weight:700;font-size:13px;margin-bottom:2px}
+    .addr-line{color:#555;line-height:1.5}
     .total-row{margin-top:16px;text-align:right;font-weight:700;font-size:15px;padding-right:12px}
     .print-btn{margin-top:24px;padding:10px 24px;background:#111;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px}
     @media print{.print-btn{display:none}}
@@ -88,6 +104,18 @@ function imprimerCommande(c: { ref: string; label: string; createdAt: string; it
   <div class="header">
     <div><div class="company-name">Pimp It Store</div><div class="company-sub">Bon de commande — ${c.label}</div></div>
     <div class="po-info"><div class="po-number">${c.ref}</div><div class="po-date">${formatDate(c.createdAt)}</div></div>
+  </div>
+  <div class="addresses">
+    <div class="addr-block">
+      <div class="addr-label">Livraison à</div>
+      <div class="addr-name">Pimp It Store</div>
+      <div class="addr-line">3 rue des Carrières<br>93800 Épinay-sur-Seine<br>France</div>
+    </div>
+    <div class="addr-block">
+      <div class="addr-label">Facturation à</div>
+      <div class="addr-name">Pimp It Store</div>
+      <div class="addr-line">3 rue des Carrières<br>93800 Épinay-sur-Seine<br>France</div>
+    </div>
   </div>
   <table>
     <thead><tr><th></th><th>Nom</th><th>SKU interne</th><th>SKU fournisseur</th><th style="text-align:right">Qté</th></tr></thead>
