@@ -26,7 +26,12 @@ export interface PinParams {
 }
 
 /** Prochain SKU Pimpit disponible (max + 1) — même principe que GET /api/pins/next-sku de
- * l'ancien admin, recalculé côté Supabase puisqu'il n'y a plus d'Airtable à interroger. */
+ * l'ancien admin, recalculé côté Supabase puisqu'il n'y a plus d'Airtable à interroger.
+ *
+ * Exclut les SKU ≥ 10000 (retour utilisateur du 2026-09-05 : "il faut pas compter les sku après
+ * 10000") : cette plage est réservée à une série à part (lettres A-Z en plusieurs couleurs) et ne
+ * doit jamais faire avancer la numérotation normale — l'ancien admin avait déjà ce filtre
+ * (`n < 10000`, server.js /api/pins/next-sku), perdu lors du portage vers Supabase. */
 export async function chargerProchainSku(): Promise<number> {
   const supabase = await creerClientSupabaseServeur();
   const { data, error } = await supabase.from('stock_pins').select('sku_pimpit');
@@ -34,7 +39,7 @@ export async function chargerProchainSku(): Promise<number> {
   let max = 0;
   for (const row of data ?? []) {
     const n = Number(row.sku_pimpit);
-    if (Number.isFinite(n) && n > max) max = n;
+    if (Number.isFinite(n) && n < 10000 && n > max) max = n;
   }
   return max + 1;
 }
