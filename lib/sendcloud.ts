@@ -101,7 +101,11 @@ export async function listerOptionsExpedition(params: {
   }>('/shipping-options', 'POST', {
     from_address: versAddressBody(params.fromAddress),
     to_address: versAddressBody(params.toAddress),
-    parcels: [{ weight: { value: String(params.poidsKg), unit: 'kg' } }],
+    // .toFixed(3) plutôt que String() — Sendcloud rejette (400) un poids à plus de 3 décimales, et
+    // poidsKg vient souvent d'une division (grammes / 1000) qui produit de l'imprécision flottante
+    // classique (ex. 0.018666666666666668) — cf. erreur "Decimal input should have no more than 3
+    // decimal places" observée en prod sur /shipping-options.
+    parcels: [{ weight: { value: params.poidsKg.toFixed(3), unit: 'kg' } }],
     calculate_quotes: true,
     shipping_option_code: params.shippingOptionCode,
   });
@@ -242,7 +246,9 @@ export async function creerEtiquetteEnvoi(params: CreerEnvoiParams): Promise<Env
     ...(params.pointRelaisId ? { to_service_point: { id: String(params.pointRelaisId) } } : {}),
     parcels: [
       {
-        weight: { value: String(params.poidsKg), unit: 'kg' },
+        // Cf. commentaire de listerOptionsExpedition ci-dessus — même correctif ici, sur la création
+        // réelle de l'envoi cette fois (plus grave : un échec ici bloque une expédition facturable).
+        weight: { value: params.poidsKg.toFixed(3), unit: 'kg' },
         dimensions: params.dimensionsCm
           ? { length: String(params.dimensionsCm.longueur), width: String(params.dimensionsCm.largeur), height: String(params.dimensionsCm.hauteur), unit: 'cm' }
           : undefined,

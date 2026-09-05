@@ -10,6 +10,8 @@
 // limite on supprime le cache tous les 3 mois") : une commande livrée reste maintenant visible/
 // réimprimable, seule l'ancienneté (AGE_MAX_CACHE_MS, cf. plus bas) fait sortir une commande du
 // cache.
+import { after } from 'next/server';
+
 import {
   listerCommandesMiseAJourDepuis,
   listerCommandesRecentes,
@@ -21,6 +23,7 @@ import type { ExpeditionSendcloud } from './expeditions-sendcloud';
 import { chargerExpeditionsLaPoste } from './expeditions-laposte';
 import { chargerStatutsSuivi } from './laposte';
 import { creerClientSupabaseServeur } from './supabase/server';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 const MARGE_SECURITE_MS = 60_000;
 /** Cf. retour utilisateur du 2026-09-05 (révisé le jour même : 3 mois -> 6 mois pour garder plus de
@@ -88,19 +91,17 @@ function versLigneBrute(c: CommandeShopifyAvecMaj) {
   };
 }
 
-/** Commandes pas encore livrées, depuis le cache Supabase — synchronise d'abord avec Shopify
- * (backfill complet au tout premier appel, incrémental ensuite) avant de lire. Un échec Shopify
- * (rate limit, réseau) ne fait jamais planter l'écran : on retombe sur le contenu du cache tel
- * quel, déjà à jour de la dernière synchro réussie.
- *
- * `expeditionsSendcloud` : passé par l'appelant (page.tsx) plutôt que rechargé ici — il en a de
- * toute façon besoin pour l'affichage, inutile de faire la même requête Supabase deux fois par
- * visite (audit latence du 2026-09-02). */
-export async function commandesShopifyEnCache(
+/** Synchro Shopify -> cache (mise à jour livrées + upsert incrémental + purge par ancienneté) —
+ * extrait de commandesShopifyEnCache pour tourner en arrière-plan via `after()` (cf. plus bas) :
+ * cf. retour utilisateur du 2026-09-05 ("ça prend du temps à changer les pages") — mesuré en
+ * conditions réelles à 3-17s par visite de l'écran, uniquement parce que la page attendait la fin
+ * de cette synchro (rate-limitée à 2 req/s côté Shopify) avant de pouvoir afficher quoi que ce
+ * soit, alors que le cache existant est déjà largement à jour la plupart du temps (synchro
+ * incrémentale + filet de sécurité nocturne, cf. migration 0094 côté App PIMP IT). */
+async function synchroniser(
+  supabase: SupabaseClient,
   expeditionsSendcloud: Map<number, ExpeditionSendcloud>,
-): Promise<CommandeShopify[]> {
-  const supabase = await creerClientSupabaseServeur();
-
+): Promise<void> {
   try {
     const { data: etat } = await supabase.from('hub_commandes_shopify_sync_etat').select('*').single();
     const maintenant = new Date();
@@ -128,7 +129,7 @@ export async function commandesShopifyEnCache(
     // code "distribué" précis) est le bon signal : pour une lettre suivie, La Poste ne garantit que
     // l'événement "mis en distribution", jamais forcément une confirmation de livraison explicite.
     try {
-      const expeditionsLaPoste = await chargerExpeditionsLaPoste();
+      const expeditionsLaPoste = await chargerExpeditionsLaPoste(supabase);
       const itemIds = [...expeditionsLaPoste.values()].map((e) => e.laposteItemId);
       const idsLivresLaPoste: number[] = [];
       for (let i = 0; i < itemIds.length; i += 10) {
@@ -193,6 +194,37 @@ export async function commandesShopifyEnCache(
       .from('hub_commandes_shopify_sync_etat')
       .update({ ok: false, message })
       .eq('id', true);
+  }
+}
+
+/** Commandes pas encore livrées, depuis le cache Supabase — répond IMMÉDIATEMENT avec le contenu
+ * actuel du cache (déjà à jour la plupart du temps grâce à la synchro incrémentale précédente + au
+ * filet de sécurité nocturne, cf. migration 0094) pendant que la synchro Shopify tourne en tâche de
+ * fond via `after()` (Next.js) : elle continue après l'envoi de la réponse, sans faire attendre
+ * l'écran. Un échec Shopify (rate limit, réseau) ne fait jamais planter l'écran ni la synchro de
+ * fond — cf. synchroniser() ci-dessus.
+ *
+ * `expeditionsSendcloud` : passé par l'appelant (page.tsx) plutôt que rechargé ici — il en a de
+ * toute façon besoin pour l'affichage, inutile de faire la même requête Supabase deux fois par
+ * visite (audit latence du 2026-09-02). */
+export async function commandesShopifyEnCache(
+  expeditionsSendcloud: Map<number, ExpeditionSendcloud>,
+): Promise<CommandeShopify[]> {
+  const supabase = await creerClientSupabaseServeur();
+
+  // Le client ci-dessus est lié aux cookies de la requête (cf. lib/supabase/server.ts) : Next.js
+  // interdit de toucher aux cookies depuis un callback `after()` ("used cookies inside after()"),
+  // ce que ce client ferait quand même en interne (rafraîchissement de session) même sans y
+  // toucher explicitement. Le callback reçoit donc un client à part, sans cookies, authentifié par
+  // le jeton d'accès déjà récupéré ici (avant l'envoi de la réponse).
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  if (session) {
+    const supabaseArrierePlan = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+      global: { headers: { Authorization: `Bearer ${session.access_token}` } },
+    });
+    after(() => synchroniser(supabaseArrierePlan, expeditionsSendcloud));
   }
 
   const { data, error } = await supabase

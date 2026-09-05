@@ -1,6 +1,8 @@
 // Suivi des étiquettes La Poste créées depuis le Hub (cf. migration 0090_expeditions_laposte, même
 // principe que lib/expeditions-sendcloud.ts) — l'API La Poste n'a pas d'endpoint pour retélécharger
 // une étiquette déjà générée, donc le PDF (base64) est conservé ici tel quel à la création.
+import type { SupabaseClient } from '@supabase/supabase-js';
+
 import { creerClientSupabaseServeur } from './supabase/server';
 import type { EtiquetteLettre, ProduitLettre } from './laposte';
 
@@ -75,8 +77,14 @@ export async function chargerEtiquettesLaPosteRecentes(depuisIso: string): Promi
   }));
 }
 
-export async function chargerExpeditionsLaPoste(): Promise<Map<number, ExpeditionLaPoste>> {
-  const supabase = await creerClientSupabaseServeur();
+/** `supabaseExistant` : cf. lib/commandes-shopify-cache.ts synchroniser() — appelée depuis un
+ * callback `after()`, où le client lié aux cookies (creerClientSupabaseServeur) ne peut pas être
+ * utilisé ("used cookies inside after()", Next.js). Optionnel pour ne rien changer aux autres
+ * appelants (Server Components/Route Handlers classiques). */
+export async function chargerExpeditionsLaPoste(
+  supabaseExistant?: SupabaseClient,
+): Promise<Map<number, ExpeditionLaPoste>> {
+  const supabase = supabaseExistant ?? (await creerClientSupabaseServeur());
   const { data, error } = await supabase
     .from('expeditions_laposte')
     .select('*')
