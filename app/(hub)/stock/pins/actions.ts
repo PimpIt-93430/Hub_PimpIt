@@ -265,7 +265,23 @@ export async function supprimerRemplissage(id: string) {
   revalidatePath('/stock');
 }
 
-export async function envoyerCommande(params: { popUpId: string; pinIds: string[] }): Promise<string> {
+/** Applique un delta (positif = incrément, négatif = décrément, jamais sous 0) au stock local
+ * d'un pin — cf. retour utilisateur du 2026-09-05 : "il faut que le pin's soit décrémenté [...]
+ * comme ca on suit la quantité de pin's dans le local aussi". Utilisé à l'envoi d'une commande à
+ * un pop-up (décrément) et à son retrait avant prise en charge (increment, rollback). */
+async function appliquerDeltaStockPin(
+  supabase: Awaited<ReturnType<typeof creerClientSupabaseServeur>>,
+  pinId: string,
+  delta: number,
+): Promise<void> {
+  const { data: pin, error: errLecture } = await supabase.from('stock_pins').select('stock_general').eq('id', pinId).single();
+  if (errLecture) throw new Error(errLecture.message);
+  const nouveauStock = Math.max(0, Number(pin.stock_general) + delta);
+  const { error: errMaj } = await supabase.from('stock_pins').update({ stock_general: nouveauStock }).eq('id', pinId);
+  if (errMaj) throw new Error(errMaj.message);
+}
+
+export async function envoyerCommande(params: { popUpId: string; lignes: { pinId: string; quantite: number }[] }): Promise<string> {
   const supabase = await creerClientSupabaseServeur();
   const profileId = await idUtilisateurCourant(supabase);
   const { data: commande, error: errorCommande } = await supabase
@@ -277,21 +293,44 @@ export async function envoyerCommande(params: { popUpId: string; pinIds: string[
 
   const { error: errorLignes } = await supabase
     .from('commande_lignes')
-    .insert(params.pinIds.map((pinId) => ({ commande_id: commande.id, pin_id: pinId })));
+    .insert(params.lignes.map((l) => ({ commande_id: commande.id, pin_id: l.pinId, quantite: l.quantite })));
   if (errorLignes) throw new Error(errorLignes.message);
+
+  // Décrémente le stock local pour chaque pin envoyé — best-effort par ligne : un souci sur un
+  // pin ne doit pas remettre en cause l'envoi déjà enregistré ci-dessus.
+  for (const l of params.lignes) {
+    try {
+      await appliquerDeltaStockPin(supabase, l.pinId, -l.quantite);
+    } catch (e) {
+      console.warn(`Décrément stock local échoué pour le pin ${l.pinId}:`, e instanceof Error ? e.message : e);
+    }
+  }
 
   revalidatePath('/stock');
   return commande.id;
 }
 
-export async function basculerLigneCommande(params: { commandeId: string; pinId: string; inclus: boolean }) {
+export async function basculerLigneCommande(params: { commandeId: string; pinId: string; inclus: boolean; quantite?: number }) {
   const supabase = await creerClientSupabaseServeur();
   if (params.inclus) {
+    const quantite = params.quantite ?? 100;
     const { error } = await supabase
       .from('commande_lignes')
-      .insert({ commande_id: params.commandeId, pin_id: params.pinId });
+      .insert({ commande_id: params.commandeId, pin_id: params.pinId, quantite });
     if (error) throw new Error(error.message);
+    try {
+      await appliquerDeltaStockPin(supabase, params.pinId, -quantite);
+    } catch (e) {
+      console.warn(`Décrément stock local échoué pour le pin ${params.pinId}:`, e instanceof Error ? e.message : e);
+    }
   } else {
+    const { data: ligneExistante } = await supabase
+      .from('commande_lignes')
+      .select('quantite')
+      .eq('commande_id', params.commandeId)
+      .eq('pin_id', params.pinId)
+      .maybeSingle();
+
     const { data, error } = await supabase
       .from('commande_lignes')
       .delete()
@@ -300,6 +339,15 @@ export async function basculerLigneCommande(params: { commandeId: string; pinId:
       .select();
     if (error) throw new Error(error.message);
     if (!data || data.length === 0) throw new Error('Retrait bloqué (droits insuffisants ?)');
+
+    // Rollback du décrément fait à l'ajout de cette ligne — cf. envoyerCommande/appliquerDeltaStockPin.
+    if (ligneExistante) {
+      try {
+        await appliquerDeltaStockPin(supabase, params.pinId, Number(ligneExistante.quantite));
+      } catch (e) {
+        console.warn(`Ré-incrément stock local échoué pour le pin ${params.pinId}:`, e instanceof Error ? e.message : e);
+      }
+    }
   }
   revalidatePath('/stock');
 }

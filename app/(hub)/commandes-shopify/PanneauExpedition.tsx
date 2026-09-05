@@ -245,6 +245,7 @@ export function PanneauExpedition({
         pointRelaisId: pointRelaisChoisi?.id,
         commandeShopifyId: commande.id,
         commandeNom: commande.nom,
+        lignes: commande.lignes,
       });
       setResultat({ id: envoi.id, etiquetteUrl, fulfillmentShopifyId });
       setForcerNouvelle(false);

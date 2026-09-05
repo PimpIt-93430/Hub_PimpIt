@@ -64,6 +64,10 @@ export interface CommandeLigne {
   commande_id: string;
   pin_id: string;
   fait: boolean;
+  /** Quantité envoyée de ce pin au pop-up — cf. migration 0097 (App PIMP IT), retour utilisateur
+   * du 2026-09-05 : "il faut que le pin's soit décrémenté de 100 200 ou 300 ou met 100 par
+   * defaut". Décrémentée du stock local (stock_pins.stock_general) à l'envoi. */
+  quantite: number;
   updated_at: string;
 }
 
@@ -199,4 +203,16 @@ export function comparerParEmplacement(
 /** `numeric` côté Postgres revient parfois en string selon le client — normalise ici. */
 export function versNombre(valeur: number | string): number {
   return typeof valeur === 'string' ? Number(valeur) : valeur;
+}
+
+/** Pas des flèches (natives et clavier) sur la quantité envoyée à un pop-up : 100 par défaut,
+ * palier de 100 (100 → 200 → 300…), jamais en dessous de 100 (décocher la case exclut le pin
+ * plutôt que descendre à 0) — cf. retour utilisateur du 2026-09-05 : "100 200 ou 300 ou met 100
+ * par defaut avec une possibilité de monter 200 300 etc". Même principe que le palier 0/50/100/200
+ * de Commandes fournisseurs (CommandesClient.tsx), mais un pas fixe ici. */
+export function prochainPalierEnvoi(v: number): number {
+  return Math.max(100, v || 0) + 100;
+}
+export function palierPrecedentEnvoi(v: number): number {
+  return Math.max(100, (v || 0) - 100);
 }

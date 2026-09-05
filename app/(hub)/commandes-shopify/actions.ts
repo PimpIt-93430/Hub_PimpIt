@@ -29,7 +29,61 @@ import {
   type ExpeditionLaPoste,
 } from '@/lib/expeditions-laposte';
 import { annulerEtiquetteLettre, creerEtiquetteLettre, type AdresseLaPoste, type ProduitLettre } from '@/lib/laposte';
-import { commandesEnSuspens, creerFulfillmentShopify, listerPossibilitesExpedition, type PossibiliteExpedition } from '@/lib/shopify';
+import { commandesEnSuspens, creerFulfillmentShopify, listerPossibilitesExpedition, type LigneCommande, type PossibiliteExpedition } from '@/lib/shopify';
+import { creerClientSupabaseServeur } from '@/lib/supabase/server';
+
+/** Décrémente stock_pins pour les pin's vendus dans une commande Shopify, au moment où son
+ * étiquette d'expédition est créée — cf. retour utilisateur du 2026-09-05 : "quand on fait une
+ * vente sur shopify il faut que le pin's soit décrémenté [...] au moment ou imprime les
+ * expéditions". Trois cas par ligne :
+ *  1) Le SKU correspond à un pin unique (catalogue "Pin's à l'unité", stock_pins.sku_pimpit) —
+ *     décrémente ce seul pin.
+ *  2) Le SKU correspond à un pack (hub_packs) ou un sabot personnalisé (hub_sabots_custom) —
+ *     "il y a des fois tous les pins de ce produit qui sont commandés, faut décrémenter tous les
+ *     sku de ce produit" : décrémente CHAQUE pin de sa composition (qtes_pins), dans la quantité
+ *     prévue par le pack, multipliée par la quantité commandée de ce pack.
+ *  3) Aucune correspondance (produit sans lien pin's, ex. un sabot brut) — "si jamais il y a pas
+ *     de sku de pin's on décrémente rien" : ignoré silencieusement, jamais d'erreur.
+ * Best-effort : ne doit jamais faire échouer la création de l'étiquette (même logique que le
+ * fulfillment Shopify juste au-dessus dans ce fichier) — une erreur est juste loguée.
+ */
+async function decrementerStockPourVente(lignes: Pick<LigneCommande, 'sku' | 'quantite'>[]): Promise<void> {
+  const supabase = await creerClientSupabaseServeur();
+  const deltaParPin = new Map<string, number>();
+
+  for (const ligne of lignes) {
+    if (!ligne.sku || !ligne.quantite) continue;
+
+    const { data: pin } = await supabase.from('stock_pins').select('airtable_record_id').eq('sku_pimpit', ligne.sku).maybeSingle();
+    if (pin?.airtable_record_id) {
+      deltaParPin.set(pin.airtable_record_id, (deltaParPin.get(pin.airtable_record_id) ?? 0) + ligne.quantite);
+      continue;
+    }
+
+    const [{ data: pack }, { data: sabotCustom }] = await Promise.all([
+      supabase.from('hub_packs').select('qtes_pins').eq('sku_shopify', ligne.sku).maybeSingle(),
+      supabase.from('hub_sabots_custom').select('qtes_pins').eq('sku_shopify', ligne.sku).maybeSingle(),
+    ]);
+    const composition = (pack?.qtes_pins ?? sabotCustom?.qtes_pins) as Record<string, number> | null | undefined;
+    if (composition) {
+      for (const [pinAirtableId, qteDansLot] of Object.entries(composition)) {
+        deltaParPin.set(pinAirtableId, (deltaParPin.get(pinAirtableId) ?? 0) + Number(qteDansLot) * ligne.quantite);
+      }
+    }
+    // Ni pin ni pack/sabot custom trouvé pour ce SKU : rien à décrémenter pour cette ligne.
+  }
+
+  for (const [airtableId, delta] of deltaParPin) {
+    const { data: pinActuel } = await supabase
+      .from('stock_pins')
+      .select('stock_general')
+      .eq('airtable_record_id', airtableId)
+      .maybeSingle();
+    if (!pinActuel) continue;
+    const nouveauStock = Math.max(0, Number(pinActuel.stock_general) - delta);
+    await supabase.from('stock_pins').update({ stock_general: nouveauStock }).eq('airtable_record_id', airtableId);
+  }
+}
 
 export async function chargerPossibilitesExpedition(): Promise<PossibiliteExpedition[]> {
   return listerPossibilitesExpedition();
@@ -119,6 +173,8 @@ export interface ParamsCreerEtiquette {
    * pour le suivi de livraison automatique, pas envoyé à Sendcloud (order_number l'est séparément). */
   commandeShopifyId: number;
   commandeNom: string;
+  /** Lignes de la commande, pour le décrément de stock des pin's vendus — cf. decrementerStockPourVente. */
+  lignes: Pick<LigneCommande, 'sku' | 'quantite'>[];
 }
 
 /** Crée un envoi Sendcloud RÉEL (facturé) puis récupère son étiquette. Appelé uniquement depuis un
@@ -139,8 +195,9 @@ export async function creerEtiquette(
   });
 
   // Cf. discussion 2026-08-29 : l'envoi est déjà créé et FACTURÉ au-dessus — un échec dans tout ce
-  // qui suit (création du fulfillment Shopify) ne doit jamais faire remonter d'erreur qui donnerait
-  // l'impression que toute l'opération a échoué (même leçon que pour Boxtal, incident #26586).
+  // qui suit (création du fulfillment Shopify, décrément du stock) ne doit jamais faire remonter
+  // d'erreur qui donnerait l'impression que toute l'opération a échoué (même leçon que pour
+  // Boxtal, incident #26586).
   let fulfillmentShopifyId: string | null = null;
   try {
     const fulfillment = await creerFulfillmentShopify({
@@ -152,6 +209,12 @@ export async function creerEtiquette(
     fulfillmentShopifyId = fulfillment.fulfillmentId;
   } catch (e) {
     console.warn(`Fulfillment Shopify échoué pour ${params.commandeNom}:`, e instanceof Error ? e.message : e);
+  }
+
+  try {
+    await decrementerStockPourVente(params.lignes);
+  } catch (e) {
+    console.warn(`Décrément stock pin's échoué pour ${params.commandeNom}:`, e instanceof Error ? e.message : e);
   }
 
   await enregistrerExpeditionSendcloud({
@@ -205,6 +268,8 @@ export async function creerEtiquetteLaPoste(params: {
   destinataire: AdresseLaPoste;
   commandeShopifyId: number;
   commandeNom: string;
+  /** Lignes de la commande, pour le décrément de stock des pin's vendus — cf. decrementerStockPourVente. */
+  lignes: Pick<LigneCommande, 'sku' | 'quantite'>[];
 }): Promise<ExpeditionLaPoste> {
   const etiquette = await creerEtiquetteLettre({
     produit: params.produit,
@@ -213,6 +278,12 @@ export async function creerEtiquetteLaPoste(params: {
     destinataire: params.destinataire,
     reference: params.commandeNom,
   });
+
+  try {
+    await decrementerStockPourVente(params.lignes);
+  } catch (e) {
+    console.warn(`Décrément stock pin's échoué pour ${params.commandeNom}:`, e instanceof Error ? e.message : e);
+  }
 
   let fulfillmentShopifyId: string | null = null;
   try {

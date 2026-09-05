@@ -4,7 +4,9 @@ import { useState, useTransition } from 'react';
 
 import { basculerLigneCommande, envoyerCommande } from './actions';
 import { Modal } from './Modal';
-import type { LigneCommande } from './stockLib';
+import { palierPrecedentEnvoi, prochainPalierEnvoi, type LigneCommande } from './stockLib';
+
+const QUANTITE_PAR_DEFAUT = 100;
 
 /** Aperçu/édition de la commande envoyée au local — cf. PanneauCommande (StockScreen.tsx). En
  * création : tout démarre coché, décocher exclut un pin de cet envoi (il reste "à commander").
@@ -31,9 +33,29 @@ export function PanneauCommande({
   const [pinsExclus, setPinsExclus] = useState<Set<string>>(
     () => new Set(pinIdsInitialementCoches ? lignes.filter((l) => !pinIdsInitialementCoches.includes(l.pin.id)).map((l) => l.pin.id) : []),
   );
+  // Quantité par pin envoyée au pop-up — 100 par défaut, palier +100 — cf. retour utilisateur du
+  // 2026-09-05 : "il faut que le pin's soit décrémenté de 100 200 ou 300 ou met 100 par defaut
+  // avec une possibilité de monter 200 300 etc". Pas éditable en mode modification (commande déjà
+  // envoyée) : une ligne ré-ajoutée repart à 100 (cf. basculerLigneCommande côté serveur).
+  const [qtyParPin, setQtyParPin] = useState<Record<string, number>>({});
   const [enCours, demarrer] = useTransition();
 
   const lignesRetenues = lignes.filter((l) => !pinsExclus.has(l.pin.id));
+
+  function quantitePin(pinId: string): number {
+    return qtyParPin[pinId] ?? QUANTITE_PAR_DEFAUT;
+  }
+
+  function definirQuantite(pinId: string, brut: number) {
+    setQtyParPin((prev) => {
+      const precedent = prev[pinId] ?? QUANTITE_PAR_DEFAUT;
+      let q: number;
+      if (brut === precedent + 1) q = prochainPalierEnvoi(precedent);
+      else if (brut === precedent - 1) q = palierPrecedentEnvoi(precedent);
+      else q = Math.max(QUANTITE_PAR_DEFAUT, brut || QUANTITE_PAR_DEFAUT);
+      return { ...prev, [pinId]: q };
+    });
+  }
 
   const basculerPin = (pinId: string) => {
     const inclusApres = pinsExclus.has(pinId);
@@ -65,7 +87,10 @@ export function PanneauCommande({
   const envoyer = () => {
     if (!confirm(`Le local va préparer ces pins pour ${popUpNom}. Tu ne pourras pas envoyer de nouvelle commande tant que celle-ci n'est pas reçue.`)) return;
     demarrer(async () => {
-      await envoyerCommande({ popUpId, pinIds: lignesRetenues.map((l) => l.pin.id) });
+      await envoyerCommande({
+        popUpId,
+        lignes: lignesRetenues.map((l) => ({ pinId: l.pin.id, quantite: quantitePin(l.pin.id) })),
+      });
       onChanged();
       onFermer();
     });
@@ -93,27 +118,36 @@ export function PanneauCommande({
           lignes.map((ligne) => {
             const retenu = !pinsExclus.has(ligne.pin.id);
             return (
-              <button
-                key={ligne.pin.id}
-                onClick={() => basculerPin(ligne.pin.id)}
-                className="mb-2 flex w-full items-center gap-3 rounded-xl bg-slate-50 p-2 text-left"
-              >
-                {ligne.pin.photo_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={ligne.pin.photo_url} alt={ligne.pin.nom} className="h-14 w-14 rounded-lg bg-slate-100 object-cover" />
-                ) : (
-                  <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-slate-100 text-lg text-slate-300">?</div>
+              <div key={ligne.pin.id} className="mb-2 flex w-full items-center gap-3 rounded-xl bg-slate-50 p-2 text-left">
+                <button type="button" onClick={() => basculerPin(ligne.pin.id)} className="flex flex-1 items-center gap-3 text-left">
+                  {ligne.pin.photo_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={ligne.pin.photo_url} alt={ligne.pin.nom} className="h-14 w-14 rounded-lg bg-slate-100 object-cover" />
+                  ) : (
+                    <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-slate-100 text-lg text-slate-300">?</div>
+                  )}
+                  <span className="flex-1 text-sm font-semibold text-slate-800">{ligne.pin.nom}</span>
+                  <span className="text-xs text-slate-400">{ligne.nbBoites} boîte(s)</span>
+                  <div
+                    className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md border-2 ${
+                      retenu ? 'border-emerald-600 bg-emerald-600' : 'border-slate-300'
+                    }`}
+                  >
+                    {retenu && <span className="text-xs font-bold text-white">✓</span>}
+                  </div>
+                </button>
+                {!modeModification && retenu && (
+                  <input
+                    type="number"
+                    min={100}
+                    step={100}
+                    value={quantitePin(ligne.pin.id)}
+                    onClick={(e) => e.stopPropagation()}
+                    onChange={(e) => definirQuantite(ligne.pin.id, parseInt(e.target.value, 10) || 100)}
+                    className="w-20 shrink-0 rounded-lg border border-slate-200 px-2 py-1 text-right text-sm outline-none focus:border-slate-400"
+                  />
                 )}
-                <span className="flex-1 text-sm font-semibold text-slate-800">{ligne.pin.nom}</span>
-                <span className="text-xs text-slate-400">{ligne.nbBoites} boîte(s)</span>
-                <div
-                  className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md border-2 ${
-                    retenu ? 'border-emerald-600 bg-emerald-600' : 'border-slate-300'
-                  }`}
-                >
-                  {retenu && <span className="text-xs font-bold text-white">✓</span>}
-                </div>
-              </button>
+              </div>
             );
           })
         )}

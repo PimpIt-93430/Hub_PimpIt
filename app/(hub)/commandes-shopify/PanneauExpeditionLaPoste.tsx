@@ -120,6 +120,7 @@ export function PanneauExpeditionLaPoste({
         destinataire: versAdresseLaPoste(destinataire),
         commandeShopifyId: commande.id,
         commandeNom: commande.nom,
+        lignes: commande.lignes,
       });
       setResultat(expedition);
       setForcerNouvelle(false);

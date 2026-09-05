@@ -237,6 +237,7 @@ export function PanneauImpressionMasse({
             destinataire: versAdresseLaPoste(destinataire),
             commandeShopifyId: ligne.commande.id,
             commandeNom: ligne.commande.nom,
+            lignes: ligne.commande.lignes,
           });
           etiquetteUrl = base64VersBlobUrl(expedition.visualOutputBase64, 'application/pdf');
           fulfillmentShopifyId = expedition.fulfillmentShopifyId;
@@ -251,6 +252,7 @@ export function PanneauImpressionMasse({
             commandeShopifyId: ligne.commande.id,
             commandeNom: ligne.commande.nom,
             pointRelaisId: ligne.pointRelaisId,
+            lignes: ligne.commande.lignes,
           });
           etiquetteUrl = resultat.etiquetteUrl;
           fulfillmentShopifyId = resultat.fulfillmentShopifyId;
