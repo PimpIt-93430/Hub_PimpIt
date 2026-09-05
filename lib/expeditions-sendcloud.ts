@@ -48,6 +48,33 @@ function versExpeditionSendcloud(l: LigneBrute): ExpeditionSendcloud {
  * commandes-là à chaque rafraîchissement (cf. status.code retourné par GET /shipments/{id}). */
 const STATUTS_FINAUX = new Set(['DELIVERED', 'CANCELLED']);
 
+export interface EtiquetteRecente {
+  id: string;
+  commandeNom: string;
+  sendcloudShipmentId: string;
+  creeLe: string;
+}
+
+/** Étiquettes créées depuis `depuisIso` — cf. PanneauHistoriqueEtiquettes, même besoin que
+ * chargerEtiquettesLaPosteRecentes (lib/expeditions-laposte.ts) côté La Poste : retrouve les PDF
+ * d'un lot d'impression en masse dont le navigateur a été fermé avant que le PDF fusionné (généré
+ * côté client, jamais stocké) n'ait été enregistré. */
+export async function chargerEtiquettesSendcloudRecentes(depuisIso: string): Promise<EtiquetteRecente[]> {
+  const supabase = await creerClientSupabaseServeur();
+  const { data, error } = await supabase
+    .from('expeditions_sendcloud')
+    .select('id, commande_nom, sendcloud_shipment_id, cree_le')
+    .gte('cree_le', depuisIso)
+    .order('cree_le', { ascending: false });
+  if (error) throw new Error(error.message);
+  return ((data ?? []) as { id: string; commande_nom: string; sendcloud_shipment_id: string; cree_le: string }[]).map((l) => ({
+    id: l.id,
+    commandeNom: l.commande_nom,
+    sendcloudShipmentId: l.sendcloud_shipment_id,
+    creeLe: l.cree_le,
+  }));
+}
+
 /** Enregistre le lien commande Shopify → envoi Sendcloud juste après création d'une étiquette (cf.
  * actions.ts, creerEtiquette) — best-effort : si ça échoue, l'étiquette existe déjà et est
  * facturée, on ne veut pas faire échouer le retour à l'utilisateur pour autant, juste perdre le

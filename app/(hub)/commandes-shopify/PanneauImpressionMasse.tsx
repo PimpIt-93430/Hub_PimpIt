@@ -21,6 +21,7 @@ import {
   destinataireExploitable,
   DIMENSIONS_PAR_DEFAUT,
   type Expediteur,
+  fusionnerPdfs,
   POIDS_PAR_DEFAUT_KG,
   prixInconnu,
   resoudreExpedition,
@@ -104,6 +105,8 @@ export function PanneauImpressionMasse({
   const [resultats, setResultats] = useState<Map<number, Resultat>>(new Map());
   const [lignes, setLignes] = useState<Ligne[]>([]);
   const [pdfFusionUrl, setPdfFusionUrl] = useState<string | null>(null);
+  const [pdfFusionPages, setPdfFusionPages] = useState(0);
+  const [pdfFusionEchecs, setPdfFusionEchecs] = useState(0);
   const [fusionEnCours, setFusionEnCours] = useState(false);
   const [fusionErreur, setFusionErreur] = useState<string | null>(null);
 
@@ -283,6 +286,8 @@ export function PanneauImpressionMasse({
   useEffect(() => {
     if (etape !== 'termine') {
       setPdfFusionUrl(null);
+      setPdfFusionPages(0);
+      setPdfFusionEchecs(0);
       setFusionErreur(null);
       return;
     }
@@ -291,20 +296,16 @@ export function PanneauImpressionMasse({
     let annule = false;
     setFusionEnCours(true);
     setFusionErreur(null);
-    (async () => {
-      const { PDFDocument } = await import('pdf-lib');
-      const fusion = await PDFDocument.create();
-      for (const url of urls) {
-        const octets = await fetch(url).then((r) => r.arrayBuffer());
-        const doc = await PDFDocument.load(octets);
-        const pages = await fusion.copyPages(doc, doc.getPageIndices());
-        for (const p of pages) fusion.addPage(p);
-      }
-      const octetsFusion = await fusion.save();
-      return URL.createObjectURL(new Blob([octetsFusion.buffer as ArrayBuffer], { type: 'application/pdf' }));
-    })()
-      .then((url) => {
-        if (!annule) setPdfFusionUrl(url);
+    fusionnerPdfs(urls)
+      .then((resultat) => {
+        if (annule) return;
+        if (!resultat.url) {
+          setFusionErreur('Aucune étiquette récupérable — ouvre-les une par une ci-dessus.');
+          return;
+        }
+        setPdfFusionUrl(resultat.url);
+        setPdfFusionPages(resultat.pagesFusionnees);
+        setPdfFusionEchecs(resultat.echecs);
       })
       .catch((e) => {
         if (!annule) setFusionErreur(e instanceof Error ? e.message : 'Échec de la fusion des étiquettes.');
@@ -476,14 +477,24 @@ export function PanneauImpressionMasse({
                         Échec de la fusion — ouvre les étiquettes une par une ci-dessus
                       </span>
                     ) : pdfFusionUrl ? (
-                      <a
-                        href={pdfFusionUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700"
-                      >
-                        Ouvrir le PDF ({nbSucces} étiquette{nbSucces > 1 ? 's' : ''})
-                      </a>
+                      <span className="flex items-center gap-2">
+                        {pdfFusionEchecs > 0 && (
+                          <span
+                            className="text-xs font-semibold text-amber-600"
+                            title="Étiquette(s) pas encore prête(s) côté transporteur au moment de la fusion — réessaie 'Ouvrir' sur la ligne concernée ci-dessus dans quelques secondes"
+                          >
+                            {pdfFusionEchecs} non incluse{pdfFusionEchecs > 1 ? 's' : ''}
+                          </span>
+                        )}
+                        <a
+                          href={pdfFusionUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700"
+                        >
+                          Ouvrir le PDF ({pdfFusionPages} étiquette{pdfFusionPages > 1 ? 's' : ''})
+                        </a>
+                      </span>
                     ) : null)}
                 </div>
               )}

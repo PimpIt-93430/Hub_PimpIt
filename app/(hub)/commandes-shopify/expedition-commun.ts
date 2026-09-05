@@ -19,6 +19,49 @@ export const CLE_EXPEDITEUR = 'expedition-sendcloud:expediteur';
  * en `target="_blank"` (restriction de sécurité) — la page reste blanche sans erreur visible. Il
  * faut convertir en `blob:` (créé côté client) pour que "Ouvrir l'étiquette" fonctionne vraiment —
  * utile pour La Poste (PDF renvoyé en base64, pas d'URL toute faite comme Sendcloud). */
+export interface ResultatFusionPdfs {
+  /** null si aucune étiquette n'a pu être récupérée (toutes en échec). */
+  url: string | null;
+  pagesFusionnees: number;
+  echecs: number;
+}
+
+/** Fusionne plusieurs PDF (une URL par étiquette) en un seul, ouvrable via un unique lien <a> — cf.
+ * PanneauImpressionMasse (juste après création) et PanneauHistoriqueEtiquettes (réimpression a
+ * posteriori) : window.open() en boucle se heurte au bloqueur de popups du navigateur (un seul
+ * appel autorisé par clic), remplacé par une fusion pdf-lib + un lien unique.
+ *
+ * Chaque étiquette est récupérée indépendamment (cf. incident 2026-09-05 : une commande
+ * Sendcloud fraîchement créée peut renvoyer une erreur transitoire — label pas encore généré côté
+ * transporteur — le temps que le navigateur la redemande juste après création ; le proxy
+ * /api/etiquette-sendcloud répond alors en JSON d'erreur, pas en PDF). Avant, une seule étiquette
+ * en échec faisait échouer `PDFDocument.load` et donc TOUTE la fusion, perdant même les étiquettes
+ * déjà récupérées avec succès. Désormais une étiquette en échec est simplement ignorée (comptée
+ * dans `echecs`) et la fusion continue avec le reste — cf. retour utilisateur du 2026-09-05 : "il
+ * faut que quand c'est comme ça ça fusionne tout celles qui n'ont pas eu d'échec". */
+export async function fusionnerPdfs(urls: string[]): Promise<ResultatFusionPdfs> {
+  const { PDFDocument } = await import('pdf-lib');
+  const fusion = await PDFDocument.create();
+  let echecs = 0;
+  for (const url of urls) {
+    try {
+      const reponse = await fetch(url);
+      if (!reponse.ok) throw new Error(`HTTP ${reponse.status}`);
+      const octets = await reponse.arrayBuffer();
+      const doc = await PDFDocument.load(octets);
+      const pages = await fusion.copyPages(doc, doc.getPageIndices());
+      for (const p of pages) fusion.addPage(p);
+    } catch (e) {
+      echecs++;
+      console.warn(`Fusion PDF : étiquette ignorée (${url}) —`, e instanceof Error ? e.message : e);
+    }
+  }
+  if (fusion.getPageCount() === 0) return { url: null, pagesFusionnees: 0, echecs };
+  const octetsFusion = await fusion.save();
+  const url = URL.createObjectURL(new Blob([octetsFusion.buffer as ArrayBuffer], { type: 'application/pdf' }));
+  return { url, pagesFusionnees: fusion.getPageCount(), echecs };
+}
+
 export function base64VersBlobUrl(base64: string, type: string): string {
   const octets = atob(base64);
   const tableau = new Uint8Array(octets.length);

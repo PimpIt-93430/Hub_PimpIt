@@ -48,6 +48,33 @@ function versExpeditionLaPoste(l: LigneBrute): ExpeditionLaPoste {
   };
 }
 
+export interface EtiquetteRecente {
+  id: string;
+  commandeNom: string;
+  creeLe: string;
+}
+
+/** Étiquettes créées depuis `depuisIso` (id/commande/date seulement, pas le PDF base64 — trop
+ * lourd pour une liste) — cf. PanneauHistoriqueEtiquettes : retrouve les PDF d'un lot d'impression
+ * en masse dont le navigateur a été fermé avant que le PDF fusionné (généré côté client, jamais
+ * stocké) n'ait été enregistré, cf. retour utilisateur du 2026-09-05 : "j'ai fait un tout
+ * imprimer... j'ai plus accès... il faudrait un moyen de les récupérer". */
+export async function chargerEtiquettesLaPosteRecentes(depuisIso: string): Promise<EtiquetteRecente[]> {
+  const supabase = await creerClientSupabaseServeur();
+  const { data, error } = await supabase
+    .from('expeditions_laposte')
+    .select('id, commande_nom, cree_le')
+    .eq('statut', 'cree')
+    .gte('cree_le', depuisIso)
+    .order('cree_le', { ascending: false });
+  if (error) throw new Error(error.message);
+  return ((data ?? []) as { id: string; commande_nom: string; cree_le: string }[]).map((l) => ({
+    id: l.id,
+    commandeNom: l.commande_nom,
+    creeLe: l.cree_le,
+  }));
+}
+
 export async function chargerExpeditionsLaPoste(): Promise<Map<number, ExpeditionLaPoste>> {
   const supabase = await creerClientSupabaseServeur();
   const { data, error } = await supabase

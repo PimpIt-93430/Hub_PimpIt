@@ -16,11 +16,13 @@ import {
 } from '@/lib/sendcloud';
 import {
   chargerExpeditionSendcloudPourCommande,
+  chargerEtiquettesSendcloudRecentes,
   enregistrerExpeditionSendcloud,
   rafraichirStatutsExpeditionsSendcloud,
   type ExpeditionSendcloud,
 } from '@/lib/expeditions-sendcloud';
 import {
+  chargerEtiquettesLaPosteRecentes,
   chargerExpeditionLaPostePourCommande,
   enregistrerExpeditionLaPoste,
   marquerExpeditionLaPosteAnnulee,
@@ -241,4 +243,54 @@ export async function creerEtiquetteLaPoste(params: {
 export async function annulerEtiquetteLaPoste(itemId: string): Promise<void> {
   await annulerEtiquetteLettre(itemId);
   await marquerExpeditionLaPosteAnnulee(itemId);
+}
+
+export interface EtiquetteHistorique {
+  cle: string;
+  commandeNom: string;
+  methode: 'laposte' | 'sendcloud';
+  url: string | null;
+  creeLe: string;
+}
+
+/** Étiquettes (La Poste + Sendcloud) créées depuis `depuisIso`, url ouvrable pour chacune — cf.
+ * PanneauHistoriqueEtiquettes, retour utilisateur du 2026-09-05 : "j'ai fait un tout imprimer...
+ * j'ai plus accès... il faudrait un moyen de les récupérer" (le PDF fusionné de l'impression en
+ * masse n'est jamais stocké, généré à la volée côté navigateur — cf. PanneauImpressionMasse — donc
+ * perdu si l'onglet ferme avant d'être enregistré ; les étiquettes d'origine, elles, sont toujours
+ * en base). Sendcloud n'a pas de parcelId stocké directement (seulement le shipment id) : une
+ * requête par étiquette pour le résoudre, best-effort — une étiquette dont la résolution échoue
+ * reste listée avec url:null plutôt que de faire échouer tout le chargement. */
+export async function chargerEtiquettesRecentes(depuisIso: string): Promise<EtiquetteHistorique[]> {
+  const [laposte, sendcloud] = await Promise.all([
+    chargerEtiquettesLaPosteRecentes(depuisIso),
+    chargerEtiquettesSendcloudRecentes(depuisIso),
+  ]);
+
+  const lignesLaPoste: EtiquetteHistorique[] = laposte.map((l) => ({
+    cle: `laposte-${l.id}`,
+    commandeNom: l.commandeNom,
+    methode: 'laposte',
+    url: `/api/etiquette-laposte/${l.id}`,
+    creeLe: l.creeLe,
+  }));
+
+  const lignesSendcloud: EtiquetteHistorique[] = await Promise.all(
+    sendcloud.map(async (l): Promise<EtiquetteHistorique> => {
+      try {
+        const envoi = await recupererEnvoi(l.sendcloudShipmentId);
+        return {
+          cle: `sendcloud-${l.id}`,
+          commandeNom: l.commandeNom,
+          methode: 'sendcloud',
+          url: `/api/etiquette-sendcloud/${envoi.parcelId}`,
+          creeLe: l.creeLe,
+        };
+      } catch {
+        return { cle: `sendcloud-${l.id}`, commandeNom: l.commandeNom, methode: 'sendcloud', url: null, creeLe: l.creeLe };
+      }
+    }),
+  );
+
+  return [...lignesLaPoste, ...lignesSendcloud].sort((a, b) => (a.creeLe < b.creeLe ? 1 : -1));
 }

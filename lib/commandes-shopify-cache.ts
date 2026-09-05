@@ -23,10 +23,10 @@ import { chargerStatutsSuivi } from './laposte';
 import { creerClientSupabaseServeur } from './supabase/server';
 
 const MARGE_SECURITE_MS = 60_000;
-/** Cf. retour utilisateur du 2026-09-05 : "à la limite on supprime le cache tous les 3 mois" — âge
- * (depuis la création Shopify de la commande) au-delà duquel une commande sort du cache, quel que
- * soit son statut de livraison. */
-const AGE_MAX_CACHE_MS = 90 * 24 * 60 * 60 * 1000;
+/** Cf. retour utilisateur du 2026-09-05 (révisé le jour même : 3 mois -> 6 mois pour garder plus de
+ * marge de suivi/réimpression) — âge (depuis la création Shopify de la commande) au-delà duquel une
+ * commande sort du cache, quel que soit son statut de livraison. */
+const AGE_MAX_CACHE_MS = 182 * 24 * 60 * 60 * 1000;
 
 interface LigneBrute {
   shopify_id: number;
@@ -150,10 +150,32 @@ export async function commandesShopifyEnCache(
       ? await listerCommandesMiseAJourDepuis(new Date(new Date(etat.derniere_synchro_le).getTime() - MARGE_SECURITE_MS).toISOString())
       : await listerCommandesRecentes(200);
 
-    if (commandesAJour.length > 0) {
-      const { error } = await supabase.from('hub_commandes_shopify_cache').upsert(commandesAJour.map(versLigneBrute));
-      if (error) throw new Error(error.message);
+    // Cf. incident 2026-09-05 (#27129, payée le 04/09, jamais entrée dans le cache alors que
+    // Shopify la renvoyait bien à la synchro) : la pagination Shopify par updated_at_min peut
+    // renvoyer deux fois la même commande si plusieurs commandes partagent exactement le même
+    // updated_at à la frontière de deux pages — un upsert Postgres avec un shopify_id en double
+    // DANS LE MÊME appel échoue entièrement ("ON CONFLICT DO UPDATE command cannot affect row a
+    // second time"), perdant alors TOUTES les commandes du lot, pas seulement le doublon. Dédoublonné
+    // ici avant l'upsert (on garde la dernière occurrence, la plus à jour).
+    const parId = new Map<number, CommandeShopifyAvecMaj>();
+    for (const c of commandesAJour) parId.set(c.id, c);
+    const commandesDedupliquees = [...parId.values()];
+
+    // Découpé en lots plutôt qu'un unique upsert : si une commande a un problème de données qui
+    // fait échouer l'upsert malgré tout, seul son lot est perdu (retenté à la prochaine synchro,
+    // le curseur n'avance pas en cas d'erreur, cf. catch plus bas), pas les 200+ commandes du coup
+    // de synchro entier.
+    const TAILLE_LOT = 50;
+    const lotsEnEchec: string[] = [];
+    for (let i = 0; i < commandesDedupliquees.length; i += TAILLE_LOT) {
+      const lot = commandesDedupliquees.slice(i, i + TAILLE_LOT);
+      const { error } = await supabase.from('hub_commandes_shopify_cache').upsert(lot.map(versLigneBrute));
+      if (error) {
+        console.warn(`Synchro commandes Shopify : échec du lot ${i / TAILLE_LOT + 1} (${lot.map((c) => c.nom).join(', ')}) —`, error.message);
+        lotsEnEchec.push(`lot ${i / TAILLE_LOT + 1} (${lot.length} commande${lot.length > 1 ? 's' : ''}) : ${error.message}`);
+      }
     }
+    if (lotsEnEchec.length > 0) throw new Error(`Échec partiel de la synchro — ${lotsEnEchec.join(' | ')}`);
 
     // Purge par ancienneté plutôt que par statut de livraison (cf. commentaire plus haut) — une
     // commande de plus de 3 mois sort du cache quel que soit son statut, gardant la table utilisable

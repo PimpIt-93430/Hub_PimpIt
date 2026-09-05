@@ -12,6 +12,7 @@ import { chargerExpediteur, type Expediteur, POIDS_PAR_DEFAUT_KG, prixInconnu, r
 import { PanneauCodesTransporteurs } from './PanneauCodesTransporteurs';
 import { PanneauExpedition } from './PanneauExpedition';
 import { PanneauExpeditionLaPoste } from './PanneauExpeditionLaPoste';
+import { PanneauHistoriqueEtiquettes } from './PanneauHistoriqueEtiquettes';
 import { PanneauImpressionMasse } from './PanneauImpressionMasse';
 import { ReglesLivraisonPanel } from './ReglesLivraisonPanel';
 
@@ -108,12 +109,18 @@ export function CommandesShopifyClient({
   const poidsConnus = useMemo(() => new Map(poidsInitiaux), [poidsInitiaux]);
   const classification = useMemo(() => new Map(classificationInitiale), [classificationInitiale]);
   const [recherche, setRecherche] = useState('');
-  const [onglet, setOnglet] = useState<Onglet>('tous');
+  // Cf. retour utilisateur du 2026-09-05 : "je veux que ca arrive que sur les commandes pas encore
+  // créé mais que je puisse ensuite avoir une barre qui recherche dans toutes les commandes" —
+  // onglet par défaut = pas encore créées, mais dès qu'une recherche est tapée elle porte sur TOUT
+  // le cache (6 mois, cf. commandes-shopify-cache.ts), pas seulement l'onglet actif (cf.
+  // commandesFiltrees plus bas).
+  const [onglet, setOnglet] = useState<Onglet>('a_creer');
   const [commandeOuverte, setCommandeOuverte] = useState<CommandeShopify | null>(null);
   const [regles, setRegles] = useState<RegleLivraison[]>([]);
   const [reglesOuvertes, setReglesOuvertes] = useState(false);
   const [codesOuverts, setCodesOuverts] = useState(false);
   const [impressionMasseOuverte, setImpressionMasseOuverte] = useState(false);
+  const [historiqueOuvert, setHistoriqueOuvert] = useState(false);
   const [expeditions, setExpeditions] = useState<Map<number, ExpeditionSendcloud>>(new Map(expeditionsInitiales));
   const [rafraichissementEnCours, setRafraichissementEnCours] = useState(false);
   const [expediteur, setExpediteur] = useState<Expediteur | null>(null);
@@ -177,13 +184,15 @@ export function CommandesShopifyClient({
     return c;
   }, [commandesVisibles, expeditions]);
 
+  // Une recherche tapée porte sur les 6 mois de cache en entier, indépendamment de l'onglet
+  // sélectionné (cf. retour utilisateur ci-dessus) : sans terme de recherche, l'onglet filtre
+  // normalement (par défaut "Pas encore créées").
   const commandesFiltrees = useMemo(() => {
     const r = recherche.trim().toLowerCase();
-    return commandesVisibles.filter((cmd) => {
-      if (onglet !== 'tous' && statutAffiche(cmd) !== onglet) return false;
-      if (r && !`${cmd.nom} ${cmd.client} ${cmd.email ?? ''}`.toLowerCase().includes(r)) return false;
-      return true;
-    });
+    if (r) {
+      return commandesVisibles.filter((cmd) => `${cmd.nom} ${cmd.client} ${cmd.email ?? ''}`.toLowerCase().includes(r));
+    }
+    return commandesVisibles.filter((cmd) => onglet === 'tous' || statutAffiche(cmd) === onglet);
   }, [commandesVisibles, recherche, onglet, expeditions]);
 
   // Cf. discussion 2026-08-29 : migration Boxtal → Sendcloud, resoudreExpedition() est devenue
@@ -228,7 +237,7 @@ export function CommandesShopifyClient({
 
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <input
-          placeholder="Rechercher une commande, un client, un email"
+          placeholder="Rechercher sur 6 mois (commande, client, email)…"
           value={recherche}
           onChange={(e) => setRecherche(e.target.value)}
           className="w-full max-w-xs rounded-full border border-slate-200 bg-white px-4 py-2 text-sm shadow-sm focus:border-indigo-300 focus:outline-none"
@@ -274,6 +283,14 @@ export function CommandesShopifyClient({
             className="rounded-full bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-500"
           >
             🖨 Créer et imprimer toutes les étiquettes
+          </button>
+          <button
+            type="button"
+            onClick={() => setHistoriqueOuvert(true)}
+            title="Rouvrir ou refusionner des étiquettes déjà créées"
+            className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-500 hover:bg-slate-50"
+          >
+            🕒 Étiquettes récentes
           </button>
         </div>
       </div>
@@ -470,6 +487,8 @@ export function CommandesShopifyClient({
           onFermer={() => setImpressionMasseOuverte(false)}
         />
       )}
+
+      {historiqueOuvert && <PanneauHistoriqueEtiquettes onFermer={() => setHistoriqueOuvert(false)} />}
     </div>
   );
 }
