@@ -93,17 +93,40 @@ export async function shopifyFetch(endpoint: string, method = 'GET', body: unkno
   return res.json();
 }
 
+/** Cf. retour utilisateur du 2026-09-07 : "j'ai imprimé toutes les commandes shopify [...] ça
+ * s'enlève pas" — l'impression en masse (PanneauImpressionMasse) appelle creerFulfillmentShopify
+ * (donc shopifyGraphQL) une fois par commande dans une boucle séquentielle rapprochée. Contrairement
+ * à shopifyFetch/shopifyRawFetch (REST, cf. plus haut — même leçon tirée le 2026-08-29 sur le débit
+ * REST), cette fonction n'avait ni file d'attente partagée ni retry : au-delà de quelques commandes
+ * d'affilée, Shopify renvoie "Throttled" (coût GraphQL cumulé), chaque fulfillment échouait
+ * silencieusement (avalé par le try/catch appelant dans commandes-shopify/actions.ts), donc jamais
+ * marquées "fulfilled" côté Shopify — la commande restait "à créer" dans le cache malgré une
+ * étiquette bien créée et facturée. Même file d'attente (`attendreSonTour`) que le REST : les deux
+ * partagent le même budget de débit Shopify côté API Admin.
+ */
 export async function shopifyGraphQL<T = unknown>(query: string, variables: Record<string, unknown> = {}): Promise<T> {
   const token = await getToken();
-  const res = await fetch(`https://${STORE}/admin/api/${API_VERSION}/graphql.json`, {
-    method: 'POST',
-    headers: { 'X-Shopify-Access-Token': token, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ query, variables }),
-  });
-  if (!res.ok) throw new Error(`Shopify GraphQL ${res.status}: ${await res.text()}`);
-  const json = await res.json();
-  if (json.errors?.length) throw new Error(json.errors[0].message);
-  return json.data;
+  for (let tentative = 0; ; tentative++) {
+    await attendreSonTour();
+    const res = await fetch(`https://${STORE}/admin/api/${API_VERSION}/graphql.json`, {
+      method: 'POST',
+      headers: { 'X-Shopify-Access-Token': token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query, variables }),
+    });
+    if (!res.ok) throw new Error(`Shopify GraphQL ${res.status}: ${await res.text()}`);
+    const json = await res.json();
+    const throttled = json.errors?.some(
+      (e: { message?: string; extensions?: { code?: string } }) => e.extensions?.code === 'THROTTLED' || e.message === 'Throttled',
+    );
+    if (throttled && tentative < 5) {
+      const restoreRate: number | undefined = json.extensions?.cost?.throttleStatus?.restoreRate;
+      const attente = restoreRate ? Math.max(500, 1000 / restoreRate) : 1500;
+      await new Promise((r) => setTimeout(r, attente));
+      continue;
+    }
+    if (json.errors?.length) throw new Error(json.errors[0].message);
+    return json.data;
+  }
 }
 
 const HS_CODE = '64029990';

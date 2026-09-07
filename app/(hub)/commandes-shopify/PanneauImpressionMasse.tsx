@@ -10,6 +10,7 @@ import type { CommandeShopify } from '@/lib/shopify';
 import {
   chargerDetailPointRelais,
   chargerPointEtCarrierConnu,
+  chargerPointsRelais,
   creerEtiquette,
   creerEtiquetteLaPoste,
   verifierCommandesEnSuspens,
@@ -169,16 +170,34 @@ export function PanneauImpressionMasse({
           // ce point ici plutôt que forcer une vérification manuelle commande par commande.
           if (offre.pointRelaisRequis) {
             const connu = await chargerPointEtCarrierConnu(commande.nom).catch(() => null);
-            if (!connu?.pointRelaisId || connu.autoAssigne) {
-              const raison = connu?.autoAssigne
-                ? 'point relais auto-assigné par Sendcloud (pas un choix confirmé du client) — vérification manuelle requise'
-                : 'point relais — sélection manuelle du point requise';
-              return { commande, eligible: false, raisonExclusion: raison, poidsGrammes };
+            if (connu?.pointRelaisId && !connu.autoAssigne) {
+              const pointRelaisNom = await chargerDetailPointRelais(connu.pointRelaisId)
+                .then((p) => p.nom)
+                .catch(() => undefined);
+              return { commande, eligible: true, methode: 'sendcloud', offre, pointRelaisId: connu.pointRelaisId, pointRelaisNom, poidsGrammes };
             }
-            const pointRelaisNom = await chargerDetailPointRelais(connu.pointRelaisId)
-              .then((p) => p.nom)
-              .catch(() => undefined);
-            return { commande, eligible: true, methode: 'sendcloud', offre, pointRelaisId: connu.pointRelaisId, pointRelaisNom, poidsGrammes };
+            // Pas de point confirmé par le client (ou juste auto-assigné par Sendcloud faute de
+            // choix réel, cf. autoAssigne) — cf. retour utilisateur du 2026-09-07 : "des fois le
+            // point relais n'est pas sélectionné [...] sélectionner automatiquement le point
+            // relais le plus proche de son adresse" : recherche et prend le plus proche plutôt que
+            // d'exclure la commande pour vérification manuelle.
+            const points = await chargerPointsRelais(
+              { street: destinataire.adresse1, city: destinataire.ville, postalCode: destinataire.codePostal, countryIsoCode: destinataire.paysCode.toUpperCase() },
+              offre.transporteurCode,
+            ).catch(() => []);
+            const plusProche = [...points].sort((a, b) => (a.distanceMetres ?? Infinity) - (b.distanceMetres ?? Infinity))[0];
+            if (!plusProche) {
+              return { commande, eligible: false, raisonExclusion: 'point relais — aucun point trouvé pour cette adresse', poidsGrammes };
+            }
+            return {
+              commande,
+              eligible: true,
+              methode: 'sendcloud',
+              offre,
+              pointRelaisId: plusProche.id,
+              pointRelaisNom: `${plusProche.nom} (plus proche, auto)`,
+              poidsGrammes,
+            };
           }
           return { commande, eligible: true, methode: 'sendcloud', offre, poidsGrammes };
         }),

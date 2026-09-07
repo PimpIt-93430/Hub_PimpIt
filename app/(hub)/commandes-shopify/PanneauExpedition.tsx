@@ -98,8 +98,11 @@ export function PanneauExpedition({
   // 'auto_assigne' = Sendcloud a rempli un point tout seul faute de sélection réelle (tag order
   // "Service Point Auto-Assigned", cf. discussion 2026-08-29 : vérifié en comparant aux vraies
   // commandes clients, qui n'ont jamais ce tag) — à vérifier comme un point deviné, pas un choix
-  // confirmé. 'manuel' = choisi à la main dans la liste ci-dessous.
-  const [pointRelaisConfiance, setPointRelaisConfiance] = useState<'client' | 'auto_assigne' | 'manuel' | null>(null);
+  // confirmé. 'manuel' = choisi à la main dans la liste ci-dessous. 'auto_proche' = aucun point
+  // connu du tout par Sendcloud, le plus proche de l'adresse a été présélectionné automatiquement
+  // (cf. retour utilisateur du 2026-09-07 : "des fois le point relais n'est pas sélectionné [...]
+  // sélectionner automatiquement le point relais le plus proche de son adresse").
+  const [pointRelaisConfiance, setPointRelaisConfiance] = useState<'client' | 'auto_assigne' | 'manuel' | 'auto_proche' | null>(null);
   // undefined = chargement, null = rien connu par Sendcloud pour cette commande (livraison à
   // domicile, ou client pas encore passé par le sélecteur post-achat).
   const [connuSendcloud, setConnuSendcloud] = useState<{ pointRelaisId: number | null; autoAssigne: boolean } | null | undefined>(undefined);
@@ -206,7 +209,20 @@ export function PanneauExpedition({
       optionChoisie.transporteurCode,
     )
       .then((r) => {
-        if (!annule) setPointsRelais(r);
+        if (annule) return;
+        setPointsRelais(r);
+        // connuSendcloud (pas de state React, capturé par la fermeture de cet effet — pas de
+        // risque de race avec le setPointRelaisChoisi de la branche "connu" juste au-dessus) : on
+        // n'auto-sélectionne QUE quand Sendcloud n'a absolument aucun point pour cette commande —
+        // cf. retour utilisateur du 2026-09-07, sinon le point auto-assigné déjà pré-rempli reste
+        // la meilleure estimation disponible.
+        if (!connuSendcloud?.pointRelaisId) {
+          const plusProche = [...r].sort((a, b) => (a.distanceMetres ?? Infinity) - (b.distanceMetres ?? Infinity))[0];
+          if (plusProche) {
+            setPointRelaisChoisi(plusProche);
+            setPointRelaisConfiance('auto_proche');
+          }
+        }
       })
       .catch((e) => {
         if (!annule) setErreur(e instanceof Error ? e.message : 'Recherche des points relais échouée.');
@@ -458,6 +474,7 @@ export function PanneauExpedition({
             {pointRelaisConfiance === 'client' && ' — déjà choisi par le client, vérifie et confirme'}
             {pointRelaisConfiance === 'auto_assigne' && ' — assigné par Sendcloud (pas confirmé), vérifie ou choisis-en un autre'}
             {pointRelaisConfiance === 'manuel' && ' — choisi à la main'}
+            {pointRelaisConfiance === 'auto_proche' && ' — aucun point connu, le plus proche présélectionné automatiquement : vérifie ou choisis-en un autre'}
             {!pointRelaisConfiance && ' — choisis un point ci-dessous'}
           </p>
           <div className="max-h-40 overflow-y-auto rounded-lg border border-slate-200 bg-white">
