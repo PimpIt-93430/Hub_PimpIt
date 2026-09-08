@@ -210,7 +210,14 @@ function CelluleJour({
       <div className="mb-1 border-b border-slate-100 pb-0.5 text-[9px] font-semibold uppercase tracking-wide text-slate-400">
         {d.getDate()}
       </div>
-      {editable && !jour.horsMois ? (
+      {/* Jour d'école sans heure travaillée (cas courant) : "École 7h" prend directement la place
+          du trait/de l'heure, plutôt que rester en petit dessous d'un "—" (cf. retour utilisateur :
+          "faut que l'école 7h soit à la place du trait pas en dessous"). Si la personne a quand
+          même une heure travaillée ce jour-là (école ET travail le même jour), on garde les deux
+          affichés : l'heure au-dessus, "École" en étiquette dessous, comme avant. */}
+      {jour.estEcole && heures <= 0 ? (
+        <div className="text-sm font-bold text-cyan-600">École {formatDureeHeures(jour.heuresEcole)}</div>
+      ) : editable && !jour.horsMois ? (
         <input
           type="number"
           step="0.25"
@@ -222,7 +229,7 @@ function CelluleJour({
         <div className="text-sm font-bold">{heures > 0 ? formatDureeHeures(heures) : '—'}</div>
       )}
       <div className="mt-1 flex flex-col gap-0.5 text-[9px] font-semibold leading-tight">
-        {jour.estEcole && <span className="text-cyan-600">École {formatDureeHeures(jour.heuresEcole)}</span>}
+        {jour.estEcole && heures > 0 && <span className="text-cyan-600">École {formatDureeHeures(jour.heuresEcole)}</span>}
         {jour.estConge && <span className="text-red-500">Congé</span>}
         {jour.estDimanche && jour.heuresReelles > 0 && <span className="text-amber-600">Dimanche</span>}
       </div>
