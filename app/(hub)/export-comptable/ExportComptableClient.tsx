@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 import { ajouterJours, dateEnISO, formatDureeHeures } from '../planning/dateUtils';
 import { definirExclusionDimanche } from './actions';
 import {
-  appliquerJoursEcole,
   calculerSemainesProfil,
   HEURES_ECOLE_PAR_JOUR,
   joursCongesDuMois,
@@ -14,10 +13,42 @@ import {
   totalHeuresEcoleMoisProfil,
   totalHeuresMoisProfil,
   type CongeCalcul,
+  type JourCalendrier,
   type JourEcoleCalcul,
   type SemaineCalendrier,
   type ShiftCalcul,
 } from './calcul';
+
+/** Heures affichées d'un jour, en tenant compte d'une éventuelle correction manuelle (cf. retour
+ * utilisateur : "il faudrait pouvoir faire des modifications des heures sur les jours avant
+ * d'enregistrer en pdf") — ne touche jamais le planning réel, purement local à cet export (même
+ * principe que les lignes du résumé mensuel, cf. plus bas). */
+type EditionsCalendrier = Record<string, Record<string, number>>;
+
+function heuresJourResolues(profileId: string, jour: JourCalendrier, editions: EditionsCalendrier): number {
+  const correction = editions[profileId]?.[jour.date];
+  return correction ?? jour.heuresAffichees;
+}
+
+/** Total d'une semaine affichée : heures travaillées (corrigées si édité) + heures d'école (cf.
+ * retour utilisateur : "dans le total semaine faut compter les heures de cours avec"). */
+function totalSemaineResolu(profileId: string, semaine: SemaineCalendrier, editions: EditionsCalendrier): number {
+  const total = semaine.jours.reduce((t, j) => t + heuresJourResolues(profileId, j, editions) + j.heuresEcole, 0);
+  return Math.round(total * 100) / 100;
+}
+
+/** Total du mois affiché (jours du mois strict uniquement, cf. calcul.ts) — corrections + école
+ * incluses, cohérent avec totalSemaineResolu ci-dessus. */
+function totalMoisResolu(profileId: string, semaines: SemaineCalendrier[], editions: EditionsCalendrier): number {
+  let total = 0;
+  for (const s of semaines) {
+    for (const j of s.jours) {
+      if (j.horsMois) continue;
+      total += heuresJourResolues(profileId, j, editions) + j.heuresEcole;
+    }
+  }
+  return Math.round(total * 100) / 100;
+}
 
 type Role = 'admin' | 'employe';
 type TypeContrat = 'manager' | 'employe' | 'alternant';
@@ -127,11 +158,7 @@ function calculerLignes(
     }
 
     const exclureDimanche = exclusionParProfil.get(p.id) ?? false;
-    const semaines = appliquerJoursEcole(
-      calculerSemainesProfil({ debutMoisIso: moisIso, profileId: p.id, exclureDimanche, shifts, conges }),
-      p.id,
-      joursEcole,
-    );
+    const semaines = calculerSemainesProfil({ debutMoisIso: moisIso, profileId: p.id, exclureDimanche, shifts, conges, joursEcole });
     const datesPrises = joursCongesDuMois(moisIso, p.id, conges);
 
     return {
@@ -156,20 +183,48 @@ function calculerLignes(
 
 const JOURS_LABELS_COURTS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 
-function CelluleJour({ jour }: { jour: SemaineCalendrier['jours'][number] }) {
+function CelluleJour({
+  jour,
+  profileId,
+  editable,
+  editions,
+  onModifierHeure,
+}: {
+  jour: JourCalendrier;
+  profileId: string;
+  editable: boolean;
+  editions: EditionsCalendrier;
+  onModifierHeure: (dateIso: string, valeur: number) => void;
+}) {
   const d = new Date(`${jour.date}T00:00:00`);
+  const heures = heuresJourResolues(profileId, jour, editions);
   return (
     <td
       className={`border-b border-slate-200 px-2 py-1.5 align-top ${jour.horsMois ? 'text-slate-300' : ''} ${
         jour.estDimanche && !jour.horsMois && jour.heuresReelles > 0 ? 'bg-amber-50' : ''
       }`}
     >
-      <div className="text-[10px] font-semibold">{d.getDate()}</div>
-      <div className="text-xs font-bold">{jour.heuresAffichees > 0 ? formatDureeHeures(jour.heuresAffichees) : '—'}</div>
-      <div className="mt-0.5 flex gap-1 text-[9px]">
-        {jour.estEcole && <span className="text-cyan-600">Éc.</span>}
+      {/* Date bien séparée des heures (cf. retour utilisateur : "on peut confondre c'est pas
+          beau") — petite étiquette grise au-dessus d'un filet, les heures nettement plus grosses
+          et en dessous. */}
+      <div className="mb-1 border-b border-slate-100 pb-0.5 text-[9px] font-semibold uppercase tracking-wide text-slate-400">
+        {d.getDate()}
+      </div>
+      {editable && !jour.horsMois ? (
+        <input
+          type="number"
+          step="0.25"
+          value={heures}
+          onChange={(e) => onModifierHeure(jour.date, Number(e.target.value))}
+          className="w-14 rounded border border-transparent bg-slate-50 px-1 py-0.5 text-sm font-bold text-slate-900 focus:border-indigo-300 focus:bg-white focus:outline-none"
+        />
+      ) : (
+        <div className="text-sm font-bold">{heures > 0 ? formatDureeHeures(heures) : '—'}</div>
+      )}
+      <div className="mt-1 flex flex-col gap-0.5 text-[9px] font-semibold leading-tight">
+        {jour.estEcole && <span className="text-cyan-600">École {formatDureeHeures(jour.heuresEcole)}</span>}
         {jour.estConge && <span className="text-red-500">Congé</span>}
-        {jour.estDimanche && jour.heuresReelles > 0 && <span className="text-amber-600">Dim.</span>}
+        {jour.estDimanche && jour.heuresReelles > 0 && <span className="text-amber-600">Dimanche</span>}
       </div>
     </td>
   );
@@ -180,10 +235,11 @@ function LegendeCalendrier() {
     <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-slate-500">
       <span className="font-semibold text-slate-700">Légende :</span>
       <span>
-        <span className="font-bold">Xh</span> — heures travaillées ce jour (dimanche redistribué si la case est cochée)
+        <span className="font-bold">Xh</span> — heures travaillées ce jour (dimanche redistribué si la case est cochée,
+        modifiable à la main)
       </span>
-      <span className="text-amber-600">Dim. — dimanche travaillé</span>
-      <span className="text-cyan-600">Éc. — jour d&apos;école</span>
+      <span className="text-amber-600">Dimanche — dimanche travaillé</span>
+      <span className="text-cyan-600">École — jour d&apos;école (compté dans le total semaine)</span>
       <span className="text-red-500">Congé — congé posé</span>
     </div>
   );
@@ -196,6 +252,10 @@ function CarteCalendrierEmploye({
   exclureDimanche,
   enCoursBascule,
   onBasculerExclusion,
+  editable,
+  editions,
+  onModifierHeure,
+  onReinitialiserEditions,
 }: {
   profil: Profil;
   semaines: SemaineCalendrier[];
@@ -203,8 +263,13 @@ function CarteCalendrierEmploye({
   exclureDimanche: boolean;
   enCoursBascule: boolean;
   onBasculerExclusion: (valeur: boolean) => void;
+  editable: boolean;
+  editions: EditionsCalendrier;
+  onModifierHeure: (dateIso: string, valeur: number) => void;
+  onReinitialiserEditions: () => void;
 }) {
-  const totalMois = totalHeuresMoisProfil(semaines);
+  const totalMois = totalMoisResolu(profil.id, semaines, editions);
+  const aDesCorrections = Object.keys(editions[profil.id] ?? {}).length > 0;
   return (
     <div className="mb-6 overflow-hidden rounded-[16px] border border-slate-200 bg-white shadow-sm print:break-inside-avoid print:rounded-none print:border-0 print:shadow-none">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 bg-slate-50 px-4 py-3 print:bg-transparent">
@@ -223,6 +288,16 @@ function CarteCalendrierEmploye({
             />
             Ne pas compter les dimanches
           </label>
+          {aDesCorrections && (
+            <button
+              type="button"
+              onClick={onReinitialiserEditions}
+              title="Annule les corrections manuelles des heures pour cette personne ce mois-ci"
+              className="text-xs font-semibold text-slate-400 underline decoration-dotted hover:text-slate-600"
+            >
+              Réinitialiser les heures
+            </button>
+          )}
           <span className="text-xs font-bold text-indigo-600">Total mois : {formatDureeHeures(totalMois)}</span>
         </div>
         <span className="hidden text-xs font-bold text-slate-700 print:inline">Total mois : {formatDureeHeures(totalMois)}</span>
@@ -247,10 +322,17 @@ function CarteCalendrierEmploye({
                 {libelleSemaineCourte(s.lundiIso)}
               </td>
               {s.jours.map((j) => (
-                <CelluleJour key={j.date} jour={j} />
+                <CelluleJour
+                  key={j.date}
+                  jour={j}
+                  profileId={profil.id}
+                  editable={editable}
+                  editions={editions}
+                  onModifierHeure={onModifierHeure}
+                />
               ))}
               <td className="border-b border-slate-200 px-2 py-1.5 align-top">
-                <div className="text-xs font-bold text-indigo-700">{formatDureeHeures(s.totalHeures)}</div>
+                <div className="text-xs font-bold text-indigo-700">{formatDureeHeures(totalSemaineResolu(profil.id, s, editions))}</div>
                 {s.alerteRedistributionImpossible && (
                   <div className="mt-0.5 text-[9px] font-semibold text-amber-600">⚠ dimanche seul, à vérifier</div>
                 )}
@@ -263,7 +345,7 @@ function CarteCalendrierEmploye({
       {heuresEcoleMois > 0 && (
         <div className="border-t border-slate-100 px-4 py-2 text-[11px] text-slate-500">
           Dont {formatDureeHeures(heuresEcoleMois)} d&apos;école ce mois ({heuresEcoleMois / HEURES_ECOLE_PAR_JOUR} jour
-          {heuresEcoleMois / HEURES_ECOLE_PAR_JOUR > 1 ? 's' : ''}).
+          {heuresEcoleMois / HEURES_ECOLE_PAR_JOUR > 1 ? 's' : ''}) — déjà comptée dans le total.
         </div>
       )}
     </div>
@@ -322,21 +404,61 @@ export function ExportComptableClient({
     const map = new Map<string, SemaineCalendrier[]>();
     for (const p of profils) {
       if (p.role === 'admin') continue; // forfait fixe, pas de vrai calendrier hebdo (cf. calculerLignes)
-      const semaines = appliquerJoursEcole(
-        calculerSemainesProfil({
-          debutMoisIso: moisIso,
-          profileId: p.id,
-          exclureDimanche: exclusionLocale.get(p.id) ?? false,
-          shifts,
-          conges,
-        }),
-        p.id,
+      const semaines = calculerSemainesProfil({
+        debutMoisIso: moisIso,
+        profileId: p.id,
+        exclureDimanche: exclusionLocale.get(p.id) ?? false,
+        shifts,
+        conges,
         joursEcole,
-      );
+      });
       map.set(p.id, semaines);
     }
     return map;
   }, [moisIso, profils, exclusionLocale, shifts, conges, joursEcole]);
+
+  // Corrections manuelles des heures par jour, vue calendrier (cf. retour utilisateur : "il
+  // faudrait pouvoir faire des modifications des heures sur les jours avant d'enregistrer en pdf")
+  // — jamais en base (cf. réponse à la question posée avant de construire cet écran : uniquement
+  // l'export, aucun impact sur le vrai planning), persisté dans localStorage par mois comme le
+  // reste de cet export.
+  const cleStockageCalendrier = (mois: string) => `export-comptable:calendrier:${mois}`;
+  const [editionsCalendrier, setEditionsCalendrier] = useState<EditionsCalendrier>({});
+
+  useEffect(() => {
+    try {
+      const sauvegarde = localStorage.getItem(cleStockageCalendrier(moisIso));
+      setEditionsCalendrier(sauvegarde ? (JSON.parse(sauvegarde) as EditionsCalendrier) : {});
+    } catch {
+      setEditionsCalendrier({});
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [moisIso]);
+
+  const modifierHeureCalendrier = (profileId: string, dateIso: string, valeur: number) => {
+    setEditionsCalendrier((prev) => {
+      const suivant = { ...prev, [profileId]: { ...prev[profileId], [dateIso]: valeur } };
+      try {
+        localStorage.setItem(cleStockageCalendrier(moisIso), JSON.stringify(suivant));
+      } catch {
+        /* navigation privée / quota dépassé — la correction reste au moins visible en mémoire. */
+      }
+      return suivant;
+    });
+  };
+
+  const reinitialiserEditionsCalendrier = (profileId: string) => {
+    setEditionsCalendrier((prev) => {
+      const suivant = { ...prev };
+      delete suivant[profileId];
+      try {
+        localStorage.setItem(cleStockageCalendrier(moisIso), JSON.stringify(suivant));
+      } catch {
+        /* idem ci-dessus */
+      }
+      return suivant;
+    });
+  };
 
   // Toujours en local (jamais en base, cf. page.tsx — un export ponctuel, pas une nouvelle source
   // de vérité), mais persisté dans localStorage par mois (cf. retour utilisateur du 2026-08-28 :
@@ -501,6 +623,10 @@ export function ExportComptableClient({
                   exclureDimanche={exclusionLocale.get(p.id) ?? false}
                   enCoursBascule={false}
                   onBasculerExclusion={() => {}}
+                  editable={false}
+                  editions={editionsCalendrier}
+                  onModifierHeure={() => {}}
+                  onReinitialiserEditions={() => {}}
                 />
               </div>
             ))}
@@ -728,6 +854,10 @@ export function ExportComptableClient({
           </>
         ) : (
           <>
+            <p className="mb-3 -mt-2 text-xs text-slate-400">
+              Clique sur les heures d&apos;un jour pour les corriger avant l&apos;export — conservé dans ce navigateur, jamais
+              enregistré dans le vrai planning.
+            </p>
             <LegendeCalendrier />
             {profils
               .filter((p) => p.role !== 'admin')
@@ -740,6 +870,10 @@ export function ExportComptableClient({
                   exclureDimanche={exclusionLocale.get(p.id) ?? false}
                   enCoursBascule={profilEnCoursBascule === p.id}
                   onBasculerExclusion={(valeur) => basculerExclusion(p.id, valeur)}
+                  editable
+                  editions={editionsCalendrier}
+                  onModifierHeure={(dateIso, valeur) => modifierHeureCalendrier(p.id, dateIso, valeur)}
+                  onReinitialiserEditions={() => reinitialiserEditionsCalendrier(p.id)}
                 />
               ))}
             {profils.filter((p) => p.role !== 'admin').length === 0 && (

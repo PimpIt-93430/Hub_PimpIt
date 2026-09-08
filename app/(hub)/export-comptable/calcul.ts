@@ -15,7 +15,7 @@
 // laisser disparaître silencieusement des heures réellement travaillées.
 import { ajouterJours, dateEnISO, dureeShiftMinutes, lundiDeLaSemaine } from '../planning/dateUtils';
 
-export const HEURES_ECOLE_PAR_JOUR = 7;
+export const HEURES_ECOLE_PAR_JOUR: number = 7;
 const CIBLE_HEBDO_MAX = 35;
 
 export interface ProfilCalendrier {
@@ -58,6 +58,10 @@ export interface JourCalendrier {
   /** Après redistribution éventuelle des heures du dimanche (cf. en-tête du fichier). Identique à
    * heuresReelles si la personne n'a pas coché "exclure les dimanches". */
   heuresAffichees: number;
+  /** HEURES_ECOLE_PAR_JOUR si estEcole, sinon 0 — comptées à part de heuresAffichees (jamais
+   * touchées par la redistribution "exclure dimanche"), mais incluses dans le total de la semaine
+   * (cf. retour utilisateur : "dans le total semaine faut compter les heures de cours"). */
+  heuresEcole: number;
 }
 
 export interface SemaineCalendrier {
@@ -122,8 +126,10 @@ export function calculerSemainesProfil(params: {
   exclureDimanche: boolean;
   shifts: ShiftCalcul[];
   conges: CongeCalcul[];
+  joursEcole?: JourEcoleCalcul[];
 }): SemaineCalendrier[] {
-  const { debutMoisIso, profileId, exclureDimanche, shifts, conges } = params;
+  const { debutMoisIso, profileId, exclureDimanche, shifts, conges, joursEcole = [] } = params;
+  const datesEcole = new Set(joursEcole.filter((j) => j.profile_id === profileId).map((j) => j.date));
   const joursDuMois = new Set(datesDuMois(debutMoisIso));
   const { debut } = fenetreSemainesDuMois(debutMoisIso);
   const premierLundi = new Date(`${debut}T00:00:00`);
@@ -172,13 +178,15 @@ export function calculerSemainesProfil(params: {
       }
     }
 
-    const totalHeuresAffichees = heuresAffichees.reduce((a, b) => a + b, 0);
+    const heuresEcoleParJour = datesSemaine.map((date) => (datesEcole.has(date) ? HEURES_ECOLE_PAR_JOUR : 0));
+    const totalHeuresAffichees =
+      heuresAffichees.reduce((a, b) => a + b, 0) + heuresEcoleParJour.reduce((a, b) => a + b, 0);
 
     const jours: JourCalendrier[] = datesSemaine.map((date, i) => ({
       date,
       horsMois: !joursDuMois.has(date),
       estDimanche: i === indexDimanche,
-      estEcole: false, // renseigné par l'appelant (calculerLigneEmploye), pas connu ici par jour
+      estEcole: datesEcole.has(date),
       estConge: conges.some(
         (c) =>
           c.profile_id === profileId &&
@@ -188,6 +196,7 @@ export function calculerSemainesProfil(params: {
       ),
       heuresReelles: Math.round(heuresParJour[i] * 100) / 100,
       heuresAffichees: Math.round(heuresAffichees[i] * 100) / 100,
+      heuresEcole: heuresEcoleParJour[i],
     }));
 
     semaines.push({
@@ -203,18 +212,11 @@ export function calculerSemainesProfil(params: {
   return semaines;
 }
 
-/** Marque les jours d'école (alternants) sur un calendrier déjà calculé — appelé séparément de
- * calculerSemainesProfil pour garder cette fonction-là indépendante du type de contrat. */
-export function appliquerJoursEcole(semaines: SemaineCalendrier[], profileId: string, joursEcole: JourEcoleCalcul[]): SemaineCalendrier[] {
-  const datesEcole = new Set(joursEcole.filter((j) => j.profile_id === profileId).map((j) => j.date));
-  if (datesEcole.size === 0) return semaines;
-  return semaines.map((s) => ({ ...s, jours: s.jours.map((j) => (datesEcole.has(j.date) ? { ...j, estEcole: true } : j)) }));
-}
-
-/** Total mensuel des heures affichées (redistribution "exclure dimanche" déjà appliquée par
- * semaine, cf. calculerSemainesProfil) — ne compte que les jours réellement dans le mois : une
- * semaine à cheval sur deux mois garde son total hebdomadaire "35h" exact (calculé sur les 7
- * jours), mais seule la part du mois en cours entre dans ce total mensuel. */
+/** Total mensuel des heures TRAVAILLÉES (redistribution "exclure dimanche" déjà appliquée par
+ * semaine, cf. calculerSemainesProfil) — école comptée à part (cf. totalHeuresEcoleMoisProfil),
+ * comme la colonne "Heures école" séparée du résumé mensuel. Ne compte que les jours réellement
+ * dans le mois : une semaine à cheval sur deux mois garde son total hebdomadaire exact (calculé sur
+ * les 7 jours), mais seule la part du mois en cours entre dans ce total mensuel. */
 export function totalHeuresMoisProfil(semaines: SemaineCalendrier[]): number {
   let total = 0;
   for (const s of semaines) for (const j of s.jours) if (!j.horsMois) total += j.heuresAffichees;
