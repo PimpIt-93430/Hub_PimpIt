@@ -1,6 +1,7 @@
 import { creerClientSupabaseServeur } from '@/lib/supabase/server';
 import { exigerAdmin } from '@/lib/roles';
 import { dateEnISO } from '../planning/dateUtils';
+import { fenetreSemainesDuMois } from './calcul';
 import { ExportComptableClient } from './ExportComptableClient';
 
 /** Export mensuel pour la compta (cf. discussion 2026-08-28) : par personne, les jours de congé
@@ -19,9 +20,11 @@ export default async function ExportComptablePage({
   // moisPrecedent/moisSuivant côté client (ExportComptableClient.tsx), jamais "YYYY-MM" seul.
   const debut = mois ? new Date(`${mois}T00:00:00`) : new Date(new Date().getFullYear(), new Date().getMonth(), 1);
   const debutMois = new Date(debut.getFullYear(), debut.getMonth(), 1);
-  const finMois = new Date(debut.getFullYear(), debut.getMonth() + 1, 0);
   const debutIso = dateEnISO(debutMois);
-  const finIso = dateEnISO(finMois);
+  // Fenêtre élargie aux semaines complètes (lundi -> dimanche) qui touchent le mois — nécessaire
+  // pour que le total "35h/semaine" d'une semaine à cheval sur deux mois (cf. calcul.ts) reste
+  // exact, même si l'affichage/l'export ne montre ensuite que les jours du mois strict.
+  const { debut: debutFenetre, fin: finFenetre } = fenetreSemainesDuMois(debutIso);
 
   const supabase = await creerClientSupabaseServeur();
 
@@ -36,14 +39,14 @@ export default async function ExportComptablePage({
       supabase
         .from('planning_shifts')
         .select('profile_id, date, heure_debut, heure_fin, pause_debut, pause_fin')
-        .gte('date', debutIso)
-        .lte('date', finIso),
+        .gte('date', debutFenetre)
+        .lte('date', finFenetre),
       supabase
         .from('conges')
         .select('profile_id, date_debut, date_fin, type, statut')
-        .lte('date_debut', finIso)
-        .gte('date_fin', debutIso),
-      supabase.from('jours_ecole_alternant').select('profile_id, date').gte('date', debutIso).lte('date', finIso),
+        .lte('date_debut', finFenetre)
+        .gte('date_fin', debutFenetre),
+      supabase.from('jours_ecole_alternant').select('profile_id, date').gte('date', debutFenetre).lte('date', finFenetre),
     ]);
 
   return (
