@@ -213,3 +213,95 @@ export async function genererEtInsererPlanning(dateDebut: string, dateFin: strin
   revalidatePath('/planning');
   return { nombreCrees: resultat.shifts.length, alertes: resultat.alertes };
 }
+
+// Fenêtre couverte quand on génère pour UNE personne (bouton "Enregistrer" de l'onglet
+// Planification côté fiche employé, cf. FicheDetailMembre.tsx) — même horizon que le cron
+// generer-planning-auto (App PIMP IT/supabase/functions/generer-planning-auto), pour que fixer
+// l'horaire récurrent de quelqu'un remplisse tout de suite son planning sur un an, pas seulement
+// la semaine affichée à l'écran. Purement additif comme genererEtInsererPlanning ci-dessus.
+const FENETRE_SEMAINES_PROFIL = 52;
+
+/** Génère le planning d'UNE SEULE personne, à partir d'aujourd'hui (ou de sa date de début de
+ * contrat si elle est plus tardive — cf. pasEncoreCommence dans generationPlanning.ts, ou du
+ * début du pop-up si l'horaire ne s'applique qu'à partir de là), sur un an — les jours d'école
+ * (jours_ecole_alternant) restent prioritaires sur le travail, exactement comme pour tout le
+ * reste du planning. Ne touche jamais aux créneaux d'un autre profil (requêtes filtrées
+ * `.eq('profile_id', profileId)`, et `profiles: [profil]` passé à genererPlanning). */
+export async function genererPlanningPourProfil(profileId: string): Promise<{ nombreCrees: number }> {
+  await exigerAccesEcriture();
+  const supabase = await creerClientSupabaseServeur();
+  const adminId = await idUtilisateurConnecte(supabase);
+
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const isoDate = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  const lundiDepart = new Date();
+  lundiDepart.setDate(lundiDepart.getDate() - ((lundiDepart.getDay() + 6) % 7));
+  lundiDepart.setHours(0, 0, 0, 0);
+  const finFenetre = new Date(lundiDepart);
+  finFenetre.setDate(finFenetre.getDate() + FENETRE_SEMAINES_PROFIL * 7 - 1);
+  const dateDebut = isoDate(lundiDepart);
+  const dateFin = isoDate(finFenetre);
+
+  const [
+    { data: profil, error: eProfil },
+    { data: horairesRecurrents, error: eHoraires },
+    { data: conges, error: eConges },
+    { data: joursEcole, error: eEcole },
+    { data: shiftsExistants, error: eShifts },
+    { data: affectations, error: eAffectations },
+    { data: popUps, error: ePopUps },
+    { data: informationsRh, error: eRh },
+  ] = await Promise.all([
+    supabase.from('profiles').select('id, role, type_contrat, actif').eq('id', profileId).maybeSingle(),
+    supabase.from('horaires_recurrents_profil').select('*').eq('profile_id', profileId),
+    supabase.from('conges').select('*').eq('profile_id', profileId).lte('date_debut', dateFin).gte('date_fin', dateDebut),
+    supabase
+      .from('jours_ecole_alternant')
+      .select('profile_id, date')
+      .eq('profile_id', profileId)
+      .gte('date', dateDebut)
+      .lte('date', dateFin),
+    supabase.from('planning_shifts').select('*').eq('profile_id', profileId).gte('date', dateDebut).lte('date', dateFin),
+    supabase.from('profil_pop_ups').select('profile_id, pop_up_id').eq('profile_id', profileId),
+    supabase.from('pop_ups').select('id, date_debut'),
+    supabase.from('informations_rh').select('profile_id, date_debut_contrat').eq('profile_id', profileId),
+  ]);
+  const erreur = eProfil || eHoraires || eConges || eEcole || eShifts || eAffectations || ePopUps || eRh;
+  if (erreur) throw new Error(erreur.message);
+  if (!profil) throw new Error('Profil introuvable.');
+
+  const mapAffectations = new Map<string, Set<string>>();
+  for (const a of affectations ?? []) {
+    const ensemble = mapAffectations.get(a.profile_id) ?? new Set<string>();
+    ensemble.add(a.pop_up_id);
+    mapAffectations.set(a.profile_id, ensemble);
+  }
+
+  const jours = Array.from({ length: FENETRE_SEMAINES_PROFIL * 7 }, (_, i) => {
+    const d = new Date(lundiDepart);
+    d.setDate(d.getDate() + i);
+    return { date: isoDate(d), jour_semaine: (d.getDay() + 6) % 7 };
+  });
+
+  const resultat = genererPlanning({
+    jours,
+    profiles: [profil],
+    horairesRecurrents: horairesRecurrents ?? [],
+    horairesOuverture: [],
+    conges: conges ?? [],
+    joursEcole: joursEcole ?? [],
+    shiftsExistants: shiftsExistants ?? [],
+    mapAffectations,
+    popUps: popUps ?? [],
+    adminId,
+    datesDebutContrat: informationsRh ?? [],
+  });
+
+  if (resultat.shifts.length > 0) {
+    const { error: eInsert } = await supabase.from('planning_shifts').insert(resultat.shifts);
+    if (eInsert) throw new Error(eInsert.message);
+  }
+
+  revalidatePath('/planning');
+  return { nombreCrees: resultat.shifts.length };
+}

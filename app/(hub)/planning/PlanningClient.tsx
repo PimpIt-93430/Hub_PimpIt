@@ -60,6 +60,7 @@ export function PlanningClient({
   const [vue, setVue] = useState<Vue>('employes');
   const [recherche, setRecherche] = useState('');
   const [filtreContrat, setFiltreContrat] = useState<FiltreContrat>('tous');
+  const [filtrePopUpId, setFiltrePopUpId] = useState<string>('tous');
   const [panneau, setPanneau] = useState<PanneauContexte | null>(null);
   const [generationEnCours, demarrerGeneration] = useTransition();
   const [messageGeneration, setMessageGeneration] = useState<string | null>(null);
@@ -83,6 +84,11 @@ export function PlanningClient({
   function profilCorrespondFiltres(profil: Profile | undefined): boolean {
     if (!profil) return false;
     if (filtreContrat !== 'tous' && profil.type_contrat !== filtreContrat) return false;
+    // Un admin est toujours considéré attribué à tous les lieux (même convention que
+    // generationPlanning.ts et estAttribueA côté écrans).
+    if (filtrePopUpId !== 'tous' && profil.role !== 'admin' && !mapAffectations.get(profil.id)?.has(filtrePopUpId)) {
+      return false;
+    }
     const r = recherche.trim().toLowerCase();
     if (r && !`${profil.nom_complet} ${profil.email}`.toLowerCase().includes(r)) return false;
     return true;
@@ -191,6 +197,21 @@ export function PlanningClient({
             <option value="employes">Vue par employés</option>
             <option value="popups">Vue par pop-up</option>
           </select>
+
+          {vue === 'employes' && (
+            <select
+              value={filtrePopUpId}
+              onChange={(e) => setFiltrePopUpId(e.target.value)}
+              className="rounded-[10px] border border-slate-200 bg-white px-3 py-2 text-[13px] font-semibold text-slate-800 shadow-sm focus:outline-none"
+            >
+              <option value="tous">Tous les pop-ups</option>
+              {popUps.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.nom}
+                </option>
+              ))}
+            </select>
+          )}
         </div>
 
         {!lectureSeule && (
