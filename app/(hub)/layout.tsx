@@ -60,7 +60,10 @@ const CATEGORIES: CategorieNav[] = [
     titre: 'Finance',
     icone: '💰',
     couleur: 'emerald',
-    liens: [{ href: '/ventes', label: 'Ventes', icone: '💰' }],
+    liens: [
+      { href: '/ventes', label: 'Ventes', icone: '💰' },
+      { href: '/trou', label: 'Trou', icone: '🕳️' },
+    ],
   },
   // "Commercial" (Clients, Tâches, Recommandations) et les autres écrans Shopify/Airtable mis de
   // côté le 2026-08-26 (Produits, Sabots, Sabots personnalisés, Produits complémentaires) restent
