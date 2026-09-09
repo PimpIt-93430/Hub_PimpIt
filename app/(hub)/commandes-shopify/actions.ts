@@ -17,6 +17,7 @@ import {
 import {
   chargerExpeditionSendcloudPourCommande,
   chargerEtiquettesSendcloudRecentes,
+  compterExpeditionsSendcloudPourCommande,
   enregistrerExpeditionSendcloud,
   rafraichirStatutsExpeditionsSendcloud,
   type ExpeditionSendcloud,
@@ -182,6 +183,15 @@ export interface ParamsCreerEtiquette {
 export async function creerEtiquette(
   params: ParamsCreerEtiquette,
 ): Promise<{ envoi: Envoi; etiquetteUrl: string | null; fulfillmentShopifyId: string | null }> {
+  // Sendcloud refuse (409 Conflict) une deuxième création avec le même external_reference_id, même
+  // si le premier envoi a depuis été annulé — sans ça, "Un problème avec ce colis ? Créer une
+  // nouvelle étiquette" (cf. PanneauExpedition.tsx) resterait bloqué en boucle après une annulation
+  // légitime (cf. retour utilisateur du 2026-09-09, commande #26800). order_number reste inchangé
+  // (juste informatif côté Sendcloud) — seul external_reference_id, qui porte la contrainte
+  // d'unicité, est suffixé à partir de la 2ᵉ tentative.
+  const nombreTentatives = await compterExpeditionsSendcloudPourCommande(params.commandeShopifyId);
+  const referenceExterne = nombreTentatives > 0 ? `${params.commandeNom}-r${nombreTentatives + 1}` : params.commandeNom;
+
   const envoi = await creerEtiquetteEnvoi({
     shippingOptionCode: params.shippingOptionCode,
     fromAddress: params.fromAddress,
@@ -189,7 +199,7 @@ export async function creerEtiquette(
     poidsKg: params.poidsKg,
     dimensionsCm: params.dimensionsCm,
     orderNumber: params.commandeNom,
-    externalReferenceId: params.commandeNom,
+    externalReferenceId: referenceExterne,
     totalCommande: params.totalCommande,
     pointRelaisId: params.pointRelaisId,
   });

@@ -98,6 +98,21 @@ export async function enregistrerExpeditionSendcloud(params: {
   }
 }
 
+/** Nombre d'envois Sendcloud déjà tentés pour cette commande (annulés inclus) — cf. actions.ts
+ * creerEtiquette : Sendcloud refuse (409 Conflict) une deuxième création avec le même
+ * external_reference_id, y compris pour un envoi qui a depuis été annulé (cf. retour utilisateur
+ * du 2026-09-09, commande #26800 : "recréer un envoi" bloqué par ce garde-fou après une annulation
+ * légitime) — un suffixe distinct par tentative (-r2, -r3…) permet un vrai renvoi. */
+export async function compterExpeditionsSendcloudPourCommande(commandeShopifyId: number): Promise<number> {
+  const supabase = await creerClientSupabaseServeur();
+  const { count, error } = await supabase
+    .from('expeditions_sendcloud')
+    .select('id', { count: 'exact', head: true })
+    .eq('commande_shopify_id', commandeShopifyId);
+  if (error) throw new Error(error.message);
+  return count ?? 0;
+}
+
 /** Dernière expédition Sendcloud connue pour UNE commande précise, interrogée en direct — garde-fou
  * anti double-création (même logique que Boxtal, cf. incident #26586) : sans cette vérification à
  * l'ouverture, une commande dont la création avait réussi et facturé mais semblé échouer côté écran
