@@ -88,6 +88,13 @@ export function PanneauExpedition({
   // et explicite (jamais automatique) pour forcer un nouvel envoi même quand un existe déjà, ex.
   // colis perdu. Reste à false par défaut : le flux normal (réimpression) prime toujours.
   const [forcerNouvelle, setForcerNouvelle] = useState(false);
+  // Cf. retour utilisateur du 2026-09-09 (commande #26800) : "ya rien qui réapparait, il faudrait
+  // un bouton recréer un envoi" — quand Shopify montre la commande expédiée mais qu'aucune
+  // expédition Sendcloud n'est enregistrée chez nous (créée par un autre biais : point relais géré
+  // ailleurs avant ce correctif, étiquette Shopify native, etc.), le panneau se contentait de
+  // disparaître (`return null` ci-dessous), sans aucun moyen d'en créer une depuis ici. Ce bouton
+  // ouvre le formulaire de création malgré tout, avec le même avertissement que "forcerNouvelle".
+  const [voirFormulaireSansResultatConnu, setVoirFormulaireSansResultatConnu] = useState(false);
   // undefined = chargement, tableau = offres triées moins cher en premier (vide = aucune trouvée).
   const [options, setOptions] = useState<OptionExpedition[] | undefined>(undefined);
   const [optionChoisie, setOptionChoisie] = useState<OptionExpedition | null>(null);
@@ -292,8 +299,25 @@ export function PanneauExpedition({
   }
 
   // Commande déjà expédiée côté Shopify mais aucun envoi Sendcloud enregistré chez nous (expédiée
-  // par un autre biais) — jamais le formulaire de création ici, cf. commentaire du prop.
-  if (!resultat && dejaExpediee) return null;
+  // par un autre biais) — cf. commentaire de voirFormulaireSansResultatConnu : un bouton explicite
+  // plutôt qu'un formulaire de création qui réapparaîtrait tout seul.
+  if (!resultat && dejaExpediee && !voirFormulaireSansResultatConnu) {
+    return (
+      <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50 p-3.5">
+        <p className="mb-2 text-xs font-semibold text-slate-600">
+          Shopify montre cette commande comme expédiée, mais aucune étiquette créée depuis le Hub n&apos;est
+          enregistrée pour elle (expédiée par un autre moyen, ou avant la mise en place du suivi ici).
+        </p>
+        <button
+          type="button"
+          onClick={() => setVoirFormulaireSansResultatConnu(true)}
+          className="text-xs font-semibold text-indigo-600 hover:underline"
+        >
+          Créer quand même une étiquette
+        </button>
+      </div>
+    );
+  }
 
   if (!resultat && enSuspens === undefined) {
     return <p className="mb-4 text-xs text-slate-400">Vérification du statut Shopify…</p>;

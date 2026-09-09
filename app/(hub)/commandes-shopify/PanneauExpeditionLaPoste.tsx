@@ -82,6 +82,11 @@ export function PanneauExpeditionLaPoste({
   // et explicite (jamais automatique) pour forcer un nouvel envoi même quand un existe déjà, ex.
   // colis perdu. Reste à false par défaut : le flux normal (réimpression) prime toujours.
   const [forcerNouvelle, setForcerNouvelle] = useState(false);
+  // Cf. retour utilisateur du 2026-09-09 (commande #26800, même correctif que PanneauExpedition.tsx)
+  // : le formulaire de création disparaissait entièrement (`return null` ci-dessous) sans aucun
+  // moyen d'en créer une depuis ici quand aucune étiquette La Poste n'est enregistrée chez nous
+  // pour une commande déjà expédiée par un autre biais.
+  const [voirFormulaireSansResultatConnu, setVoirFormulaireSansResultatConnu] = useState(false);
   // Cf. retour utilisateur du 2026-09-05 : "il y a un problème avec les shipped by seller elles
   // arrivent en suspendu sur le shopify et tant qu'elles sont en suspendu faut pas qu'elles sortent
   // sur le hub" — undefined = vérification en cours, jamais le formulaire de création tant que ce
@@ -165,8 +170,24 @@ export function PanneauExpeditionLaPoste({
   }
 
   // Commande déjà expédiée côté Shopify mais aucune étiquette La Poste enregistrée chez nous
-  // (expédiée par un autre biais) — jamais le formulaire de création ici, cf. commentaire du prop.
-  if (!resultat && dejaExpediee) return null;
+  // (expédiée par un autre biais) — cf. commentaire de voirFormulaireSansResultatConnu.
+  if (!resultat && dejaExpediee && !voirFormulaireSansResultatConnu) {
+    return (
+      <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50 p-3.5">
+        <p className="mb-2 text-xs font-semibold text-slate-600">
+          Shopify montre cette commande comme expédiée, mais aucune étiquette créée depuis le Hub n&apos;est
+          enregistrée pour elle (expédiée par un autre moyen, ou avant la mise en place du suivi ici).
+        </p>
+        <button
+          type="button"
+          onClick={() => setVoirFormulaireSansResultatConnu(true)}
+          className="text-xs font-semibold text-indigo-600 hover:underline"
+        >
+          Créer quand même une étiquette
+        </button>
+      </div>
+    );
+  }
 
   if (!resultat && enSuspens === undefined) {
     return <p className="mb-4 text-xs text-slate-400">Vérification du statut Shopify…</p>;

@@ -421,8 +421,17 @@ export function CommandesShopifyClient({
               // dessous) n'affiche alors QUE la réimpression d'une étiquette déjà enregistrée chez
               // nous, jamais le formulaire de création, pour ne jamais risquer un second envoi réel
               // sur une commande que Shopify considère déjà expédiée par un autre biais.
+              //
+              // Cf. retour utilisateur du 2026-09-09 (commande #26800) : "léger" routait toujours
+              // vers La Poste (Lettre Suivie), qui n'a JAMAIS de point relais (boîte aux lettres/
+              // domicile uniquement, cf. PanneauExpeditionLaPoste) — une commande légère mais dont
+              // le client a choisi un point relais se retrouvait donc sans aucun moyen de créer
+              // l'étiquette qu'il faut réellement. Le mode de livraison Shopify prime désormais sur
+              // la classification léger/lourd : "point relais" force toujours Sendcloud, seul à le
+              // gérer, quel que soit le poids.
               (classification.get(commandeOuverte.id) === 'leger' &&
-              commandeOuverte.adresseLivraison?.paysCode?.toUpperCase() === 'FR' ? (
+              commandeOuverte.adresseLivraison?.paysCode?.toUpperCase() === 'FR' &&
+              !/point\s*relais/i.test(commandeOuverte.moyenExpedition ?? '') ? (
                 <PanneauExpeditionLaPoste
                   commande={commandeOuverte}
                   poidsConnuGrammes={poidsConnus.get(commandeOuverte.id)}
