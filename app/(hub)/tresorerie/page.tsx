@@ -1,6 +1,6 @@
 import { chargerComptesQonto } from '@/lib/qonto';
 import { exigerAdmin } from '@/lib/roles';
-import { chargerDepensesFlux } from './actions';
+import { chargerDepensesFlux, chargerRecettesFlux } from './actions';
 import { FluxTresorerieClient } from './FluxTresorerieClient';
 
 function formatMontant(n: number, devise: string): string {
@@ -43,11 +43,12 @@ export default async function TresoreriePage() {
   // error: a server-side exception has occurred" en production) — même garde-fou que pour Qonto
   // ci-dessus, la section Flux de trésorerie affiche juste son propre message d'erreur.
   let depensesFlux: Awaited<ReturnType<typeof chargerDepensesFlux>> = [];
+  let recettesFlux: Awaited<ReturnType<typeof chargerRecettesFlux>> = [];
   let erreurDepenses: string | null = null;
   try {
-    depensesFlux = await chargerDepensesFlux();
+    [depensesFlux, recettesFlux] = await Promise.all([chargerDepensesFlux(), chargerRecettesFlux()]);
   } catch (e) {
-    erreurDepenses = e instanceof Error ? e.message : 'Chargement des dépenses échoué.';
+    erreurDepenses = e instanceof Error ? e.message : 'Chargement du flux de trésorerie échoué.';
   }
 
   return (
@@ -113,7 +114,7 @@ export default async function TresoreriePage() {
           Chargement du flux de trésorerie impossible : {erreurDepenses}
         </div>
       ) : (
-        <FluxTresorerieClient soldeActuel={soldeEur} depensesInitiales={depensesFlux} />
+        <FluxTresorerieClient soldeActuel={soldeEur} depensesInitiales={depensesFlux} recettesInitiales={recettesFlux} />
       )}
     </div>
   );

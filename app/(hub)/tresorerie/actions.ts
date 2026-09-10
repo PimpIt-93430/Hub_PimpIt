@@ -118,3 +118,91 @@ export async function supprimerDepenseFlux(id: string): Promise<void> {
   if (!data || data.length === 0) throw new Error('Suppression bloquée (droits insuffisants ?)');
   revalidatePath('/tresorerie');
 }
+
+// ---- Recettes (cf. retour utilisateur du 2026-09-11 : "pour les recettes on a tous les pop up il
+// faut qu'on mette un chiffre d'affaire moyen par jour et par mois HT et les charges variables...
+// les revenus commencent au premier jour du loyer") ----
+
+export interface RecetteFlux {
+  id: string;
+  popUpNom: string;
+  caJourHt: number;
+  caMoisHt: number;
+  tauxChargesVariables: number;
+  creeParNom: string;
+}
+
+export interface ParamsRecetteFlux {
+  popUpNom: string;
+  caJourHt: number;
+  caMoisHt: number;
+  tauxChargesVariables: number;
+}
+
+export async function chargerRecettesFlux(): Promise<RecetteFlux[]> {
+  await exigerAdmin();
+  const supabase = await creerClientSupabaseServeur();
+  const { data, error } = await supabase
+    .from('flux_tresorerie_recettes')
+    .select('id, pop_up_nom, ca_jour_ht, ca_mois_ht, taux_charges_variables, createur:created_by(nom_complet, email)')
+    .order('pop_up_nom', { ascending: true });
+  if (error) throw new Error(error.message);
+
+  type Ligne = {
+    id: string;
+    pop_up_nom: string;
+    ca_jour_ht: number;
+    ca_mois_ht: number;
+    taux_charges_variables: number;
+    createur: { nom_complet: string | null; email: string } | null;
+  };
+
+  return ((data ?? []) as unknown as Ligne[]).map((l) => ({
+    id: l.id,
+    popUpNom: l.pop_up_nom,
+    caJourHt: l.ca_jour_ht,
+    caMoisHt: l.ca_mois_ht,
+    tauxChargesVariables: l.taux_charges_variables,
+    creeParNom: l.createur ? l.createur.nom_complet || l.createur.email : '—',
+  }));
+}
+
+function versLigneRecette(params: ParamsRecetteFlux) {
+  return {
+    pop_up_nom: params.popUpNom.trim(),
+    ca_jour_ht: params.caJourHt,
+    ca_mois_ht: params.caMoisHt,
+    taux_charges_variables: params.tauxChargesVariables,
+  };
+}
+
+export async function creerRecetteFlux(params: ParamsRecetteFlux): Promise<void> {
+  await exigerAdmin();
+  const supabase = await creerClientSupabaseServeur();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error('Non connecté.');
+
+  const { error } = await supabase.from('flux_tresorerie_recettes').insert({ ...versLigneRecette(params), created_by: user.id });
+  if (error) throw new Error(error.message);
+  revalidatePath('/tresorerie');
+}
+
+export async function modifierRecetteFlux(id: string, params: ParamsRecetteFlux): Promise<void> {
+  await exigerAdmin();
+  const supabase = await creerClientSupabaseServeur();
+  const { data, error } = await supabase.from('flux_tresorerie_recettes').update(versLigneRecette(params)).eq('id', id).select('id');
+  if (error) throw new Error(error.message);
+  if (!data || data.length === 0) throw new Error('Modification bloquée (droits insuffisants ?)');
+  revalidatePath('/tresorerie');
+}
+
+export async function supprimerRecetteFlux(id: string): Promise<void> {
+  await exigerAdmin();
+  const supabase = await creerClientSupabaseServeur();
+  const { data, error } = await supabase.from('flux_tresorerie_recettes').delete().eq('id', id).select('id');
+  if (error) throw new Error(error.message);
+  if (!data || data.length === 0) throw new Error('Suppression bloquée (droits insuffisants ?)');
+  revalidatePath('/tresorerie');
+}
