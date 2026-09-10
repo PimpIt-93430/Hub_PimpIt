@@ -1,5 +1,7 @@
 import { chargerComptesQonto } from '@/lib/qonto';
 import { exigerAdmin } from '@/lib/roles';
+import { chargerDepensesFlux } from './actions';
+import { FluxTresorerieClient } from './FluxTresorerieClient';
 
 function formatMontant(n: number, devise: string): string {
   return n.toLocaleString('fr-FR', { style: 'currency', currency: devise });
@@ -33,6 +35,11 @@ export default async function TresoreriePage() {
   for (const c of organisation?.comptes ?? []) {
     parDevise.set(c.devise, (parDevise.get(c.devise) ?? 0) + c.solde);
   }
+  // Flux de trésorerie (cf. retour utilisateur du 2026-09-10) : parti du solde EUR connu ci-dessus
+  // — les autres devises, s'il y en a un jour, ne sont pas mélangées dedans (pas de taux de change
+  // géré ici).
+  const soldeEur = parDevise.get('EUR') ?? 0;
+  const depensesFlux = await chargerDepensesFlux();
 
   return (
     <div>
@@ -91,6 +98,8 @@ export default async function TresoreriePage() {
           </div>
         </>
       )}
+
+      <FluxTresorerieClient soldeActuel={soldeEur} depensesInitiales={depensesFlux} />
     </div>
   );
 }
