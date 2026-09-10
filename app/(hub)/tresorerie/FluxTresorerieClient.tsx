@@ -139,7 +139,20 @@ function GraphiqueSolde({ soldeDepart, occurrences, debut, fin }: { soldeDepart:
   );
 }
 
-export function FluxTresorerieClient({ soldeActuel, depensesInitiales }: { soldeActuel: number; depensesInitiales: DepenseFlux[] }) {
+interface PopUp {
+  id: string;
+  nom: string;
+}
+
+export function FluxTresorerieClient({
+  soldeActuel,
+  depensesInitiales,
+  popUps,
+}: {
+  soldeActuel: number;
+  depensesInitiales: DepenseFlux[];
+  popUps: PopUp[];
+}) {
   const router = useRouter();
   const [depenses, setDepenses] = useState(depensesInitiales);
   // router.refresh() (après ajout/suppression) refait le rendu serveur et passe de nouvelles
@@ -155,6 +168,7 @@ export function FluxTresorerieClient({ soldeActuel, depensesInitiales }: { solde
   const [frequence, setFrequence] = useState<FrequenceDepense>('mensuelle');
   const [dateFin, setDateFin] = useState('');
   const [note, setNote] = useState('');
+  const [popUpId, setPopUpId] = useState('');
 
   const [enCours, demarrer] = useTransition();
   const [erreur, setErreur] = useState<string | null>(null);
@@ -191,12 +205,14 @@ export function FluxTresorerieClient({ soldeActuel, depensesInitiales }: { solde
           frequence: type === 'recurrente' ? frequence : null,
           dateFin: type === 'recurrente' ? dateFin : null,
           note,
+          popUpId: popUpId || null,
         });
         setLibelle('');
         setMontant('');
         setDate('');
         setDateFin('');
         setNote('');
+        setPopUpId('');
         router.refresh();
       } catch (e) {
         setErreur(e instanceof Error ? e.message : "Échec de l'enregistrement.");
@@ -321,6 +337,24 @@ export function FluxTresorerieClient({ soldeActuel, depensesInitiales }: { solde
         </div>
 
         <label className="mb-3 block">
+          <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+            Pop-up concerné (optionnel) — pour repérer plus tard quelles recettes couvrent quelles charges
+          </span>
+          <select
+            value={popUpId}
+            onChange={(e) => setPopUpId(e.target.value)}
+            className="w-full rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-sm focus:border-indigo-300 focus:bg-white focus:outline-none"
+          >
+            <option value="">— Aucun (charge globale)</option>
+            {popUps.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.nom}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="mb-3 block">
           <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-400">Note (optionnel)</span>
           <input
             value={note}
@@ -346,6 +380,7 @@ export function FluxTresorerieClient({ soldeActuel, depensesInitiales }: { solde
           <thead>
             <tr className="border-b border-slate-100 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
               <th className="px-4 py-3">Libellé</th>
+              <th className="px-4 py-3">Pop-up</th>
               <th className="px-4 py-3">Montant HT</th>
               <th className="px-4 py-3">Type</th>
               <th className="px-4 py-3">Échéance</th>
@@ -358,6 +393,13 @@ export function FluxTresorerieClient({ soldeActuel, depensesInitiales }: { solde
             {depenses.map((d) => (
               <tr key={d.id} className="border-b border-slate-50 last:border-0">
                 <td className="px-4 py-2.5 font-semibold text-slate-800">{d.libelle}</td>
+                <td className="px-4 py-2.5">
+                  {d.popUpNom ? (
+                    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700">{d.popUpNom}</span>
+                  ) : (
+                    <span className="text-slate-300">—</span>
+                  )}
+                </td>
                 <td className="px-4 py-2.5 font-bold text-red-600">{formatMontant(d.montant)}</td>
                 <td className="px-4 py-2.5 text-slate-500">
                   {d.type === 'ponctuelle' ? 'Ponctuelle' : d.frequence ? LIBELLE_FREQUENCE[d.frequence] : 'Récurrente'}
@@ -382,7 +424,7 @@ export function FluxTresorerieClient({ soldeActuel, depensesInitiales }: { solde
             ))}
             {depenses.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-4 py-10 text-center text-sm text-slate-400">
+                <td colSpan={8} className="px-4 py-10 text-center text-sm text-slate-400">
                   Aucune dépense enregistrée.
                 </td>
               </tr>
