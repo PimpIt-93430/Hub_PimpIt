@@ -66,9 +66,16 @@ export default async function TresoreriePage() {
               <div key={c.id} className="rounded-[20px] border border-slate-200 bg-white p-5 shadow-sm">
                 <div className="mb-2 flex items-center justify-between">
                   <p className="font-bold text-slate-900">{c.nom}</p>
-                  {c.principal && (
-                    <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-semibold text-indigo-700">Principal</span>
-                  )}
+                  <div className="flex gap-1.5">
+                    {c.externe && (
+                      <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
+                        Compte externe
+                      </span>
+                    )}
+                    {c.principal && (
+                      <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-semibold text-indigo-700">Principal</span>
+                    )}
+                  </div>
                 </div>
                 <p className="text-2xl font-bold text-emerald-600">{formatMontant(c.solde, c.devise)}</p>
                 {c.soldeAutorise !== c.solde && (

@@ -23,6 +23,11 @@ export interface CompteQonto {
   soldeAutorise: number;
   statut: 'active' | 'closed';
   principal: boolean;
+  /** Compte d'une autre banque agrégé dans Qonto (ex. Crédit Mutuel, cf. retour utilisateur du
+   * 2026-09-10) plutôt qu'un vrai compte Qonto — même endpoint /v2/organization, juste ce flag en
+   * plus (is_external_account). Doit être connecté côté Qonto (Comptes > Comptes externes) pour
+   * apparaître ici : rien à faire côté Hub une fois que c'est fait chez Qonto. */
+  externe: boolean;
   majLe: string;
 }
 
@@ -44,6 +49,7 @@ interface ReponseOrganisation {
       authorized_balance: number;
       status: 'active' | 'closed';
       main: boolean;
+      is_external_account: boolean;
       updated_at: string;
     }[];
   };
@@ -77,6 +83,7 @@ export async function chargerComptesQonto(): Promise<OrganisationQonto> {
         soldeAutorise: c.authorized_balance,
         statut: c.status,
         principal: c.main,
+        externe: c.is_external_account,
         majLe: c.updated_at,
       })),
   };
