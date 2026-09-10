@@ -39,7 +39,16 @@ export default async function TresoreriePage() {
   // — les autres devises, s'il y en a un jour, ne sont pas mélangées dedans (pas de taux de change
   // géré ici).
   const soldeEur = parDevise.get('EUR') ?? 0;
-  const depensesFlux = await chargerDepensesFlux();
+  // Jamais laisser une erreur ici planter toute la page (cf. incident du 2026-09-10 : "Application
+  // error: a server-side exception has occurred" en production) — même garde-fou que pour Qonto
+  // ci-dessus, la section Flux de trésorerie affiche juste son propre message d'erreur.
+  let depensesFlux: Awaited<ReturnType<typeof chargerDepensesFlux>> = [];
+  let erreurDepenses: string | null = null;
+  try {
+    depensesFlux = await chargerDepensesFlux();
+  } catch (e) {
+    erreurDepenses = e instanceof Error ? e.message : 'Chargement des dépenses échoué.';
+  }
 
   return (
     <div>
@@ -99,7 +108,13 @@ export default async function TresoreriePage() {
         </>
       )}
 
-      <FluxTresorerieClient soldeActuel={soldeEur} depensesInitiales={depensesFlux} />
+      {erreurDepenses ? (
+        <div className="mt-8 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">
+          Chargement du flux de trésorerie impossible : {erreurDepenses}
+        </div>
+      ) : (
+        <FluxTresorerieClient soldeActuel={soldeEur} depensesInitiales={depensesFlux} />
+      )}
     </div>
   );
 }
