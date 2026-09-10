@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 
 import {
   creerDepenseFlux,
+  modifierDepenseFlux,
   supprimerDepenseFlux,
   type DepenseFlux,
   type FrequenceDepense,
@@ -139,36 +140,41 @@ function GraphiqueSolde({ soldeDepart, occurrences, debut, fin }: { soldeDepart:
   );
 }
 
-interface PopUp {
-  id: string;
-  nom: string;
+interface FormulaireDepense {
+  libelle: string;
+  montant: string;
+  type: TypeDepense;
+  date: string;
+  frequence: FrequenceDepense;
+  dateFin: string;
+  note: string;
+  estPopUp: boolean;
 }
 
-export function FluxTresorerieClient({
-  soldeActuel,
-  depensesInitiales,
-  popUps,
-}: {
-  soldeActuel: number;
-  depensesInitiales: DepenseFlux[];
-  popUps: PopUp[];
-}) {
+const FORMULAIRE_VIDE: FormulaireDepense = {
+  libelle: '',
+  montant: '',
+  type: 'ponctuelle',
+  date: '',
+  frequence: 'mensuelle',
+  dateFin: '',
+  note: '',
+  estPopUp: false,
+};
+
+export function FluxTresorerieClient({ soldeActuel, depensesInitiales }: { soldeActuel: number; depensesInitiales: DepenseFlux[] }) {
   const router = useRouter();
   const [depenses, setDepenses] = useState(depensesInitiales);
-  // router.refresh() (après ajout/suppression) refait le rendu serveur et passe de nouvelles
-  // props, mais un useState initialisé une fois ne les reprend jamais tout seul — sans cet effet,
-  // la ligne fraîchement créée reste invisible malgré son insertion réussie en base (cf. bug trouvé
-  // en testant : "TEST TVA T4" enregistrée en base mais jamais affichée).
+  // router.refresh() (après ajout/modification/suppression) refait le rendu serveur et passe de
+  // nouvelles props, mais un useState initialisé une fois ne les reprend jamais tout seul — sans
+  // cet effet, une ligne fraîchement créée reste invisible malgré son insertion réussie en base
+  // (cf. bug trouvé en testant : "TEST TVA T4" enregistrée en base mais jamais affichée).
   useEffect(() => setDepenses(depensesInitiales), [depensesInitiales]);
 
-  const [libelle, setLibelle] = useState('');
-  const [montant, setMontant] = useState('');
-  const [type, setType] = useState<TypeDepense>('ponctuelle');
-  const [date, setDate] = useState('');
-  const [frequence, setFrequence] = useState<FrequenceDepense>('mensuelle');
-  const [dateFin, setDateFin] = useState('');
-  const [note, setNote] = useState('');
-  const [popUpId, setPopUpId] = useState('');
+  const [form, setForm] = useState<FormulaireDepense>(FORMULAIRE_VIDE);
+  // null = mode "ajouter" ; sinon id de la dépense en cours de modification (cf. retour
+  // utilisateur : "il faut pouvoir aussi modifier les dépenses déjà mises").
+  const [editionId, setEditionId] = useState<string | null>(null);
 
   const [enCours, demarrer] = useTransition();
   const [erreur, setErreur] = useState<string | null>(null);
@@ -188,31 +194,53 @@ export function FluxTresorerieClient({
 
   const totalSurUnAn = occurrences.reduce((s, o) => s + o.montant, 0);
 
+  const demarrerEdition = (d: DepenseFlux) => {
+    setErreur(null);
+    setEditionId(d.id);
+    setForm({
+      libelle: d.libelle,
+      montant: String(d.montant),
+      type: d.type,
+      date: d.date,
+      frequence: d.frequence ?? 'mensuelle',
+      dateFin: d.dateFin ?? '',
+      note: d.note ?? '',
+      estPopUp: d.estPopUp,
+    });
+  };
+
+  const annulerEdition = () => {
+    setEditionId(null);
+    setForm(FORMULAIRE_VIDE);
+    setErreur(null);
+  };
+
   const soumettre = () => {
     setErreur(null);
-    const montantNombre = Number(montant.replace(',', '.'));
-    if (!libelle.trim() || !date || !montant || Number.isNaN(montantNombre) || montantNombre <= 0) {
+    const montantNombre = Number(form.montant.replace(',', '.'));
+    if (!form.libelle.trim() || !form.date || !form.montant || Number.isNaN(montantNombre) || montantNombre <= 0) {
       setErreur('Libellé, date et montant sont obligatoires.');
       return;
     }
+    const params = {
+      libelle: form.libelle,
+      montant: montantNombre,
+      type: form.type,
+      date: form.date,
+      frequence: form.type === 'recurrente' ? form.frequence : null,
+      dateFin: form.type === 'recurrente' ? form.dateFin : null,
+      note: form.note,
+      estPopUp: form.estPopUp,
+    };
     demarrer(async () => {
       try {
-        await creerDepenseFlux({
-          libelle,
-          montant: montantNombre,
-          type,
-          date,
-          frequence: type === 'recurrente' ? frequence : null,
-          dateFin: type === 'recurrente' ? dateFin : null,
-          note,
-          popUpId: popUpId || null,
-        });
-        setLibelle('');
-        setMontant('');
-        setDate('');
-        setDateFin('');
-        setNote('');
-        setPopUpId('');
+        if (editionId) {
+          await modifierDepenseFlux(editionId, params);
+        } else {
+          await creerDepenseFlux(params);
+        }
+        setForm(FORMULAIRE_VIDE);
+        setEditionId(null);
         router.refresh();
       } catch (e) {
         setErreur(e instanceof Error ? e.message : "Échec de l'enregistrement.");
@@ -223,6 +251,7 @@ export function FluxTresorerieClient({
   const supprimer = (d: DepenseFlux) => {
     const confirme = window.confirm(`Supprimer "${d.libelle}" (${formatMontant(d.montant)}) ?`);
     if (!confirme) return;
+    if (editionId === d.id) annulerEdition();
     setSuppressionEnCours(d.id);
     setDepenses((liste) => liste.filter((l) => l.id !== d.id));
     supprimerDepenseFlux(d.id)
@@ -258,16 +287,25 @@ export function FluxTresorerieClient({
       </div>
 
       <div className="mb-6 rounded-[20px] border border-slate-200 bg-white p-5 shadow-sm">
-        <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">Ajouter une dépense</p>
+        <div className="mb-3 flex items-center justify-between">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+            {editionId ? 'Modifier la dépense' : 'Ajouter une dépense'}
+          </p>
+          {editionId && (
+            <button type="button" onClick={annulerEdition} className="text-xs font-semibold text-slate-400 hover:underline">
+              Annuler la modification
+            </button>
+          )}
+        </div>
 
         <div className="mb-3 flex gap-2">
           {(['ponctuelle', 'recurrente'] as TypeDepense[]).map((t) => (
             <button
               key={t}
               type="button"
-              onClick={() => setType(t)}
+              onClick={() => setForm((f) => ({ ...f, type: t }))}
               className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${
-                type === t ? 'border-indigo-500 bg-indigo-500 text-white' : 'border-slate-200 bg-white text-slate-500'
+                form.type === t ? 'border-indigo-500 bg-indigo-500 text-white' : 'border-slate-200 bg-white text-slate-500'
               }`}
             >
               {t === 'ponctuelle' ? 'Ponctuelle' : 'Récurrente'}
@@ -279,8 +317,8 @@ export function FluxTresorerieClient({
           <label className="col-span-2 block sm:col-span-2">
             <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-400">Libellé</span>
             <input
-              value={libelle}
-              onChange={(e) => setLibelle(e.target.value)}
+              value={form.libelle}
+              onChange={(e) => setForm((f) => ({ ...f, libelle: e.target.value }))}
               placeholder="Ex. TVA T1, Loyer, Assurance…"
               className="w-full rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-sm focus:border-indigo-300 focus:bg-white focus:outline-none"
             />
@@ -288,8 +326,8 @@ export function FluxTresorerieClient({
           <label className="block">
             <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-400">Montant HT (€)</span>
             <input
-              value={montant}
-              onChange={(e) => setMontant(e.target.value)}
+              value={form.montant}
+              onChange={(e) => setForm((f) => ({ ...f, montant: e.target.value }))}
               placeholder="Ex. 3500"
               inputMode="decimal"
               className="w-full rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-sm focus:border-indigo-300 focus:bg-white focus:outline-none"
@@ -297,23 +335,23 @@ export function FluxTresorerieClient({
           </label>
           <label className="block">
             <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-              {type === 'ponctuelle' ? "Date d'échéance" : '1ère échéance'}
+              {form.type === 'ponctuelle' ? "Date d'échéance" : '1ère échéance'}
             </span>
             <input
               type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
+              value={form.date}
+              onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
               className="w-full rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-sm focus:border-indigo-300 focus:bg-white focus:outline-none"
             />
           </label>
 
-          {type === 'recurrente' && (
+          {form.type === 'recurrente' && (
             <>
               <label className="block">
                 <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-400">Fréquence</span>
                 <select
-                  value={frequence}
-                  onChange={(e) => setFrequence(e.target.value as FrequenceDepense)}
+                  value={form.frequence}
+                  onChange={(e) => setForm((f) => ({ ...f, frequence: e.target.value as FrequenceDepense }))}
                   className="w-full rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-sm focus:border-indigo-300 focus:bg-white focus:outline-none"
                 >
                   {(Object.keys(LIBELLE_FREQUENCE) as FrequenceDepense[]).map((f) => (
@@ -327,8 +365,8 @@ export function FluxTresorerieClient({
                 <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-400">Fin (optionnel)</span>
                 <input
                   type="date"
-                  value={dateFin}
-                  onChange={(e) => setDateFin(e.target.value)}
+                  value={form.dateFin}
+                  onChange={(e) => setForm((f) => ({ ...f, dateFin: e.target.value }))}
                   className="w-full rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-sm focus:border-indigo-300 focus:bg-white focus:outline-none"
                 />
               </label>
@@ -336,29 +374,22 @@ export function FluxTresorerieClient({
           )}
         </div>
 
-        <label className="mb-3 block">
-          <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-            Pop-up concerné (optionnel) — pour repérer plus tard quelles recettes couvrent quelles charges
-          </span>
-          <select
-            value={popUpId}
-            onChange={(e) => setPopUpId(e.target.value)}
-            className="w-full rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-sm focus:border-indigo-300 focus:bg-white focus:outline-none"
-          >
-            <option value="">— Aucun (charge globale)</option>
-            {popUps.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.nom}
-              </option>
-            ))}
-          </select>
+        <label className="mb-3 flex items-center gap-2 text-xs text-slate-600">
+          <input
+            type="checkbox"
+            checked={form.estPopUp}
+            onChange={(e) => setForm((f) => ({ ...f, estPopUp: e.target.checked }))}
+            className="h-3.5 w-3.5 rounded border-slate-300"
+          />
+          <span className="font-semibold">C&apos;est un pop-up</span>
+          <span className="text-slate-400">(y compris un pop-up pas encore créé dans l&apos;appli)</span>
         </label>
 
         <label className="mb-3 block">
           <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-400">Note (optionnel)</span>
           <input
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
+            value={form.note}
+            onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))}
             className="w-full rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-sm focus:border-indigo-300 focus:bg-white focus:outline-none"
           />
         </label>
@@ -371,7 +402,7 @@ export function FluxTresorerieClient({
           disabled={enCours}
           className="rounded-lg bg-indigo-600 px-4 py-2 text-xs font-bold text-white hover:bg-indigo-500 disabled:opacity-60"
         >
-          {enCours ? 'Enregistrement…' : 'Ajouter la dépense'}
+          {enCours ? 'Enregistrement…' : editionId ? 'Enregistrer les modifications' : 'Ajouter la dépense'}
         </button>
       </div>
 
@@ -391,11 +422,11 @@ export function FluxTresorerieClient({
           </thead>
           <tbody>
             {depenses.map((d) => (
-              <tr key={d.id} className="border-b border-slate-50 last:border-0">
+              <tr key={d.id} className={`border-b border-slate-50 last:border-0 ${editionId === d.id ? 'bg-indigo-50/50' : ''}`}>
                 <td className="px-4 py-2.5 font-semibold text-slate-800">{d.libelle}</td>
                 <td className="px-4 py-2.5">
-                  {d.popUpNom ? (
-                    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700">{d.popUpNom}</span>
+                  {d.estPopUp ? (
+                    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700">Pop-up</span>
                   ) : (
                     <span className="text-slate-300">—</span>
                   )}
@@ -411,14 +442,24 @@ export function FluxTresorerieClient({
                 <td className="max-w-[160px] px-4 py-2.5 text-slate-500">{d.note ?? '—'}</td>
                 <td className="px-4 py-2.5 text-slate-400">{d.creeParNom}</td>
                 <td className="px-2 py-2.5 text-center">
-                  <button
-                    type="button"
-                    onClick={() => supprimer(d)}
-                    disabled={suppressionEnCours === d.id}
-                    className="rounded-lg px-2 py-1 text-slate-300 hover:bg-red-50 hover:text-red-500 disabled:opacity-60"
-                  >
-                    ✕
-                  </button>
+                  <div className="flex items-center justify-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => demarrerEdition(d)}
+                      title="Modifier cette dépense"
+                      className="rounded-lg px-2 py-1 text-slate-300 hover:bg-indigo-50 hover:text-indigo-500"
+                    >
+                      ✎
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => supprimer(d)}
+                      disabled={suppressionEnCours === d.id}
+                      className="rounded-lg px-2 py-1 text-slate-300 hover:bg-red-50 hover:text-red-500 disabled:opacity-60"
+                    >
+                      ✕
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}

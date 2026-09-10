@@ -1,6 +1,5 @@
 import { chargerComptesQonto } from '@/lib/qonto';
 import { exigerAdmin } from '@/lib/roles';
-import { creerClientSupabaseServeur } from '@/lib/supabase/server';
 import { chargerDepensesFlux } from './actions';
 import { FluxTresorerieClient } from './FluxTresorerieClient';
 
@@ -40,11 +39,7 @@ export default async function TresoreriePage() {
   // — les autres devises, s'il y en a un jour, ne sont pas mélangées dedans (pas de taux de change
   // géré ici).
   const soldeEur = parDevise.get('EUR') ?? 0;
-  const supabase = await creerClientSupabaseServeur();
-  const [depensesFlux, { data: popUps }] = await Promise.all([
-    chargerDepensesFlux(),
-    supabase.from('pop_ups').select('id, nom').order('nom', { ascending: true }),
-  ]);
+  const depensesFlux = await chargerDepensesFlux();
 
   return (
     <div>
@@ -104,7 +99,7 @@ export default async function TresoreriePage() {
         </>
       )}
 
-      <FluxTresorerieClient soldeActuel={soldeEur} depensesInitiales={depensesFlux} popUps={popUps ?? []} />
+      <FluxTresorerieClient soldeActuel={soldeEur} depensesInitiales={depensesFlux} />
     </div>
   );
 }
