@@ -62,6 +62,7 @@ const CATEGORIES: CategorieNav[] = [
     couleur: 'emerald',
     liens: [
       { href: '/ventes', label: 'Ventes', icone: '💰' },
+      { href: '/tresorerie', label: 'Trésorerie', icone: '🏦' },
       { href: '/trou', label: 'Trou', icone: '🕳️' },
     ],
   },
