@@ -2,8 +2,15 @@
 // truc flux de trésorerie avec Qonto... déjà on va connecter notre compte Qonto... l'affichage du
 // solde de tous nos comptes"). Authentification par clé API (pas OAuth) : header Authorization au
 // format "<login>:<secret_key>", SANS encodage Base64 (cf. doc Qonto — ce n'est pas du Basic Auth
-// standard). Un seul appel suffit pour tout récupérer : GET /v2/organization renvoie l'organisation
-// ET la liste de tous les comptes bancaires (soldes inclus), pas besoin d'un endpoint par compte.
+// standard).
+//
+// Deux appels, pas un seul : GET /v2/organization ne renvoie QUE les comptes Qonto natifs — un
+// compte d'une autre banque agrégé dans Qonto (ex. Crédit Mutuel, cf. retour utilisateur : "si il
+// est bien relié j'ai accès à tous les comptes... je vois le solde des deux comptes sur mon
+// Qonto") n'y apparaît PAS, vérifié en direct (un seul compte renvoyé alors que Qonto lui-même en
+// montre deux). GET /v2/bank_accounts, lui, renvoie les deux — c'est le seul qui inclut vraiment
+// is_external_account: true. Le nom de l'organisation n'est en revanche disponible que via
+// /v2/organization, d'où les deux appels en parallèle.
 const QONTO_API = 'https://thirdparty.qonto.com/v2';
 
 function authHeader(): string {
@@ -13,9 +20,20 @@ function authHeader(): string {
   return `${login}:${secret}`;
 }
 
+async function appelQonto<T>(chemin: string): Promise<T> {
+  const res = await fetch(`${QONTO_API}${chemin}`, {
+    headers: { Authorization: authHeader() },
+    cache: 'no-store',
+  });
+  if (!res.ok) {
+    const corps = await res.text().catch(() => '');
+    throw new Error(`Qonto API ${res.status}: ${corps.slice(0, 300)}`);
+  }
+  return res.json() as Promise<T>;
+}
+
 export interface CompteQonto {
   id: string;
-  slug: string;
   nom: string;
   iban: string;
   devise: string;
@@ -23,10 +41,9 @@ export interface CompteQonto {
   soldeAutorise: number;
   statut: 'active' | 'closed';
   principal: boolean;
-  /** Compte d'une autre banque agrégé dans Qonto (ex. Crédit Mutuel, cf. retour utilisateur du
-   * 2026-09-10) plutôt qu'un vrai compte Qonto — même endpoint /v2/organization, juste ce flag en
-   * plus (is_external_account). Doit être connecté côté Qonto (Comptes > Comptes externes) pour
-   * apparaître ici : rien à faire côté Hub une fois que c'est fait chez Qonto. */
+  /** Compte d'une autre banque agrégé dans Qonto (ex. Crédit Mutuel) plutôt qu'un vrai compte
+   * Qonto — is_external_account côté API. Doit être connecté côté Qonto (Comptes > Comptes
+   * externes) pour apparaître ici : rien à faire côté Hub une fois que c'est fait chez Qonto. */
   externe: boolean;
   majLe: string;
 }
@@ -37,50 +54,46 @@ export interface OrganisationQonto {
 }
 
 interface ReponseOrganisation {
-  organization: {
-    name: string;
-    bank_accounts: {
-      id: string;
-      slug: string;
-      name: string;
-      iban: string;
-      currency: string;
-      balance: number;
-      authorized_balance: number;
-      status: 'active' | 'closed';
-      main: boolean;
-      is_external_account: boolean;
-      updated_at: string;
-    }[];
-  };
+  organization: { name: string };
 }
 
-/** Organisation + tous les comptes bancaires Qonto (soldes inclus) — cf. en-tête du fichier.
- * Ne renvoie que les comptes actifs (un compte fermé n'a plus de solde pertinent pour la
- * trésorerie). */
+interface ReponseBankAccounts {
+  bank_accounts: {
+    id: string;
+    name: string;
+    iban: string;
+    currency: string;
+    /** String côté /v2/bank_accounts (ex. "16182.93"), contrairement à /v2/organization qui les
+     * renvoie en nombre — vérifié en direct, pas une supposition de la doc. */
+    balance: string;
+    authorized_balance: string;
+    status: 'active' | 'closed';
+    main: boolean;
+    is_external_account: boolean;
+    updated_at: string;
+  }[];
+}
+
+/** Organisation + tous les comptes bancaires (Qonto natifs + externes agrégés, soldes inclus) —
+ * cf. en-tête du fichier. Ne renvoie que les comptes actifs (un compte fermé n'a plus de solde
+ * pertinent pour la trésorerie). */
 export async function chargerComptesQonto(): Promise<OrganisationQonto> {
-  const res = await fetch(`${QONTO_API}/organization`, {
-    headers: { Authorization: authHeader() },
-    cache: 'no-store',
-  });
-  if (!res.ok) {
-    const corps = await res.text().catch(() => '');
-    throw new Error(`Qonto API ${res.status}: ${corps.slice(0, 300)}`);
-  }
-  const json = (await res.json()) as ReponseOrganisation;
+  const [organisation, comptes] = await Promise.all([
+    appelQonto<ReponseOrganisation>('/organization'),
+    appelQonto<ReponseBankAccounts>('/bank_accounts?per_page=100'),
+  ]);
 
   return {
-    nom: json.organization.name,
-    comptes: json.organization.bank_accounts
+    nom: organisation.organization.name,
+    comptes: comptes.bank_accounts
       .filter((c) => c.status === 'active')
       .map((c) => ({
         id: c.id,
-        slug: c.slug,
         nom: c.name,
         iban: c.iban,
         devise: c.currency,
-        solde: c.balance,
-        soldeAutorise: c.authorized_balance,
+        solde: Number(c.balance),
+        soldeAutorise: Number(c.authorized_balance),
         statut: c.status,
         principal: c.main,
         externe: c.is_external_account,
