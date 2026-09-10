@@ -270,7 +270,7 @@ export function FluxTresorerieClient({ soldeActuel, depensesInitiales }: { solde
             />
           </label>
           <label className="block">
-            <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-400">Montant (€)</span>
+            <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-400">Montant HT (€)</span>
             <input
               value={montant}
               onChange={(e) => setMontant(e.target.value)}
@@ -346,7 +346,7 @@ export function FluxTresorerieClient({ soldeActuel, depensesInitiales }: { solde
           <thead>
             <tr className="border-b border-slate-100 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
               <th className="px-4 py-3">Libellé</th>
-              <th className="px-4 py-3">Montant</th>
+              <th className="px-4 py-3">Montant HT</th>
               <th className="px-4 py-3">Type</th>
               <th className="px-4 py-3">Échéance</th>
               <th className="px-4 py-3">Note</th>
