@@ -288,3 +288,125 @@ export async function definirPourcentageMoisRecette(mensualiteId: string, pource
   if (!data || data.length === 0) throw new Error('Modification bloquée (droits insuffisants ?)');
   revalidatePath('/tresorerie');
 }
+
+/** Noms des pop-up réellement créés dans l'appli (table pop_ups, pas flux_tresorerie_*) — sert à
+ * distinguer, côté Hub, un pop-up déjà ouvert (dont les revenus comptent dès la grille, cf. retour
+ * utilisateur du 2026-09-11) d'un pop-up seulement prévu (dont les revenus n'ont pas encore à
+ * compter avant son 1er loyer, ex. "Bordeaux" pas encore ouvert). */
+export async function chargerPopUpsReels(): Promise<string[]> {
+  await exigerAdmin();
+  const supabase = await creerClientSupabaseServeur();
+  const { data, error } = await supabase.from('pop_ups').select('nom');
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((p) => p.nom as string);
+}
+
+// ---- Recettes exceptionnelles (cf. retour utilisateur du 2026-09-11 : "rajouter les recettes
+// exceptionnelles qui peuvent être récurrentes ou une ponctuelle") — même structure que les
+// dépenses (DepenseFlux), sans la case "pop-up" qui n'a pas de sens ici. ----
+
+export interface RecetteExceptionnelleFlux {
+  id: string;
+  libelle: string;
+  montant: number;
+  type: TypeDepense;
+  date: string;
+  frequence: FrequenceDepense | null;
+  dateFin: string | null;
+  note: string | null;
+  creeParNom: string;
+}
+
+export interface ParamsRecetteExceptionnelleFlux {
+  libelle: string;
+  montant: number;
+  type: TypeDepense;
+  date: string;
+  frequence: FrequenceDepense | null;
+  dateFin: string | null;
+  note: string;
+}
+
+export async function chargerRecettesExceptionnellesFlux(): Promise<RecetteExceptionnelleFlux[]> {
+  await exigerAdmin();
+  const supabase = await creerClientSupabaseServeur();
+  const { data, error } = await supabase
+    .from('flux_tresorerie_recettes_exceptionnelles')
+    .select('id, libelle, montant, type, date, frequence, date_fin, note, createur:created_by(nom_complet, email)')
+    .order('date', { ascending: true });
+  if (error) throw new Error(error.message);
+
+  type Ligne = {
+    id: string;
+    libelle: string;
+    montant: number;
+    type: TypeDepense;
+    date: string;
+    frequence: FrequenceDepense | null;
+    date_fin: string | null;
+    note: string | null;
+    createur: { nom_complet: string | null; email: string } | null;
+  };
+
+  return ((data ?? []) as unknown as Ligne[]).map((l) => ({
+    id: l.id,
+    libelle: l.libelle,
+    montant: l.montant,
+    type: l.type,
+    date: l.date,
+    frequence: l.frequence,
+    dateFin: l.date_fin,
+    note: l.note,
+    creeParNom: l.createur ? l.createur.nom_complet || l.createur.email : '—',
+  }));
+}
+
+function versLigneRecetteExceptionnelle(params: ParamsRecetteExceptionnelleFlux) {
+  const estRecurrente = params.type === 'recurrente';
+  return {
+    libelle: params.libelle.trim(),
+    montant: params.montant,
+    type: params.type,
+    date: params.date,
+    frequence: estRecurrente ? params.frequence : null,
+    date_fin: estRecurrente ? params.dateFin || null : null,
+    note: params.note.trim() || null,
+  };
+}
+
+export async function creerRecetteExceptionnelleFlux(params: ParamsRecetteExceptionnelleFlux): Promise<void> {
+  await exigerAdmin();
+  const supabase = await creerClientSupabaseServeur();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error('Non connecté.');
+
+  const { error } = await supabase
+    .from('flux_tresorerie_recettes_exceptionnelles')
+    .insert({ ...versLigneRecetteExceptionnelle(params), created_by: user.id });
+  if (error) throw new Error(error.message);
+  revalidatePath('/tresorerie');
+}
+
+export async function modifierRecetteExceptionnelleFlux(id: string, params: ParamsRecetteExceptionnelleFlux): Promise<void> {
+  await exigerAdmin();
+  const supabase = await creerClientSupabaseServeur();
+  const { data, error } = await supabase
+    .from('flux_tresorerie_recettes_exceptionnelles')
+    .update(versLigneRecetteExceptionnelle(params))
+    .eq('id', id)
+    .select('id');
+  if (error) throw new Error(error.message);
+  if (!data || data.length === 0) throw new Error('Modification bloquée (droits insuffisants ?)');
+  revalidatePath('/tresorerie');
+}
+
+export async function supprimerRecetteExceptionnelleFlux(id: string): Promise<void> {
+  await exigerAdmin();
+  const supabase = await creerClientSupabaseServeur();
+  const { data, error } = await supabase.from('flux_tresorerie_recettes_exceptionnelles').delete().eq('id', id).select('id');
+  if (error) throw new Error(error.message);
+  if (!data || data.length === 0) throw new Error('Suppression bloquée (droits insuffisants ?)');
+  revalidatePath('/tresorerie');
+}

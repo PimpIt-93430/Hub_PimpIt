@@ -1,6 +1,6 @@
 import { chargerComptesQonto } from '@/lib/qonto';
 import { exigerAdmin } from '@/lib/roles';
-import { chargerDepensesFlux, chargerRecettesFlux } from './actions';
+import { chargerDepensesFlux, chargerPopUpsReels, chargerRecettesExceptionnellesFlux, chargerRecettesFlux } from './actions';
 import { FluxTresorerieClient } from './FluxTresorerieClient';
 
 function formatMontant(n: number, devise: string): string {
@@ -44,9 +44,16 @@ export default async function TresoreriePage() {
   // ci-dessus, la section Flux de trésorerie affiche juste son propre message d'erreur.
   let depensesFlux: Awaited<ReturnType<typeof chargerDepensesFlux>> = [];
   let recettesFlux: Awaited<ReturnType<typeof chargerRecettesFlux>> = [];
+  let recettesExceptionnellesFlux: Awaited<ReturnType<typeof chargerRecettesExceptionnellesFlux>> = [];
+  let popUpsReels: string[] = [];
   let erreurDepenses: string | null = null;
   try {
-    [depensesFlux, recettesFlux] = await Promise.all([chargerDepensesFlux(), chargerRecettesFlux()]);
+    [depensesFlux, recettesFlux, recettesExceptionnellesFlux, popUpsReels] = await Promise.all([
+      chargerDepensesFlux(),
+      chargerRecettesFlux(),
+      chargerRecettesExceptionnellesFlux(),
+      chargerPopUpsReels(),
+    ]);
   } catch (e) {
     erreurDepenses = e instanceof Error ? e.message : 'Chargement du flux de trésorerie échoué.';
   }
@@ -114,7 +121,13 @@ export default async function TresoreriePage() {
           Chargement du flux de trésorerie impossible : {erreurDepenses}
         </div>
       ) : (
-        <FluxTresorerieClient soldeActuel={soldeEur} depensesInitiales={depensesFlux} recettesInitiales={recettesFlux} />
+        <FluxTresorerieClient
+          soldeActuel={soldeEur}
+          depensesInitiales={depensesFlux}
+          recettesInitiales={recettesFlux}
+          recettesExceptionnellesInitiales={recettesExceptionnellesFlux}
+          popUpsReels={popUpsReels}
+        />
       )}
     </div>
   );
