@@ -10,7 +10,6 @@ import {
   definirPourcentageMoisRecette,
   modifierDepenseFlux,
   modifierRecetteFlux,
-  NOMBRE_MOIS_PREREMPLIS,
   supprimerDepenseFlux,
   supprimerRecetteFlux,
   type DepenseFlux,
@@ -19,6 +18,10 @@ import {
   type RecetteFlux,
   type TypeDepense,
 } from './actions';
+
+// Doit rester égal à NOMBRE_MOIS_PREREMPLIS (actions.ts) — pas importable : un fichier "use
+// server" ne peut exporter que des fonctions async.
+const NOMBRE_MOIS_PREREMPLIS = 12;
 
 function formatMontant(n: number): string {
   return n.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });

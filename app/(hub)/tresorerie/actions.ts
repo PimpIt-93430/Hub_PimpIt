@@ -126,8 +126,10 @@ export async function supprimerDepenseFlux(id: string): Promise<void> {
 // Les pop-up déjà ouverts démarrent à 100% dès le mois en cours, cf. POURCENTAGE_PAR_DEFAUT
 // ci-dessous.) ----
 
-export const NOMBRE_MOIS_PREREMPLIS = 12;
-export const POURCENTAGE_PAR_DEFAUT = 100;
+// Pas exportées : un fichier "use server" ne peut exporter que des fonctions async (cf. build
+// Next.js cassé par ces deux constantes) — dupliquées côté client (FluxTresorerieClient.tsx).
+const NOMBRE_MOIS_PREREMPLIS = 12;
+const POURCENTAGE_PAR_DEFAUT = 100;
 
 export interface MensualiteRecette {
   id: string;
