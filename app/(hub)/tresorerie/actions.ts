@@ -257,6 +257,17 @@ export async function supprimerRecetteFlux(id: string): Promise<void> {
   revalidatePath('/tresorerie');
 }
 
+/** Change le taux de charges variables de tous les pop-up d'un coup — cf. retour utilisateur :
+ * "donne-moi la possibilité de changer toutes les charges variables des pop-up", plutôt que
+ * d'éditer chaque pop-up un par un. */
+export async function definirTauxChargesVariablesPourTous(taux: number): Promise<void> {
+  await exigerAdmin();
+  const supabase = await creerClientSupabaseServeur();
+  const { error } = await supabase.from('flux_tresorerie_recettes').update({ taux_charges_variables: taux }).not('id', 'is', null);
+  if (error) throw new Error(error.message);
+  revalidatePath('/tresorerie');
+}
+
 /** Ajoute un mois de plus (à `POURCENTAGE_PAR_DEFAUT`) au bout de la grille d'une recette — cf.
  * retour utilisateur : la grille glisse dans le temps, un admin doit pouvoir l'étendre. */
 export async function ajouterMoisRecetteFlux(recetteId: string, mois: string): Promise<void> {

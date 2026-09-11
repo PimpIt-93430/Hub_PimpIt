@@ -9,6 +9,7 @@ import {
   creerRecetteExceptionnelleFlux,
   creerRecetteFlux,
   definirPourcentageMoisRecette,
+  definirTauxChargesVariablesPourTous,
   modifierDepenseFlux,
   modifierRecetteExceptionnelleFlux,
   modifierRecetteFlux,
@@ -612,6 +613,32 @@ export function FluxTresorerieClient({
       });
   };
 
+  // Applique un taux de charges variables à tous les pop-up d'un coup — cf. retour utilisateur :
+  // "donne-moi la possibilité de changer toutes les charges variables des pop-up".
+  const [tauxPourTous, setTauxPourTous] = useState('30');
+  const [applicationTauxEnCours, setApplicationTauxEnCours] = useState(false);
+  const [erreurTauxPourTous, setErreurTauxPourTous] = useState<string | null>(null);
+
+  const appliquerTauxPourTous = () => {
+    setErreurTauxPourTous(null);
+    const taux = Number(tauxPourTous.replace(',', '.'));
+    if (Number.isNaN(taux) || taux < 0 || taux > 100) {
+      setErreurTauxPourTous('Le taux doit être un nombre entre 0 et 100.');
+      return;
+    }
+    const confirme = window.confirm(`Mettre ${taux}% de charges variables sur tous les pop-up (${recettes.length}) ?`);
+    if (!confirme) return;
+    setApplicationTauxEnCours(true);
+    setRecettes((liste) => liste.map((r) => ({ ...r, tauxChargesVariables: taux })));
+    definirTauxChargesVariablesPourTous(taux)
+      .then(() => router.refresh())
+      .catch((e) => {
+        setErreurTauxPourTous(e instanceof Error ? e.message : "Échec de l'enregistrement.");
+        setRecettes(recettesInitiales);
+      })
+      .finally(() => setApplicationTauxEnCours(false));
+  };
+
   const [ajoutMoisEnCours, setAjoutMoisEnCours] = useState<string | null>(null);
 
   const ajouterUnMois = (r: RecetteFlux) => {
@@ -1213,6 +1240,30 @@ export function FluxTresorerieClient({
       </div>
 
       {mensualiteEnErreur && <p className="mb-3 text-xs font-semibold text-red-600">{mensualiteEnErreur}</p>}
+
+      <div className="mb-4 flex flex-wrap items-end gap-2 rounded-[20px] border border-slate-200 bg-white p-4 shadow-sm">
+        <label className="block">
+          <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+            Charges variables (%) pour tous les pop-up
+          </span>
+          <input
+            value={tauxPourTous}
+            onChange={(e) => setTauxPourTous(e.target.value)}
+            placeholder="Ex. 30"
+            inputMode="decimal"
+            className="w-32 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-sm focus:border-indigo-300 focus:bg-white focus:outline-none"
+          />
+        </label>
+        <button
+          type="button"
+          onClick={appliquerTauxPourTous}
+          disabled={applicationTauxEnCours || recettes.length === 0}
+          className="rounded-lg bg-slate-900 px-3 py-2 text-xs font-bold text-white hover:bg-slate-700 disabled:opacity-60"
+        >
+          {applicationTauxEnCours ? 'Application…' : 'Appliquer à tous les pop-up'}
+        </button>
+        {erreurTauxPourTous && <p className="text-xs font-semibold text-red-600">{erreurTauxPourTous}</p>}
+      </div>
 
       <div className="flex flex-col gap-4">
         {recettes.map((r) => {
