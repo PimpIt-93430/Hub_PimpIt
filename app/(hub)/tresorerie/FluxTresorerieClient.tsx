@@ -58,6 +58,70 @@ function calculMensualite(r: RecetteFlux, m: MensualiteRecette) {
   return { caJourPrevu, caMoisPrevu, chargesVariables, net: caMoisPrevu - chargesVariables };
 }
 
+/** Les `n` mois (clé "AAAA-MM") à partir du mois de `debut`, dans l'ordre — sert de colonnes au
+ * récapitulatif mensuel (cf. construireRecapMensuel). */
+function clesMoisPeriode(debut: Date, n: number): string[] {
+  const cles: string[] = [];
+  for (let i = 0; i < n; i++) {
+    const d = ajouterMois(new Date(debut.getFullYear(), debut.getMonth(), 1), i);
+    cles.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+  }
+  return cles;
+}
+
+interface LigneRecap {
+  cle: string;
+  label: string;
+  parMois: Record<string, number>;
+  emphase?: boolean;
+}
+
+/** Récapitulatif mensuel détaillé (cf. retour utilisateur : "recap des dépenses et des recettes
+ * par mois détaillé, les salaires tu les regroupes, les loyers pareil, les revenus aussi") — les
+ * dépenses "Salaire ..." et "Loyer ..." sont regroupées en une seule ligne chacune, les autres
+ * dépenses restent détaillées ligne par ligne, et tous les revenus (pop-up + exceptionnels) sont
+ * regroupés en une seule ligne "Revenus". */
+function construireRecapMensuel(occurrences: Occurrence[], moisCles: string[]): LigneRecap[] {
+  const videParMois = (): Record<string, number> => Object.fromEntries(moisCles.map((c) => [c, 0]));
+
+  const parCategorieDepense = new Map<string, Record<string, number>>();
+  const revenusParMois = videParMois();
+
+  for (const occ of occurrences) {
+    const cle = `${occ.date.getFullYear()}-${String(occ.date.getMonth() + 1).padStart(2, '0')}`;
+    if (!(cle in revenusParMois)) continue;
+    if (occ.nature === 'recette') {
+      revenusParMois[cle] += occ.montant;
+      continue;
+    }
+    const categorie = /^salaire/i.test(occ.libelle) ? 'Salaires' : /^loyer/i.test(occ.libelle) ? 'Loyers' : occ.libelle;
+    if (!parCategorieDepense.has(categorie)) parCategorieDepense.set(categorie, videParMois());
+    parCategorieDepense.get(categorie)![cle] += occ.montant;
+  }
+
+  const ordrePrioritaire = ['Salaires', 'Loyers'];
+  const categories = [...parCategorieDepense.keys()].sort((a, b) => {
+    const pa = ordrePrioritaire.indexOf(a);
+    const pb = ordrePrioritaire.indexOf(b);
+    if (pa !== -1 || pb !== -1) return (pa === -1 ? 99 : pa) - (pb === -1 ? 99 : pb);
+    return a.localeCompare(b);
+  });
+
+  const lignesDepenses: LigneRecap[] = categories.map((c) => ({ cle: c, label: c, parMois: parCategorieDepense.get(c)! }));
+  const totalDepensesParMois = videParMois();
+  for (const cle of moisCles) totalDepensesParMois[cle] = lignesDepenses.reduce((s, l) => s + l.parMois[cle], 0);
+
+  const soldeParMois = videParMois();
+  for (const cle of moisCles) soldeParMois[cle] = revenusParMois[cle] - totalDepensesParMois[cle];
+
+  return [
+    ...lignesDepenses,
+    { cle: 'total-depenses', label: 'Total dépenses', parMois: totalDepensesParMois, emphase: true },
+    { cle: 'revenus', label: 'Revenus', parMois: revenusParMois, emphase: true },
+    { cle: 'solde', label: 'Solde du mois', parMois: soldeParMois, emphase: true },
+  ];
+}
+
 const LIBELLE_FREQUENCE: Record<FrequenceDepense, string> = {
   mensuelle: 'Tous les mois',
   trimestrielle: 'Tous les trimestres',
@@ -378,6 +442,10 @@ export function FluxTresorerieClient({
   const totalDepensesSurUnAn = occurrences.filter((o) => o.nature === 'depense').reduce((s, o) => s + o.montant, 0);
   const totalRecettesSurUnAn = occurrences.filter((o) => o.nature === 'recette').reduce((s, o) => s + o.montant, 0);
 
+  const [recapOuvert, setRecapOuvert] = useState(false);
+  const moisClesRecap = useMemo(() => clesMoisPeriode(debut, NOMBRE_MOIS_PREREMPLIS), [debut]);
+  const recap = useMemo(() => construireRecapMensuel(occurrences, moisClesRecap), [occurrences, moisClesRecap]);
+
   const demarrerEdition = (d: DepenseFlux) => {
     setErreur(null);
     setEditionId(d.id);
@@ -656,6 +724,58 @@ export function FluxTresorerieClient({
           Recettes = pour chaque pop-up et chaque mois, (% des ventes × CA/jour de référence × nb de jours du mois) moins les charges
           variables — cf. grille &quot;Recettes par pop-up&quot; ci-dessous. Les revenus du site ne sont pas encore intégrés.
         </p>
+
+        <button
+          type="button"
+          onClick={() => setRecapOuvert((v) => !v)}
+          className="mt-3 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+        >
+          {recapOuvert ? 'Masquer le récap mensuel' : '📊 Récap mensuel détaillé'}
+        </button>
+
+        {recapOuvert && (
+          <div className="mt-3 overflow-x-auto rounded-xl border border-slate-100">
+            <table className="w-full min-w-[900px] text-left text-sm">
+              <thead>
+                <tr className="border-b border-slate-100 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                  <th className="sticky left-0 bg-white px-3 py-2.5">Catégorie</th>
+                  {moisClesRecap.map((cle) => (
+                    <th key={cle} className="whitespace-nowrap px-3 py-2.5 text-right">
+                      {formatMoisCourt(`${cle}-01`)}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {recap.map((ligne) => (
+                  <tr
+                    key={ligne.cle}
+                    className={`border-b border-slate-50 last:border-0 ${ligne.emphase ? 'bg-slate-50 font-bold' : ''} ${
+                      ligne.cle === 'revenus' ? 'text-emerald-700' : ligne.cle === 'total-depenses' ? 'text-red-600' : ''
+                    }`}
+                  >
+                    <td className={`sticky left-0 px-3 py-2 ${ligne.emphase ? 'bg-slate-50' : 'bg-white'} ${!ligne.emphase ? 'text-slate-600' : ''}`}>
+                      {ligne.label}
+                    </td>
+                    {moisClesRecap.map((cle) => (
+                      <td key={cle} className="whitespace-nowrap px-3 py-2 text-right">
+                        {ligne.parMois[cle] === 0 ? (
+                          <span className="text-slate-300">—</span>
+                        ) : ligne.cle === 'solde' ? (
+                          <span className={ligne.parMois[cle] < 0 ? 'text-red-600' : 'text-emerald-600'}>
+                            {formatMontant(ligne.parMois[cle])}
+                          </span>
+                        ) : (
+                          formatMontant(ligne.parMois[cle])
+                        )}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       <div className="mb-6 rounded-[20px] border border-slate-200 bg-white p-5 shadow-sm">
