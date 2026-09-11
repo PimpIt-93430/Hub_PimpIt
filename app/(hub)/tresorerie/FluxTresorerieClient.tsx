@@ -78,21 +78,24 @@ interface LigneRecap {
 }
 
 /** Récapitulatif mensuel détaillé (cf. retour utilisateur : "recap des dépenses et des recettes
- * par mois détaillé, les salaires tu les regroupes, les loyers pareil, les revenus aussi") — les
- * dépenses "Salaire ..." et "Loyer ..." sont regroupées en une seule ligne chacune, les autres
- * dépenses restent détaillées ligne par ligne, et tous les revenus (pop-up + exceptionnels) sont
- * regroupés en une seule ligne "Revenus". */
+ * par mois détaillé, les salaires tu les regroupes, les loyers pareil" puis "les revenus détaillé
+ * au moins revenu pop-up, revenu ponctuelle, revenu récurrent") — les dépenses "Salaire ..." et
+ * "Loyer ..." sont regroupées en une seule ligne chacune, les autres dépenses restent détaillées
+ * ligne par ligne, et les revenus sont regroupés par categorieRecap (cf. Occurrence) plutôt qu'en
+ * une seule ligne "Revenus". */
 function construireRecapMensuel(occurrences: Occurrence[], moisCles: string[]): LigneRecap[] {
   const videParMois = (): Record<string, number> => Object.fromEntries(moisCles.map((c) => [c, 0]));
 
   const parCategorieDepense = new Map<string, Record<string, number>>();
-  const revenusParMois = videParMois();
+  const parCategorieRevenu = new Map<string, Record<string, number>>();
 
   for (const occ of occurrences) {
     const cle = `${occ.date.getFullYear()}-${String(occ.date.getMonth() + 1).padStart(2, '0')}`;
-    if (!(cle in revenusParMois)) continue;
+    if (!moisCles.includes(cle)) continue;
     if (occ.nature === 'recette') {
-      revenusParMois[cle] += occ.montant;
+      const categorie = occ.categorieRecap ?? 'Revenus';
+      if (!parCategorieRevenu.has(categorie)) parCategorieRevenu.set(categorie, videParMois());
+      parCategorieRevenu.get(categorie)![cle] += occ.montant;
       continue;
     }
     const categorie = /^salaire/i.test(occ.libelle) ? 'Salaires' : /^loyer/i.test(occ.libelle) ? 'Loyers' : occ.libelle;
@@ -100,25 +103,35 @@ function construireRecapMensuel(occurrences: Occurrence[], moisCles: string[]): 
     parCategorieDepense.get(categorie)![cle] += occ.montant;
   }
 
-  const ordrePrioritaire = ['Salaires', 'Loyers'];
-  const categories = [...parCategorieDepense.keys()].sort((a, b) => {
-    const pa = ordrePrioritaire.indexOf(a);
-    const pb = ordrePrioritaire.indexOf(b);
-    if (pa !== -1 || pb !== -1) return (pa === -1 ? 99 : pa) - (pb === -1 ? 99 : pb);
-    return a.localeCompare(b);
-  });
+  const trierParOrdre = (cles: string[], ordrePrioritaire: string[]) =>
+    cles.sort((a, b) => {
+      const pa = ordrePrioritaire.indexOf(a);
+      const pb = ordrePrioritaire.indexOf(b);
+      if (pa !== -1 || pb !== -1) return (pa === -1 ? 99 : pa) - (pb === -1 ? 99 : pb);
+      return a.localeCompare(b);
+    });
 
-  const lignesDepenses: LigneRecap[] = categories.map((c) => ({ cle: c, label: c, parMois: parCategorieDepense.get(c)! }));
+  const categoriesDepenses = trierParOrdre([...parCategorieDepense.keys()], ['Salaires', 'Loyers']);
+  const lignesDepenses: LigneRecap[] = categoriesDepenses.map((c) => ({ cle: `d-${c}`, label: c, parMois: parCategorieDepense.get(c)! }));
   const totalDepensesParMois = videParMois();
   for (const cle of moisCles) totalDepensesParMois[cle] = lignesDepenses.reduce((s, l) => s + l.parMois[cle], 0);
 
+  const categoriesRevenus = trierParOrdre(
+    [...parCategorieRevenu.keys()],
+    ['Revenu pop-up', 'Revenu ponctuel', 'Revenu récurrent'],
+  );
+  const lignesRevenus: LigneRecap[] = categoriesRevenus.map((c) => ({ cle: `r-${c}`, label: c, parMois: parCategorieRevenu.get(c)! }));
+  const totalRevenusParMois = videParMois();
+  for (const cle of moisCles) totalRevenusParMois[cle] = lignesRevenus.reduce((s, l) => s + l.parMois[cle], 0);
+
   const soldeParMois = videParMois();
-  for (const cle of moisCles) soldeParMois[cle] = revenusParMois[cle] - totalDepensesParMois[cle];
+  for (const cle of moisCles) soldeParMois[cle] = totalRevenusParMois[cle] - totalDepensesParMois[cle];
 
   return [
     ...lignesDepenses,
     { cle: 'total-depenses', label: 'Total dépenses', parMois: totalDepensesParMois, emphase: true },
-    { cle: 'revenus', label: 'Revenus', parMois: revenusParMois, emphase: true },
+    ...lignesRevenus,
+    { cle: 'total-revenus', label: 'Total revenus', parMois: totalRevenusParMois, emphase: true },
     { cle: 'solde', label: 'Solde du mois', parMois: soldeParMois, emphase: true },
   ];
 }
@@ -136,6 +149,10 @@ interface Occurrence {
   /** 'depense' réduit le solde, 'recette' l'augmente — cf. GraphiqueSolde (retour utilisateur du
    * 2026-09-11 : "maintenant on va travailler sur les recettes"). */
   nature: 'depense' | 'recette';
+  /** Sous-catégorie d'une recette pour le récap mensuel ("Revenu pop-up", "Revenu ponctuel",
+   * "Revenu récurrent") — cf. retour utilisateur : "revenu pop up, revenu ponctuelle, revenu
+   * récurrent". Sans effet sur le graphique de solde, qui ne distingue pas la nature du revenu. */
+  categorieRecap?: string;
 }
 
 /** Toutes les échéances d'une dépense qui tombent entre `debut` et `fin` inclus — une seule pour
@@ -166,10 +183,11 @@ function occurrencesDansLaPeriode(d: DepenseFlux, debut: Date, fin: Date): Occur
  * au lieu de 'depense') — cf. retour utilisateur du 2026-09-11 : "rajouter les recettes
  * exceptionnelles qui peuvent être récurrentes ou une ponctuelle". */
 function occurrencesRecetteExceptionnelleDansLaPeriode(r: RecetteExceptionnelleFlux, debut: Date, fin: Date): Occurrence[] {
+  const categorieRecap = r.type === 'ponctuelle' ? 'Revenu ponctuel' : 'Revenu récurrent';
   const premiere = new Date(`${r.date}T00:00:00`);
   if (r.type === 'ponctuelle') {
     return premiere >= debut && premiere <= fin
-      ? [{ date: premiere, montant: r.montant, libelle: r.libelle, nature: 'recette' as const }]
+      ? [{ date: premiere, montant: r.montant, libelle: r.libelle, nature: 'recette' as const, categorieRecap }]
       : [];
   }
   const limite = r.dateFin ? new Date(`${r.dateFin}T00:00:00`) : fin;
@@ -179,7 +197,7 @@ function occurrencesRecetteExceptionnelleDansLaPeriode(r: RecetteExceptionnelleF
   let courante = premiere;
   let garde = 0;
   while (courante <= finEffective && garde < 500) {
-    if (courante >= debut) occurrences.push({ date: courante, montant: r.montant, libelle: r.libelle, nature: 'recette' });
+    if (courante >= debut) occurrences.push({ date: courante, montant: r.montant, libelle: r.libelle, nature: 'recette', categorieRecap });
     courante = ajouterMois(courante, pas);
     garde += 1;
   }
@@ -244,7 +262,13 @@ function occurrencesRecetteDansLaPeriode(
       (dateMois.getFullYear() === dateDebutPopUp.getFullYear() && dateMois.getMonth() < dateDebutPopUp.getMonth()))) {
       continue;
     }
-    occurrences.push({ date: dateMois, montant: calculMensualite(r, m).net, libelle: `Recette ${r.popUpNom}`, nature: 'recette' });
+    occurrences.push({
+      date: dateMois,
+      montant: calculMensualite(r, m).net,
+      libelle: `Recette ${r.popUpNom}`,
+      nature: 'recette',
+      categorieRecap: 'Revenu pop-up',
+    });
   }
   return occurrences;
 }
@@ -778,7 +802,13 @@ export function FluxTresorerieClient({
                   <tr
                     key={ligne.cle}
                     className={`border-b border-slate-50 last:border-0 ${ligne.emphase ? 'bg-slate-50 font-bold' : ''} ${
-                      ligne.cle === 'revenus' ? 'text-emerald-700' : ligne.cle === 'total-depenses' ? 'text-red-600' : ''
+                      ligne.cle === 'total-revenus'
+                        ? 'text-emerald-700'
+                        : ligne.cle === 'total-depenses'
+                          ? 'text-red-600'
+                          : ligne.cle.startsWith('r-')
+                            ? 'text-emerald-600'
+                            : ''
                     }`}
                   >
                     <td className={`sticky left-0 px-3 py-2 ${ligne.emphase ? 'bg-slate-50' : 'bg-white'} ${!ligne.emphase ? 'text-slate-600' : ''}`}>
