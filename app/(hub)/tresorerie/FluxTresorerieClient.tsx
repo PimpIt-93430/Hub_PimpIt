@@ -4,14 +4,18 @@ import { useEffect, useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 
 import {
+  ajouterMoisRecetteFlux,
   creerDepenseFlux,
   creerRecetteFlux,
+  definirPourcentageMoisRecette,
   modifierDepenseFlux,
   modifierRecetteFlux,
+  NOMBRE_MOIS_PREREMPLIS,
   supprimerDepenseFlux,
   supprimerRecetteFlux,
   type DepenseFlux,
   type FrequenceDepense,
+  type MensualiteRecette,
   type RecetteFlux,
   type TypeDepense,
 } from './actions';
@@ -28,6 +32,23 @@ function dateEnISO(d: Date): string {
 }
 function ajouterMois(d: Date, n: number): Date {
   return new Date(d.getFullYear(), d.getMonth() + n, d.getDate());
+}
+function joursDansLeMois(moisIso: string): number {
+  const [annee, mois] = moisIso.split('-').map(Number);
+  return new Date(annee, mois, 0).getDate();
+}
+function formatMoisCourt(moisIso: string): string {
+  return new Date(`${moisIso}T00:00:00`).toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' });
+}
+/** CA jour/mois prévu et net d'un mois de la grille — pourcentage × la référence "100%/jour" du
+ * pop-up × nb de jours du mois, moins les charges variables (cf. retour utilisateur du
+ * 2026-09-11 : "un pourcentage par mois... à combien correspond 100% par jour... charges
+ * variables 30% du CA HT"). */
+function calculMensualite(r: RecetteFlux, m: MensualiteRecette) {
+  const caJourPrevu = (r.caJourHt * m.pourcentage) / 100;
+  const caMoisPrevu = caJourPrevu * joursDansLeMois(m.mois);
+  const chargesVariables = caMoisPrevu * (r.tauxChargesVariables / 100);
+  return { caJourPrevu, caMoisPrevu, chargesVariables, net: caMoisPrevu - chargesVariables };
 }
 
 const LIBELLE_FREQUENCE: Record<FrequenceDepense, string> = {
@@ -69,37 +90,16 @@ function occurrencesDansLaPeriode(d: DepenseFlux, debut: Date, fin: Date): Occur
   return occurrences;
 }
 
-/** Nom du pop-up porté par une dépense "loyer" marquée estPopUp — le préfixe "Loyer " (ou "Loyer
- * et charges ") est retiré pour ne garder que le nom comparable à celui saisi côté recette (cf.
- * retour utilisateur : "les revenus commencent au premier jour du loyer"). */
-function nomPopUpDepuisLibelle(libelle: string): string {
-  return libelle.replace(/^loyer(\s+et\s+charges)?\s+/i, '').trim();
-}
-
-/** Date de la première échéance du loyer du pop-up nommé `popUpNom` (comparaison insensible à la
- * casse/aux espaces) — null si aucune dépense estPopUp ne correspond. */
-function trouverDateDebutPopUp(popUpNom: string, depenses: DepenseFlux[]): Date | null {
-  const cible = popUpNom.trim().toLowerCase();
-  const depense = depenses.find((d) => d.estPopUp && nomPopUpDepuisLibelle(d.libelle).toLowerCase() === cible);
-  return depense ? new Date(`${depense.date}T00:00:00`) : null;
-}
-
-/** Échéances mensuelles d'une recette entre `debut` et `fin`, à partir du 1er jour du loyer du
- * pop-up correspondant (cf. trouverDateDebutPopUp) — montant net des charges variables
- * (caMoisHt × (1 - taux/100)), cf. retour utilisateur : "pour 1€ vendu HT on a 30% de charges". */
-function occurrencesRecetteDansLaPeriode(r: RecetteFlux, debut: Date, fin: Date, depenses: DepenseFlux[]): Occurrence[] {
-  const dateDebutPopUp = trouverDateDebutPopUp(r.popUpNom, depenses);
-  if (!dateDebutPopUp) return [];
-  const montantNet = r.caMoisHt * (1 - r.tauxChargesVariables / 100);
+/** Une occurrence par mois de la grille de mensualités qui tombe entre `debut` et `fin` — montant
+ * net des charges variables (cf. calculMensualite). Ne dépend plus de la date du loyer : un
+ * pop-up déjà ouvert démarre dès que sa grille a un mois à un pourcentage non nul (cf. retour
+ * utilisateur du 2026-09-11 : "les pop-up déjà ouverts... commencent dès maintenant"). */
+function occurrencesRecetteDansLaPeriode(r: RecetteFlux, debut: Date, fin: Date): Occurrence[] {
   const occurrences: Occurrence[] = [];
-  let courante = dateDebutPopUp;
-  let garde = 0;
-  while (courante <= fin && garde < 500) {
-    if (courante >= debut) {
-      occurrences.push({ date: courante, montant: montantNet, libelle: `Recette ${r.popUpNom}`, nature: 'recette' });
-    }
-    courante = ajouterMois(courante, 1);
-    garde += 1;
+  for (const m of r.mensualites) {
+    const dateMois = new Date(`${m.mois}T00:00:00`);
+    if (dateMois < debut || dateMois > fin || m.pourcentage <= 0) continue;
+    occurrences.push({ date: dateMois, montant: calculMensualite(r, m).net, libelle: `Recette ${r.popUpNom}`, nature: 'recette' });
   }
   return occurrences;
 }
@@ -208,11 +208,12 @@ const FORMULAIRE_VIDE: FormulaireDepense = {
 interface FormulaireRecette {
   popUpNom: string;
   caJourHt: string;
-  caMoisHt: string;
   tauxChargesVariables: string;
 }
 
-const FORMULAIRE_RECETTE_VIDE: FormulaireRecette = { popUpNom: '', caJourHt: '', caMoisHt: '', tauxChargesVariables: '' };
+// Charges variables à 30% par défaut (cf. retour utilisateur du 2026-09-11 : "pour les charges
+// variables on va dire 30% du CA HT à chaque fois pour l'instant").
+const FORMULAIRE_RECETTE_VIDE: FormulaireRecette = { popUpNom: '', caJourHt: '', tauxChargesVariables: '30' };
 
 export function FluxTresorerieClient({
   soldeActuel,
@@ -257,7 +258,7 @@ export function FluxTresorerieClient({
 
   const occurrences = useMemo(() => {
     const depensesOcc = depenses.flatMap((d) => occurrencesDansLaPeriode(d, debut, fin));
-    const recettesOcc = recettes.flatMap((r) => occurrencesRecetteDansLaPeriode(r, debut, fin, depenses));
+    const recettesOcc = recettes.flatMap((r) => occurrencesRecetteDansLaPeriode(r, debut, fin));
     return [...depensesOcc, ...recettesOcc].sort((a, b) => a.date.getTime() - b.date.getTime());
   }, [depenses, recettes, debut, fin]);
 
@@ -341,7 +342,6 @@ export function FluxTresorerieClient({
     setFormRecette({
       popUpNom: r.popUpNom,
       caJourHt: String(r.caJourHt),
-      caMoisHt: String(r.caMoisHt),
       tauxChargesVariables: String(r.tauxChargesVariables),
     });
   };
@@ -355,17 +355,16 @@ export function FluxTresorerieClient({
   const soumettreRecette = () => {
     setErreurRecette(null);
     const caJour = Number(formRecette.caJourHt.replace(',', '.'));
-    const caMois = Number(formRecette.caMoisHt.replace(',', '.'));
     const taux = Number(formRecette.tauxChargesVariables.replace(',', '.'));
-    if (!formRecette.popUpNom.trim() || !formRecette.caJourHt || !formRecette.caMoisHt || !formRecette.tauxChargesVariables) {
-      setErreurRecette('Pop-up, CA jour, CA mois et taux de charges sont obligatoires.');
+    if (!formRecette.popUpNom.trim() || !formRecette.caJourHt || !formRecette.tauxChargesVariables) {
+      setErreurRecette('Pop-up, CA jour (100%) et taux de charges sont obligatoires.');
       return;
     }
-    if (Number.isNaN(caJour) || Number.isNaN(caMois) || Number.isNaN(taux) || taux < 0 || taux > 100) {
+    if (Number.isNaN(caJour) || Number.isNaN(taux) || taux < 0 || taux > 100) {
       setErreurRecette('Vérifie les montants (le taux de charges doit être entre 0 et 100).');
       return;
     }
-    const params = { popUpNom: formRecette.popUpNom, caJourHt: caJour, caMoisHt: caMois, tauxChargesVariables: taux };
+    const params = { popUpNom: formRecette.popUpNom, caJourHt: caJour, tauxChargesVariables: taux };
     demarrerRecette(async () => {
       try {
         if (editionRecetteId) {
@@ -399,6 +398,53 @@ export function FluxTresorerieClient({
       });
   };
 
+  // Édition du pourcentage d'un mois de la grille — état local optimiste (cf. TableauMensualites)
+  // + appel serveur au blur, pour ne pas re-render toute la grille à chaque frappe.
+  const [pourcentagesEnEdition, setPourcentagesEnEdition] = useState<Record<string, string>>({});
+  const [mensualiteEnErreur, setMensualiteEnErreur] = useState<string | null>(null);
+
+  const changerPourcentage = (mensualiteId: string, valeur: string) => {
+    setPourcentagesEnEdition((etat) => ({ ...etat, [mensualiteId]: valeur }));
+  };
+
+  const validerPourcentage = (mensualiteId: string) => {
+    const valeur = pourcentagesEnEdition[mensualiteId];
+    if (valeur === undefined) return;
+    const pourcentage = Number(valeur.replace(',', '.'));
+    setPourcentagesEnEdition((etat) => {
+      const { [mensualiteId]: _retire, ...reste } = etat;
+      return reste;
+    });
+    if (Number.isNaN(pourcentage) || pourcentage < 0) {
+      setMensualiteEnErreur('Le pourcentage doit être un nombre positif.');
+      return;
+    }
+    setMensualiteEnErreur(null);
+    setRecettes((liste) =>
+      liste.map((r) => ({ ...r, mensualites: r.mensualites.map((m) => (m.id === mensualiteId ? { ...m, pourcentage } : m)) })),
+    );
+    definirPourcentageMoisRecette(mensualiteId, pourcentage)
+      .then(() => router.refresh())
+      .catch((e) => {
+        setMensualiteEnErreur(e instanceof Error ? e.message : "Échec de l'enregistrement du pourcentage.");
+        setRecettes(recettesInitiales);
+      });
+  };
+
+  const [ajoutMoisEnCours, setAjoutMoisEnCours] = useState<string | null>(null);
+
+  const ajouterUnMois = (r: RecetteFlux) => {
+    const dernierMois = r.mensualites[r.mensualites.length - 1]?.mois;
+    const base = dernierMois ? new Date(`${dernierMois}T00:00:00`) : new Date();
+    const prochain = ajouterMois(base, 1);
+    const moisIso = dateEnISO(new Date(prochain.getFullYear(), prochain.getMonth(), 1));
+    setAjoutMoisEnCours(r.id);
+    ajouterMoisRecetteFlux(r.id, moisIso)
+      .then(() => router.refresh())
+      .catch((e) => setErreurRecette(e instanceof Error ? e.message : "Échec de l'ajout du mois."))
+      .finally(() => setAjoutMoisEnCours(null));
+  };
+
   return (
     <div className="mt-8">
       <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">Flux de trésorerie — 12 mois</p>
@@ -418,8 +464,8 @@ export function FluxTresorerieClient({
         </div>
         <GraphiqueSolde soldeDepart={soldeActuel} occurrences={occurrences} debut={debut} fin={fin} />
         <p className="mt-2 text-[11px] text-slate-400">
-          Recettes = CA mois HT × (1 − taux de charges variables) de chaque pop-up, à partir du 1er jour de son loyer. Les revenus du
-          site ne sont pas encore intégrés.
+          Recettes = pour chaque pop-up et chaque mois, (% des ventes × CA/jour de référence × nb de jours du mois) moins les charges
+          variables — cf. grille &quot;Recettes par pop-up&quot; ci-dessous. Les revenus du site ne sont pas encore intégrés.
         </p>
       </div>
 
@@ -625,7 +671,7 @@ export function FluxTresorerieClient({
           )}
         </div>
 
-        <div className="mb-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="mb-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
           <label className="block">
             <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-400">Pop-up</span>
             <input
@@ -636,21 +682,11 @@ export function FluxTresorerieClient({
             />
           </label>
           <label className="block">
-            <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-400">CA moyen/jour HT (€)</span>
+            <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-400">CA/jour HT = 100% (€)</span>
             <input
               value={formRecette.caJourHt}
               onChange={(e) => setFormRecette((f) => ({ ...f, caJourHt: e.target.value }))}
               placeholder="Ex. 800"
-              inputMode="decimal"
-              className="w-full rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-sm focus:border-indigo-300 focus:bg-white focus:outline-none"
-            />
-          </label>
-          <label className="block">
-            <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-400">CA moyen/mois HT (€)</span>
-            <input
-              value={formRecette.caMoisHt}
-              onChange={(e) => setFormRecette((f) => ({ ...f, caMoisHt: e.target.value }))}
-              placeholder="Ex. 24000"
               inputMode="decimal"
               className="w-full rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-sm focus:border-indigo-300 focus:bg-white focus:outline-none"
             />
@@ -668,8 +704,9 @@ export function FluxTresorerieClient({
         </div>
 
         <p className="mb-3 text-[11px] text-slate-400">
-          Le nom du pop-up doit correspondre à celui utilisé dans le libellé de son loyer (ex. &quot;Loyer Carré Sénart&quot; →
-          &quot;Carré Sénart&quot;) — les revenus démarrent automatiquement au 1er jour de ce loyer.
+          Le CA/jour HT est la référence &quot;100% des ventes&quot; du pop-up. À la création, les {NOMBRE_MOIS_PREREMPLIS} prochains
+          mois sont pré-remplis à 100% (à baisser toi-même sur les mois où tu vises moins, ex. 80%, ou sur les mois avant
+          l&apos;ouverture du pop-up en le mettant à 0%).
         </p>
 
         {erreurRecette && <p className="mb-2 text-xs font-semibold text-red-600">{erreurRecette}</p>}
@@ -684,73 +721,122 @@ export function FluxTresorerieClient({
         </button>
       </div>
 
-      <div className="overflow-hidden rounded-[20px] border border-slate-200 bg-white shadow-sm">
-        <table className="w-full text-left text-sm">
-          <thead>
-            <tr className="border-b border-slate-100 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-              <th className="px-4 py-3">Pop-up</th>
-              <th className="px-4 py-3">CA/jour HT</th>
-              <th className="px-4 py-3">CA/mois HT</th>
-              <th className="px-4 py-3">Charges var.</th>
-              <th className="px-4 py-3">Net/mois</th>
-              <th className="px-4 py-3">Démarre le</th>
-              <th className="px-4 py-3">Ajouté par</th>
-              <th className="px-4 py-3" />
-            </tr>
-          </thead>
-          <tbody>
-            {recettes.map((r) => {
-              const dateDebutPopUp = trouverDateDebutPopUp(r.popUpNom, depenses);
-              const net = r.caMoisHt * (1 - r.tauxChargesVariables / 100);
-              return (
-                <tr key={r.id} className={`border-b border-slate-50 last:border-0 ${editionRecetteId === r.id ? 'bg-indigo-50/50' : ''}`}>
-                  <td className="px-4 py-2.5 font-semibold text-slate-800">{r.popUpNom}</td>
-                  <td className="px-4 py-2.5 text-slate-500">{formatMontant(r.caJourHt)}</td>
-                  <td className="px-4 py-2.5 text-slate-500">{formatMontant(r.caMoisHt)}</td>
-                  <td className="px-4 py-2.5 text-slate-500">{r.tauxChargesVariables}%</td>
-                  <td className="px-4 py-2.5 font-bold text-emerald-600">{formatMontant(net)}</td>
-                  <td className="px-4 py-2.5 text-slate-500">
-                    {dateDebutPopUp ? (
-                      formatDateCourte(dateEnISO(dateDebutPopUp))
-                    ) : (
-                      <span className="font-semibold text-amber-600" title="Aucun loyer estPopUp ne correspond à ce nom">
-                        ⚠ pop-up introuvable
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-4 py-2.5 text-slate-400">{r.creeParNom}</td>
-                  <td className="px-2 py-2.5 text-center">
-                    <div className="flex items-center justify-center gap-1">
-                      <button
-                        type="button"
-                        onClick={() => demarrerEditionRecette(r)}
-                        title="Modifier cette recette"
-                        className="rounded-lg px-2 py-1 text-slate-300 hover:bg-indigo-50 hover:text-indigo-500"
-                      >
-                        ✎
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => supprimerRecette(r)}
-                        disabled={suppressionRecetteEnCours === r.id}
-                        className="rounded-lg px-2 py-1 text-slate-300 hover:bg-red-50 hover:text-red-500 disabled:opacity-60"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-            {recettes.length === 0 && (
-              <tr>
-                <td colSpan={8} className="px-4 py-10 text-center text-sm text-slate-400">
-                  Aucune recette enregistrée.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+      {mensualiteEnErreur && <p className="mb-3 text-xs font-semibold text-red-600">{mensualiteEnErreur}</p>}
+
+      <div className="flex flex-col gap-4">
+        {recettes.map((r) => (
+          <div key={r.id} className="overflow-hidden rounded-[20px] border border-slate-200 bg-white shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 px-5 py-3">
+              <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+                <p className="font-bold text-slate-900">{r.popUpNom}</p>
+                <p className="text-xs text-slate-400">
+                  100% = <span className="font-semibold text-slate-600">{formatMontant(r.caJourHt)}</span>/jour HT
+                </p>
+                <p className="text-xs text-slate-400">
+                  Charges variables : <span className="font-semibold text-slate-600">{r.tauxChargesVariables}%</span> du CA HT
+                </p>
+                <p className="text-xs text-slate-300">Ajouté par {r.creeParNom}</p>
+              </div>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => demarrerEditionRecette(r)}
+                  title="Modifier cette recette"
+                  className="rounded-lg px-2 py-1 text-slate-300 hover:bg-indigo-50 hover:text-indigo-500"
+                >
+                  ✎
+                </button>
+                <button
+                  type="button"
+                  onClick={() => supprimerRecette(r)}
+                  disabled={suppressionRecetteEnCours === r.id}
+                  className="rounded-lg px-2 py-1 text-slate-300 hover:bg-red-50 hover:text-red-500 disabled:opacity-60"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[640px] text-left text-sm">
+                <thead>
+                  <tr className="border-b border-slate-100 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                    <th className="sticky left-0 bg-white px-4 py-2.5">Mois</th>
+                    {r.mensualites.map((m) => (
+                      <th key={m.id} className="whitespace-nowrap px-3 py-2.5 text-right">
+                        {formatMoisCourt(m.mois)}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="border-b border-slate-50">
+                    <td className="sticky left-0 bg-white px-4 py-2 font-semibold text-slate-600">% des ventes</td>
+                    {r.mensualites.map((m) => (
+                      <td key={m.id} className="px-2 py-1.5 text-right">
+                        <input
+                          value={pourcentagesEnEdition[m.id] ?? String(m.pourcentage)}
+                          onChange={(e) => changerPourcentage(m.id, e.target.value)}
+                          onBlur={() => validerPourcentage(m.id)}
+                          inputMode="decimal"
+                          className="w-16 rounded-lg border border-slate-200 bg-slate-50 px-1.5 py-1 text-right text-sm focus:border-indigo-300 focus:bg-white focus:outline-none"
+                        />
+                      </td>
+                    ))}
+                  </tr>
+                  <tr className="border-b border-slate-50 text-slate-500">
+                    <td className="sticky left-0 bg-white px-4 py-2">CA/jour prévu</td>
+                    {r.mensualites.map((m) => (
+                      <td key={m.id} className="whitespace-nowrap px-3 py-2 text-right">
+                        {formatMontant(calculMensualite(r, m).caJourPrevu)}
+                      </td>
+                    ))}
+                  </tr>
+                  <tr className="border-b border-slate-50 text-slate-500">
+                    <td className="sticky left-0 bg-white px-4 py-2">CA/mois prévu HT</td>
+                    {r.mensualites.map((m) => (
+                      <td key={m.id} className="whitespace-nowrap px-3 py-2 text-right">
+                        {formatMontant(calculMensualite(r, m).caMoisPrevu)}
+                      </td>
+                    ))}
+                  </tr>
+                  <tr className="border-b border-slate-50 text-red-500">
+                    <td className="sticky left-0 bg-white px-4 py-2">Charges var. ({r.tauxChargesVariables}%)</td>
+                    {r.mensualites.map((m) => (
+                      <td key={m.id} className="whitespace-nowrap px-3 py-2 text-right">
+                        −{formatMontant(calculMensualite(r, m).chargesVariables)}
+                      </td>
+                    ))}
+                  </tr>
+                  <tr>
+                    <td className="sticky left-0 bg-white px-4 py-2 font-bold text-emerald-700">Net prévu</td>
+                    {r.mensualites.map((m) => (
+                      <td key={m.id} className="whitespace-nowrap px-3 py-2 text-right font-bold text-emerald-600">
+                        {formatMontant(calculMensualite(r, m).net)}
+                      </td>
+                    ))}
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div className="border-t border-slate-100 px-5 py-2.5">
+              <button
+                type="button"
+                onClick={() => ajouterUnMois(r)}
+                disabled={ajoutMoisEnCours === r.id}
+                className="text-xs font-semibold text-indigo-500 hover:underline disabled:opacity-60"
+              >
+                {ajoutMoisEnCours === r.id ? 'Ajout…' : '+ Ajouter un mois'}
+              </button>
+            </div>
+          </div>
+        ))}
+        {recettes.length === 0 && (
+          <p className="rounded-[20px] border border-slate-200 bg-white px-4 py-10 text-center text-sm text-slate-400 shadow-sm">
+            Aucune recette enregistrée.
+          </p>
+        )}
       </div>
     </div>
   );

@@ -119,24 +119,51 @@ export async function supprimerDepenseFlux(id: string): Promise<void> {
   revalidatePath('/tresorerie');
 }
 
-// ---- Recettes (cf. retour utilisateur du 2026-09-11 : "pour les recettes on a tous les pop up il
-// faut qu'on mette un chiffre d'affaire moyen par jour et par mois HT et les charges variables...
-// les revenus commencent au premier jour du loyer") ----
+// ---- Recettes (cf. retour utilisateur du 2026-09-11 : "pour chaque pop up un pourcentage par mois
+// des ventes... et on met à combien correspond 100% par jour... comme ça on a un visuel sur ce
+// qu'on doit faire tous les mois" — ca_jour_ht est la référence "100%"/jour, et le CA prévu de
+// chaque mois se déduit d'un pourcentage saisi mois par mois dans flux_tresorerie_recettes_mois.
+// Les pop-up déjà ouverts démarrent à 100% dès le mois en cours, cf. POURCENTAGE_PAR_DEFAUT
+// ci-dessous.) ----
+
+export const NOMBRE_MOIS_PREREMPLIS = 12;
+export const POURCENTAGE_PAR_DEFAUT = 100;
+
+export interface MensualiteRecette {
+  id: string;
+  mois: string;
+  pourcentage: number;
+}
 
 export interface RecetteFlux {
   id: string;
   popUpNom: string;
   caJourHt: number;
-  caMoisHt: number;
   tauxChargesVariables: number;
   creeParNom: string;
+  mensualites: MensualiteRecette[];
 }
 
 export interface ParamsRecetteFlux {
   popUpNom: string;
   caJourHt: number;
-  caMoisHt: number;
   tauxChargesVariables: number;
+}
+
+function premierJourDuMois(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-01`;
+}
+
+/** Les `NOMBRE_MOIS_PREREMPLIS` mois (au format "AAAA-MM-01") à partir du mois en cours — sert à
+ * pré-remplir la grille de pourcentages d'une nouvelle recette. */
+function moisAPreremplir(): string[] {
+  const maintenant = new Date();
+  const mois: string[] = [];
+  for (let i = 0; i < NOMBRE_MOIS_PREREMPLIS; i++) {
+    mois.push(premierJourDuMois(new Date(maintenant.getFullYear(), maintenant.getMonth() + i, 1)));
+  }
+  return mois;
 }
 
 export async function chargerRecettesFlux(): Promise<RecetteFlux[]> {
@@ -144,7 +171,9 @@ export async function chargerRecettesFlux(): Promise<RecetteFlux[]> {
   const supabase = await creerClientSupabaseServeur();
   const { data, error } = await supabase
     .from('flux_tresorerie_recettes')
-    .select('id, pop_up_nom, ca_jour_ht, ca_mois_ht, taux_charges_variables, createur:created_by(nom_complet, email)')
+    .select(
+      'id, pop_up_nom, ca_jour_ht, taux_charges_variables, createur:created_by(nom_complet, email), mensualites:flux_tresorerie_recettes_mois(id, mois, pourcentage)',
+    )
     .order('pop_up_nom', { ascending: true });
   if (error) throw new Error(error.message);
 
@@ -152,18 +181,20 @@ export async function chargerRecettesFlux(): Promise<RecetteFlux[]> {
     id: string;
     pop_up_nom: string;
     ca_jour_ht: number;
-    ca_mois_ht: number;
     taux_charges_variables: number;
     createur: { nom_complet: string | null; email: string } | null;
+    mensualites: { id: string; mois: string; pourcentage: number }[];
   };
 
   return ((data ?? []) as unknown as Ligne[]).map((l) => ({
     id: l.id,
     popUpNom: l.pop_up_nom,
     caJourHt: l.ca_jour_ht,
-    caMoisHt: l.ca_mois_ht,
     tauxChargesVariables: l.taux_charges_variables,
     creeParNom: l.createur ? l.createur.nom_complet || l.createur.email : '—',
+    mensualites: l.mensualites
+      .map((m) => ({ id: m.id, mois: m.mois, pourcentage: m.pourcentage }))
+      .sort((a, b) => a.mois.localeCompare(b.mois)),
   }));
 }
 
@@ -171,11 +202,14 @@ function versLigneRecette(params: ParamsRecetteFlux) {
   return {
     pop_up_nom: params.popUpNom.trim(),
     ca_jour_ht: params.caJourHt,
-    ca_mois_ht: params.caMoisHt,
     taux_charges_variables: params.tauxChargesVariables,
   };
 }
 
+/** Crée la recette et pré-remplit sa grille de pourcentages sur `NOMBRE_MOIS_PREREMPLIS` mois à
+ * partir du mois en cours, à `POURCENTAGE_PAR_DEFAUT` (100%) — cf. retour utilisateur : "il faut
+ * que les pop-up déjà ouverts... commencent dès maintenant le chiffre 100%". Ceux pas encore
+ * ouverts n'ont qu'à baisser le pourcentage des mois avant leur ouverture à 0. */
 export async function creerRecetteFlux(params: ParamsRecetteFlux): Promise<void> {
   await exigerAdmin();
   const supabase = await creerClientSupabaseServeur();
@@ -184,8 +218,22 @@ export async function creerRecetteFlux(params: ParamsRecetteFlux): Promise<void>
   } = await supabase.auth.getUser();
   if (!user) throw new Error('Non connecté.');
 
-  const { error } = await supabase.from('flux_tresorerie_recettes').insert({ ...versLigneRecette(params), created_by: user.id });
+  const { data: recette, error } = await supabase
+    .from('flux_tresorerie_recettes')
+    .insert({ ...versLigneRecette(params), created_by: user.id })
+    .select('id')
+    .single();
   if (error) throw new Error(error.message);
+
+  const { error: erreurMensualites } = await supabase.from('flux_tresorerie_recettes_mois').insert(
+    moisAPreremplir().map((mois) => ({
+      recette_id: recette.id,
+      mois,
+      pourcentage: POURCENTAGE_PAR_DEFAUT,
+      created_by: user.id,
+    })),
+  );
+  if (erreurMensualites) throw new Error(erreurMensualites.message);
   revalidatePath('/tresorerie');
 }
 
@@ -204,5 +252,37 @@ export async function supprimerRecetteFlux(id: string): Promise<void> {
   const { data, error } = await supabase.from('flux_tresorerie_recettes').delete().eq('id', id).select('id');
   if (error) throw new Error(error.message);
   if (!data || data.length === 0) throw new Error('Suppression bloquée (droits insuffisants ?)');
+  revalidatePath('/tresorerie');
+}
+
+/** Ajoute un mois de plus (à `POURCENTAGE_PAR_DEFAUT`) au bout de la grille d'une recette — cf.
+ * retour utilisateur : la grille glisse dans le temps, un admin doit pouvoir l'étendre. */
+export async function ajouterMoisRecetteFlux(recetteId: string, mois: string): Promise<void> {
+  await exigerAdmin();
+  const supabase = await creerClientSupabaseServeur();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error('Non connecté.');
+
+  const { error } = await supabase
+    .from('flux_tresorerie_recettes_mois')
+    .insert({ recette_id: recetteId, mois, pourcentage: POURCENTAGE_PAR_DEFAUT, created_by: user.id });
+  if (error) throw new Error(error.message);
+  revalidatePath('/tresorerie');
+}
+
+/** Modifie le pourcentage d'un mois déjà présent dans la grille (ex. objectif "80%" pour ce
+ * mois-ci) — cf. retour utilisateur : "un pourcentage par mois des ventes exemple 80%". */
+export async function definirPourcentageMoisRecette(mensualiteId: string, pourcentage: number): Promise<void> {
+  await exigerAdmin();
+  const supabase = await creerClientSupabaseServeur();
+  const { data, error } = await supabase
+    .from('flux_tresorerie_recettes_mois')
+    .update({ pourcentage })
+    .eq('id', mensualiteId)
+    .select('id');
+  if (error) throw new Error(error.message);
+  if (!data || data.length === 0) throw new Error('Modification bloquée (droits insuffisants ?)');
   revalidatePath('/tresorerie');
 }
