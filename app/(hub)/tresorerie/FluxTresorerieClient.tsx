@@ -254,16 +254,22 @@ function occurrencesRecetteDansLaPeriode(
   const dateDebutPopUp = dejaOuvert ? null : trouverDateDebutPopUp(r.popUpNom, depenses);
   if (!dejaOuvert && !dateDebutPopUp) return [];
 
+  // Comparaison au niveau du mois (pas de la date exacte) pour la borne basse : une mensualité est
+  // toujours datée du 1er du mois, donc le mois en cours (déjà entamé) serait sinon exclu dès qu'on
+  // n'est plus le 1er (cf. retour utilisateur du 2026-09-12 : "j'ai pas les revenus des pop-up en
+  // septembre" — on était le 12). Le mois en cours est compté dès maintenant, positionné à `debut`
+  // sur le graphique plutôt qu'à une date déjà passée.
+  const debutMoisCourant = new Date(debut.getFullYear(), debut.getMonth(), 1);
   const occurrences: Occurrence[] = [];
   for (const m of r.mensualites) {
     const dateMois = new Date(`${m.mois}T00:00:00`);
-    if (dateMois < debut || dateMois > fin || m.pourcentage <= 0) continue;
+    if (dateMois < debutMoisCourant || dateMois > fin || m.pourcentage <= 0) continue;
     if (dateDebutPopUp && (dateMois.getFullYear() < dateDebutPopUp.getFullYear() ||
       (dateMois.getFullYear() === dateDebutPopUp.getFullYear() && dateMois.getMonth() < dateDebutPopUp.getMonth()))) {
       continue;
     }
     occurrences.push({
-      date: dateMois,
+      date: dateMois < debut ? debut : dateMois,
       montant: calculMensualite(r, m).net,
       libelle: `Recette ${r.popUpNom}`,
       nature: 'recette',
