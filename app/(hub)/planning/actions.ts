@@ -138,87 +138,12 @@ export async function supprimerConge(id: string) {
   revalidatePath('/planning');
 }
 
-// --- Génération automatique (bouton "Générer", cf. handleGenerer côté app — ici déclenchée à la
-// main plutôt qu'en silence au montage, plus simple à raisonner côté Next.js) ---
-
-export async function genererEtInsererPlanning(dateDebut: string, dateFin: string) {
-  await exigerAccesEcriture();
-  const supabase = await creerClientSupabaseServeur();
-  const adminId = await idUtilisateurConnecte(supabase);
-
-  const [
-    { data: profiles, error: eProfiles },
-    { data: horairesRecurrents, error: eHoraires },
-    { data: horairesOuverture, error: eOuverture },
-    { data: conges, error: eConges },
-    { data: joursEcole, error: eEcole },
-    { data: shiftsExistants, error: eShifts },
-    { data: affectations, error: eAffectations },
-    { data: popUps, error: ePopUps },
-    { data: informationsRh, error: eRh },
-  ] = await Promise.all([
-    supabase.from('profiles').select('id, role, type_contrat, actif'),
-    supabase.from('horaires_recurrents_profil').select('*'),
-    supabase.from('regles_horaires_ouverture').select('*'),
-    supabase.from('conges').select('*').lte('date_debut', dateFin).gte('date_fin', dateDebut),
-    supabase.from('jours_ecole_alternant').select('profile_id, date').gte('date', dateDebut).lte('date', dateFin),
-    supabase.from('planning_shifts').select('*').gte('date', dateDebut).lte('date', dateFin),
-    supabase.from('profil_pop_ups').select('profile_id, pop_up_id'),
-    supabase.from('pop_ups').select('id, date_debut'),
-    supabase.from('informations_rh').select('profile_id, date_debut_contrat'),
-  ]);
-  const erreur = eProfiles || eHoraires || eOuverture || eConges || eEcole || eShifts || eAffectations || ePopUps || eRh;
-  if (erreur) throw new Error(erreur.message);
-
-  const mapAffectations = new Map<string, Set<string>>();
-  for (const a of affectations ?? []) {
-    const ensemble = mapAffectations.get(a.profile_id) ?? new Set<string>();
-    ensemble.add(a.pop_up_id);
-    mapAffectations.set(a.profile_id, ensemble);
-  }
-
-  const jours = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(`${dateDebut}T00:00:00`);
-    d.setDate(d.getDate() + i);
-    const jourSemaine = (d.getDay() + 6) % 7; // 0 = lundi
-    const pad = (n: number) => String(n).padStart(2, '0');
-    return { date: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`, jour_semaine: jourSemaine };
-  });
-
-  const resultat = genererPlanning({
-    jours,
-    profiles: profiles ?? [],
-    horairesRecurrents: horairesRecurrents ?? [],
-    horairesOuverture: horairesOuverture ?? [],
-    conges: conges ?? [],
-    joursEcole: joursEcole ?? [],
-    shiftsExistants: shiftsExistants ?? [],
-    mapAffectations,
-    popUps: popUps ?? [],
-    adminId,
-    datesDebutContrat: informationsRh ?? [],
-  });
-
-  // Purement additif — ne supprime plus rien (cf. incident : ça supprimait puis recréait tous les
-  // brouillons auto-générés de la semaine à chaque clic, donc ça écrasait aussi ceux qu'un admin
-  // avait corrigés à la main entre-temps — même bug que generer-planning-auto côté App PIMP IT,
-  // qui l'a révélé en l'appliquant sur 52 semaines d'un coup. `shiftsExistants`, chargé avant
-  // l'appel à genererPlanning ci-dessus, fait déjà que seules les cases encore vides reçoivent un
-  // nouveau créneau — tout ce qui existait déjà (généré, corrigé, ou publié) reste intact).
-  if (resultat.shifts.length > 0) {
-    const { error: eInsert } = await supabase.from('planning_shifts').insert(resultat.shifts);
-    if (eInsert) throw new Error(eInsert.message);
-  }
-
-  revalidatePath('/planning');
-  return { nombreCrees: resultat.shifts.length, alertes: resultat.alertes };
-}
-
 // Fenêtre couverte quand on génère pour UNE personne (bouton "Enregistrer" de l'onglet
 // Planification côté fiche employé, cf. FicheDetailMembre.tsx) — même horizon que le cron
 // generer-planning-auto (App PIMP IT/supabase/functions/generer-planning-auto), pour que fixer
 // l'horaire récurrent de quelqu'un remplisse tout de suite son planning sur un an, pas seulement
-// la semaine affichée à l'écran. Purement additif comme genererEtInsererPlanning ci-dessus.
+// la semaine affichée à l'écran. Purement additif (cf. shiftsExistants plus bas : seules les cases
+// encore vides reçoivent un nouveau créneau).
 const FENETRE_SEMAINES_PROFIL = 52;
 
 /** Génère le planning d'UNE SEULE personne, à partir d'aujourd'hui (ou de sa date de début de

@@ -6,10 +6,10 @@
 // page.tsx (Server Component) refait le fetch à chaque changement, ce composant se contente de
 // naviguer et de gérer l'état d'interaction (recherche, filtres, panneau ouvert).
 
-import { useMemo, useState, useTransition } from 'react';
+import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-import { genererEtInsererPlanning, supprimerConge } from './actions';
+import { supprimerConge } from './actions';
 import { ajouterJours, dateDepuisISO, dateEnISO, joursDeLaSemaine, libellePeriodeCourte } from './dateUtils';
 import { PanneauShift } from './PanneauShift';
 import type { Conge, JourEcoleAlternant, PlanningShift, PopUp, Profile, TypeContrat } from './types';
@@ -62,12 +62,8 @@ export function PlanningClient({
   const [filtreContrat, setFiltreContrat] = useState<FiltreContrat>('tous');
   const [filtrePopUpId, setFiltrePopUpId] = useState<string>('tous');
   const [panneau, setPanneau] = useState<PanneauContexte | null>(null);
-  const [generationEnCours, demarrerGeneration] = useTransition();
-  const [messageGeneration, setMessageGeneration] = useState<string | null>(null);
 
   const jours = useMemo(() => joursDeLaSemaine(dateDepuisISO(semaineIso)), [semaineIso]);
-  const dateDebut = dateEnISO(jours[0]);
-  const dateFin = dateEnISO(jours[6]);
 
   const profilParId = useMemo(() => new Map(profils.map((p) => [p.id, p])), [profils]);
   const popUpParId = useMemo(() => new Map(popUps.map((p) => [p.id, p])), [popUps]);
@@ -148,22 +144,6 @@ export function PlanningClient({
     }
   }
 
-  function handleGenerer() {
-    setMessageGeneration(null);
-    demarrerGeneration(async () => {
-      try {
-        const resultat = await genererEtInsererPlanning(dateDebut, dateFin);
-        setMessageGeneration(
-          resultat.nombreCrees === 0
-            ? 'Aucun nouveau créneau à générer (semaine déjà couverte par les horaires récurrents).'
-            : `${resultat.nombreCrees} créneau${resultat.nombreCrees > 1 ? 'x' : ''} généré${resultat.nombreCrees > 1 ? 's' : ''}.`,
-        );
-      } catch (e) {
-        setMessageGeneration(e instanceof Error ? e.message : 'Échec de la génération.');
-      }
-    });
-  }
-
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="mb-2 flex flex-wrap items-center justify-between gap-3 px-1">
@@ -214,18 +194,6 @@ export function PlanningClient({
           )}
         </div>
 
-        {!lectureSeule && (
-          <div className="flex flex-1 justify-end">
-            <button
-              type="button"
-              onClick={handleGenerer}
-              disabled={generationEnCours}
-              className="rounded-[10px] bg-indigo-600 px-4 py-2 text-[13px] font-semibold text-white shadow-sm hover:bg-indigo-500 disabled:opacity-60"
-            >
-              {generationEnCours ? 'Génération...' : 'Générer depuis les horaires récurrents'}
-            </button>
-          </div>
-        )}
       </div>
 
       <div className="mb-3 flex flex-wrap items-center gap-2 px-1">
@@ -241,7 +209,6 @@ export function PlanningClient({
             {f === 'tous' ? 'Tous' : LIBELLE_TYPE_CONTRAT[f]}
           </button>
         ))}
-        {messageGeneration && <span className="ml-2 text-xs font-semibold text-slate-500">{messageGeneration}</span>}
       </div>
 
       <div className="min-h-0 flex-1 px-1 pb-4">

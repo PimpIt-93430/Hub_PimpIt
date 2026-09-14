@@ -9,9 +9,8 @@ import type { Conge, JourEcoleAlternant, PlanningShift, PopUp, Profile } from '.
  * réelles (planning_shifts, conges, jours_ecole_alternant, profil_pop_ups), pas un miroir hub_*.
  * Semaine choisie via ?semaine= (lundi ISO de la semaine visée), le composant client change cette
  * query string pour naviguer — cette page (Server Component) refait alors le fetch pour la
- * nouvelle semaine. horaires_recurrents_profil/regles_horaires_ouverture ne sont pas chargés ici :
- * seule la génération auto (bouton "Générer", cf. actions.ts genererEtInsererPlanning) en a
- * besoin, et les refetch elle-même au moment de s'exécuter. */
+ * nouvelle semaine. horaires_recurrents_profil/regles_horaires_ouverture ne sont pas chargés ici
+ * (pas besoin pour l'affichage de la grille). */
 export default async function PlanningPage({
   searchParams,
 }: {
