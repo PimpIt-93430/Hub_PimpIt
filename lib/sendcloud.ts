@@ -226,10 +226,12 @@ export interface CreerEnvoiParams {
 /** Crée ET annonce un envoi Sendcloud RÉEL, FACTURÉ immédiatement — à n'appeler que depuis un clic
  * explicite de l'utilisateur pour un envoi précis, jamais en test (cf. en-tête du fichier). */
 export async function creerEtiquetteEnvoi(params: CreerEnvoiParams): Promise<Envoi> {
+  console.log(`[Sendcloud] Création envoi ${params.orderNumber ?? '?'} — code=${params.shippingOptionCode} poids=${params.poidsKg}kg`);
   const data = await sendcloudFetch<{
     data: {
       id: string;
       parcels: { id: number; status: { code: string }; tracking_number?: string; tracking_url?: string }[];
+      errors?: { detail?: string; code?: string }[];
     };
   }>('/shipments/announce', 'POST', {
     from_address: versAddressBody(params.fromAddress),
@@ -256,6 +258,21 @@ export async function creerEtiquetteEnvoi(params: CreerEnvoiParams): Promise<Env
     ],
   });
   const parcel = data.data.parcels[0];
+  console.log(`[Sendcloud] Envoi ${data.data.id} créé pour ${params.orderNumber ?? '?'} — statut=${parcel.status.code}`);
+
+  // Cf. incident du 2026-09-14 (commandes #27714 et 4 autres) : /shipments/announce répond 2xx
+  // (l'envoi est bien créé et FACTURÉ) même quand l'annonce au transporteur échoue derrière — le
+  // vrai résultat est dans parcel.status.code (ex. ANNOUNCEMENT_FAILED) et data.errors, jamais
+  // vérifiés jusqu'ici : l'appelant traitait donc systématiquement ceci comme un succès (création
+  // du fulfillment Shopify, décrément du stock...) alors que le colis ne partira jamais. Ce n'est
+  // PAS un problème de délai (l'annonce est déjà tranchée dans cette même réponse), donc pas de
+  // retry ou d'attente à ajouter ici — juste vérifier ce qu'on nous répond déjà.
+  if (estStatutEchecSendcloud(parcel.status.code)) {
+    const raison = data.data.errors?.[0]?.detail ?? data.data.errors?.[0]?.code ?? 'raison inconnue';
+    console.error(`[Sendcloud] Envoi ${data.data.id} créé mais annonce en échec (${parcel.status.code}) : ${raison}`);
+    throw new Error(`Envoi créé mais rejeté par le transporteur (${parcel.status.code}) : ${raison}`);
+  }
+
   return {
     id: data.data.id,
     parcelId: parcel.id,
@@ -263,6 +280,14 @@ export async function creerEtiquetteEnvoi(params: CreerEnvoiParams): Promise<Env
     trackingNumber: parcel.tracking_number ?? null,
     trackingUrl: parcel.tracking_url ?? null,
   };
+}
+
+/** Codes de statut Sendcloud considérés comme un échec définitif — jamais d'étiquette à venir (cf.
+ * incident du 2026-09-14, ANNOUNCEMENT_FAILED reste ANNOUNCEMENT_FAILED indéfiniment). Dupliqué
+ * ici (plutôt qu'importé depuis commandes-shopify/actions.ts, un fichier "use server" qui
+ * n'exporte que des fonctions async) — même liste que côté actions.ts. */
+function estStatutEchecSendcloud(statutCode: string): boolean {
+  return ['ANNOUNCEMENT_FAILED', 'ERROR', 'CANCELLED'].includes(statutCode);
 }
 
 /** Relit un envoi déjà créé — statut/suivi mis à jour (utilisé par le cron, cf.

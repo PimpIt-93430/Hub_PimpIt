@@ -249,6 +249,9 @@ export async function creerEtiquette(
   const nombreTentatives = await compterExpeditionsSendcloudPourCommande(params.commandeShopifyId);
   const referenceExterne = nombreTentatives > 0 ? `${params.commandeNom}-r${nombreTentatives + 1}` : params.commandeNom;
 
+  // creerEtiquetteEnvoi lève désormais si Sendcloud a créé (et facturé) l'envoi mais rejeté
+  // l'annonce au transporteur (cf. lib/sendcloud.ts, incident du 2026-09-14) — laissé remonter tel
+  // quel : PanneauExpedition.tsx/PanneauImpressionMasse.tsx affichent déjà l'échec à l'utilisateur.
   const envoi = await creerEtiquetteEnvoi({
     shippingOptionCode: params.shippingOptionCode,
     fromAddress: params.fromAddress,
@@ -260,6 +263,7 @@ export async function creerEtiquette(
     totalCommande: params.totalCommande,
     pointRelaisId: params.pointRelaisId,
   });
+  console.log(`[commandes-shopify] Étiquette Sendcloud ${envoi.id} confirmée pour ${params.commandeNom}`);
 
   // Cf. discussion 2026-08-29 : l'envoi est déjà créé et FACTURÉ au-dessus — un échec dans tout ce
   // qui suit (création du fulfillment Shopify, décrément du stock) ne doit jamais faire remonter
