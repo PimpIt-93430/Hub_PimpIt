@@ -21,8 +21,10 @@ import {
   adresseLivraisonVersDestinataire,
   chargerExpediteur,
   CLE_EXPEDITEUR,
+  DIMENSIONS_PAR_DEFAUT,
   EXPEDITEUR_VIDE,
   type Expediteur,
+  POIDS_PAR_DEFAUT_KG,
   versSendcloudAddress,
 } from './expedition-commun';
 
@@ -75,10 +77,10 @@ export function PanneauExpedition({
   const [destinataire, setDestinataire] = useState<Expediteur>(() =>
     adresseLivraisonVersDestinataire(commande.adresseLivraison, commande.email),
   );
-  const [poids, setPoids] = useState(String(poidsConnuGrammes ? poidsConnuGrammes / 1000 : 0.2));
-  const [longueur, setLongueur] = useState('20');
-  const [largeur, setLargeur] = useState('15');
-  const [hauteur, setHauteur] = useState('5');
+  const [poids, setPoids] = useState(String(poidsConnuGrammes ? poidsConnuGrammes / 1000 : POIDS_PAR_DEFAUT_KG));
+  const [longueur, setLongueur] = useState(String(DIMENSIONS_PAR_DEFAUT.longueur));
+  const [largeur, setLargeur] = useState(String(DIMENSIONS_PAR_DEFAUT.largeur));
+  const [hauteur, setHauteur] = useState(String(DIMENSIONS_PAR_DEFAUT.hauteur));
   const [confirmer, setConfirmer] = useState(false);
   const [enCours, setEnCours] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
