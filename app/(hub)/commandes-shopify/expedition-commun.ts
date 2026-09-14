@@ -76,15 +76,14 @@ export const DESCRIPTION_CONTENU_PAR_DEFAUT = 'Bijoux fantaisie';
 // Poids/dimensions par défaut faute de mieux avant pesée réelle (cf. discussion 2026-08-28) — un
 // petit colis de pin's. Modifiable au cas par cas dans PanneauExpedition.tsx.
 export const POIDS_PAR_DEFAUT_KG = 0.2;
-// hauteur 5 → 7 cm (cf. incident du 2026-09-14, commandes #27714/#27725/#27728/#27729/#27748) :
-// avec 20×15×5, Sendcloud rejetait l'annonce Mondial Relay (ANNOUNCEMENT_FAILED) avec l'erreur
-// "le poids volumétrique du colis comporte plus de 3 décimales" — le calcul interne de Mondial
-// Relay sur 20×15×5=1500 cm³ tombe visiblement sur un diviseur qui ne divise pas rond (repli d'un
-// chiffre après la virgule à l'infini). 20×15×7=2100 cm³ est divisible par 7 en plus de 2/3/5, ce
-// qui couvre plus de diviseurs volumétriques plausibles — pas de garantie absolue (Sendcloud/
-// Mondial Relay ne documentent pas cette formule), à confirmer par un envoi réel après ce
-// changement. Impact prix a priori négligeable (+2 cm sur un petit colis pin's).
-export const DIMENSIONS_PAR_DEFAUT = { longueur: 20, largeur: 15, hauteur: 7 };
+// Incident du 2026-09-14 (commandes #27714/#27725/#27728/#27729/#27748) : Sendcloud rejette
+// l'annonce Mondial Relay (ANNOUNCEMENT_FAILED) avec "le poids volumétrique du colis comporte
+// plus de 3 décimales". Piste des dimensions écartée en repassant #27714 avec 20×15×7 au lieu de
+// 20×15×5 (retesté en prod) : échec identique, donc pas les dimensions par défaut — cause encore
+// inconnue (le endpoint /shipping-options en lecture seule ne reproduit pas l'erreur non plus,
+// qui n'apparaît qu'à l'annonce réelle). Revenu à 20×15×5 en attendant une réponse du support
+// Sendcloud plutôt que de garder un changement dont on sait maintenant qu'il n'a aucun effet.
+export const DIMENSIONS_PAR_DEFAUT = { longueur: 20, largeur: 15, hauteur: 5 };
 
 export interface Expediteur {
   entreprise: string;
