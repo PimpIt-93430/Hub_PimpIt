@@ -194,6 +194,11 @@ export function PlanningClient({
           )}
         </div>
 
+        {/* Espace muet symétrique à la barre de recherche (flex-1 des deux côtés) — sans lui, le
+           sélecteur de semaine/vues se retrouve collé à droite au lieu de rester centré (cf. retour
+           utilisateur : "tu as décalé les autres boutons à droite... remets ça au milieu"), depuis
+           le retrait du bouton "Générer" qui occupait ce rôle avant. */}
+        <div className="min-w-[240px] flex-1" aria-hidden="true" />
       </div>
 
       <div className="mb-3 flex flex-wrap items-center gap-2 px-1">
