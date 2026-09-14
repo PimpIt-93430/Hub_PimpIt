@@ -86,19 +86,15 @@ function migrer(brut: unknown): RegleLivraison[] {
     }));
 }
 
-export function chargerReglesLivraison(): RegleLivraison[] {
+/** Lecture seule de l'ancien stockage localStorage — sert uniquement à la migration ponctuelle vers
+ * la base partagée (cf. CommandesShopifyClient.tsx) depuis que les règles ne sont plus écrites ici
+ * (retour utilisateur du 2026-09-14 : "il faut que ce soit les mêmes règles pour tous les profils
+ * et tous les ordinateurs" — un localStorage par navigateur ne pouvait pas le faire). */
+export function chargerReglesLivraisonLocales(): RegleLivraison[] {
   try {
     const sauvegarde = localStorage.getItem(CLE_REGLES_LIVRAISON);
     return sauvegarde ? migrer(JSON.parse(sauvegarde)) : REGLES_PAR_DEFAUT;
   } catch {
     return REGLES_PAR_DEFAUT;
-  }
-}
-
-export function sauvegarderReglesLivraison(regles: RegleLivraison[]): void {
-  try {
-    localStorage.setItem(CLE_REGLES_LIVRAISON, JSON.stringify(regles));
-  } catch {
-    /* navigation privée — tant pis, pas persisté */
   }
 }

@@ -1,5 +1,8 @@
 'use server';
 
+import { revalidatePath } from 'next/cache';
+
+import type { RegleLivraison } from '@/lib/regles-livraison';
 import {
   annulerEnvoi,
   chercherPointsRelais,
@@ -88,6 +91,59 @@ async function decrementerStockPourVente(lignes: Pick<LigneCommande, 'sku' | 'qu
 
 export async function chargerPossibilitesExpedition(): Promise<PossibiliteExpedition[]> {
   return listerPossibilitesExpedition();
+}
+
+// ---- Règles de livraison (cf. retour utilisateur du 2026-09-14 : "il faut que celle que j'ai mis
+// pour moi sur cet ordinateur soit les mêmes règles pour tous les profils et tous les ordinateurs")
+// — partagées en base (table regles_livraison) plutôt que dans le localStorage de chaque
+// navigateur, cf. lib/regles-livraison.ts pour le type et la logique de matching (inchangés). ----
+
+export async function chargerReglesLivraisonAction(): Promise<RegleLivraison[]> {
+  const supabase = await creerClientSupabaseServeur();
+  const { data, error } = await supabase
+    .from('regles_livraison')
+    .select('id, moyen_expedition, poids, destination, transporteur, code')
+    .order('moyen_expedition');
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((r) => ({
+    id: r.id,
+    moyenExpedition: r.moyen_expedition,
+    poids: r.poids,
+    destination: r.destination,
+    transporteur: r.transporteur,
+    code: r.code,
+  }));
+}
+
+/** Remplace toute la liste — plus simple qu'un diff pour une poignée de lignes (cf.
+ * ReglesLivraisonPanel.tsx, une seule règle change à la fois mais toujours resauvegardée en
+ * entier, même principe que côté localStorage avant). */
+export async function enregistrerReglesLivraison(regles: RegleLivraison[]): Promise<void> {
+  const supabase = await creerClientSupabaseServeur();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error('Non connecté.');
+
+  const { error: eDelete } = await supabase.from('regles_livraison').delete().not('id', 'is', null);
+  if (eDelete) throw new Error(eDelete.message);
+
+  if (regles.length > 0) {
+    const { error: eInsert } = await supabase.from('regles_livraison').insert(
+      regles.map((r) => ({
+        id: r.id,
+        moyen_expedition: r.moyenExpedition,
+        poids: r.poids,
+        destination: r.destination,
+        transporteur: r.transporteur,
+        code: r.code,
+        created_by: user.id,
+      })),
+    );
+    if (eInsert) throw new Error(eInsert.message);
+  }
+
+  revalidatePath('/commandes-shopify');
 }
 
 /** Commandes (parmi celles données) dont le fulfillment order est ON_HOLD côté Shopify — cf.

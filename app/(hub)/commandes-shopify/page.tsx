@@ -2,6 +2,7 @@ import { calculerClassificationCommandes } from '@/lib/classification-produits';
 import { commandesShopifyEnCache } from '@/lib/commandes-shopify-cache';
 import { chargerExpeditionsSendcloud } from '@/lib/expeditions-sendcloud';
 import { calculerPoidsCommandes } from '@/lib/poids-commandes';
+import { chargerReglesLivraisonAction } from './actions';
 import { CommandesShopifyClient } from './CommandesShopifyClient';
 
 /** Écran "Commandes Shopify" (cf. discussion 2026-08-27) : vue d'ensemble des commandes pas encore
@@ -13,9 +14,10 @@ import { CommandesShopifyClient } from './CommandesShopifyClient';
 export default async function CommandesShopifyPage() {
   const expeditions = await chargerExpeditionsSendcloud();
   const commandes = await commandesShopifyEnCache(expeditions);
-  const [poids, classification] = await Promise.all([
+  const [poids, classification, reglesLivraison] = await Promise.all([
     calculerPoidsCommandes(commandes),
     calculerClassificationCommandes(commandes),
+    chargerReglesLivraisonAction(),
   ]);
 
   return (
@@ -24,6 +26,7 @@ export default async function CommandesShopifyPage() {
       expeditionsInitiales={[...expeditions]}
       poidsInitiaux={[...poids]}
       classificationInitiale={[...classification]}
+      reglesInitiales={reglesLivraison}
     />
   );
 }

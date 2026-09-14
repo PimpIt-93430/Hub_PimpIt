@@ -5,9 +5,9 @@ import { useEffect, useMemo, useState } from 'react';
 import type { ClassificationCommande } from '@/lib/classification-produits';
 import type { ExpeditionSendcloud } from '@/lib/expeditions-sendcloud';
 import { PRIX_LETTRE_VERTE_SUIVIE_HT } from '@/lib/laposte';
-import { chargerReglesLivraison, type RegleLivraison } from '@/lib/regles-livraison';
+import { chargerReglesLivraisonLocales, type RegleLivraison } from '@/lib/regles-livraison';
 import type { CommandeShopify, StatutExpeditionCommande } from '@/lib/shopify';
-import { rafraichirSuivisLivraison, verifierCommandesEnSuspens } from './actions';
+import { enregistrerReglesLivraison, rafraichirSuivisLivraison, verifierCommandesEnSuspens } from './actions';
 import { chargerExpediteur, type Expediteur, POIDS_PAR_DEFAUT_KG, prixInconnu, resoudreExpedition, type ResultatRoutage } from './expedition-commun';
 import { PanneauCodesTransporteurs } from './PanneauCodesTransporteurs';
 import { PanneauExpedition } from './PanneauExpedition';
@@ -94,6 +94,7 @@ export function CommandesShopifyClient({
   expeditionsInitiales,
   poidsInitiaux,
   classificationInitiale,
+  reglesInitiales,
 }: {
   commandesInitiales: CommandeShopify[];
   expeditionsInitiales: [number, ExpeditionSendcloud][];
@@ -105,6 +106,10 @@ export function CommandesShopifyClient({
    * lib/classification-produits.ts) — sert aux règles de livraison réservées aux produits légers
    * (lettre vs colis, cf. discussion 2026-08-29). */
   classificationInitiale: [number, ClassificationCommande][];
+  /** Règles de livraison partagées (table regles_livraison), cf. retour utilisateur du 2026-09-14 :
+   * chargées côté serveur pour être les mêmes sur tous les profils/ordinateurs, plus un localStorage
+   * propre à chaque navigateur. */
+  reglesInitiales: RegleLivraison[];
 }) {
   const poidsConnus = useMemo(() => new Map(poidsInitiaux), [poidsInitiaux]);
   const classification = useMemo(() => new Map(classificationInitiale), [classificationInitiale]);
@@ -116,7 +121,7 @@ export function CommandesShopifyClient({
   // commandesFiltrees plus bas).
   const [onglet, setOnglet] = useState<Onglet>('a_creer');
   const [commandeOuverte, setCommandeOuverte] = useState<CommandeShopify | null>(null);
-  const [regles, setRegles] = useState<RegleLivraison[]>([]);
+  const [regles, setRegles] = useState<RegleLivraison[]>(reglesInitiales);
   const [reglesOuvertes, setReglesOuvertes] = useState(false);
   const [codesOuverts, setCodesOuverts] = useState(false);
   const [impressionMasseOuverte, setImpressionMasseOuverte] = useState(false);
@@ -132,8 +137,25 @@ export function CommandesShopifyClient({
   const [idsEnSuspens, setIdsEnSuspens] = useState<Set<number>>(new Set());
 
   useEffect(() => {
-    setRegles(chargerReglesLivraison());
     setExpediteur(chargerExpediteur());
+  }, []);
+
+  // Migration ponctuelle localStorage → base partagée (cf. retour utilisateur du 2026-09-14 : "je
+  // viens de me connecter avec un autre ordinateur mais je n'ai plus aucune règle de livraison").
+  // Rien en base mais des règles dans le localStorage de CE navigateur : c'est l'ordinateur "source"
+  // où elles ont été configurées — on les pousse en base une fois pour toutes, elles deviennent
+  // ensuite les mêmes partout via reglesInitiales (chargées côté serveur). N'agit qu'une fois : dès
+  // que la base a au moins une règle (ici ou sur un autre poste), plus rien à migrer.
+  useEffect(() => {
+    if (reglesInitiales.length > 0) return;
+    const locales = chargerReglesLivraisonLocales();
+    if (locales.length === 0) return;
+    enregistrerReglesLivraison(locales)
+      .then(() => setRegles(locales))
+      .catch(() => {
+        /* tant pis, l'utilisateur pourra toujours les re-saisir dans le panneau */
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {

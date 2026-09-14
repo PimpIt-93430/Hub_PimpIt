@@ -3,10 +3,10 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import { PRIX_LETTRE_VERTE_SUIVIE_HT } from '@/lib/laposte';
-import { sauvegarderReglesLivraison, type ClassePoids, type ClasseDestination, type RegleLivraison } from '@/lib/regles-livraison';
+import type { ClassePoids, ClasseDestination, RegleLivraison } from '@/lib/regles-livraison';
 import type { OptionExpedition } from '@/lib/sendcloud';
 import type { PossibiliteExpedition } from '@/lib/shopify';
-import { chargerOptionsExpeditionCompte, chargerPossibilitesExpedition } from './actions';
+import { chargerOptionsExpeditionCompte, chargerPossibilitesExpedition, enregistrerReglesLivraison } from './actions';
 import { chargerExpediteur, versSendcloudAddress } from './expedition-commun';
 
 const LABEL_POIDS: Record<ClassePoids, string> = { leger: 'Léger', lourd: 'Lourd', tous: 'Tous poids' };
@@ -51,6 +51,7 @@ export function ReglesLivraisonPanel({
   const [nouveauMoyen, setNouveauMoyen] = useState('');
   const [nouveauPoids, setNouveauPoids] = useState<ClassePoids>('tous');
   const [nouvelleDestination, setNouvelleDestination] = useState<ClasseDestination>('tous');
+  const [erreur, setErreur] = useState<string | null>(null);
 
   useEffect(() => {
     const expediteur = chargerExpediteur();
@@ -115,9 +116,18 @@ export function ReglesLivraisonPanel({
   }, [possibilites, brouillon]);
 
   const sauvegarder = (suivant: RegleLivraison[]) => {
+    const precedent = brouillon;
+    setErreur(null);
     setBrouillon(suivant);
     onChange(suivant);
-    sauvegarderReglesLivraison(suivant);
+    // Partagé entre tous les profils/ordinateurs (cf. retour utilisateur du 2026-09-14) — mise à
+    // jour optimiste ci-dessus, annulée si l'enregistrement échoue plutôt que de laisser croire que
+    // c'est enregistré alors que ça ne l'est pas ailleurs.
+    enregistrerReglesLivraison(suivant).catch((e) => {
+      setErreur(e instanceof Error ? e.message : "Échec de l'enregistrement.");
+      setBrouillon(precedent);
+      onChange(precedent);
+    });
   };
 
   const regleDe = (l: Ligne) => brouillon.find((r) => r.moyenExpedition === l.moyenExpedition && r.poids === l.poids && r.destination === l.destination);
@@ -181,6 +191,7 @@ export function ReglesLivraisonPanel({
           choisi n&apos;est jamais proposée en création automatique.
         </p>
 
+        {erreur && <p className="mb-3 rounded-lg bg-red-50 p-2.5 text-xs font-semibold text-red-700">{erreur}</p>}
         {chargement && <p className="mb-3 text-xs text-slate-400">Chargement…</p>}
         {!chargement && possibilites.length === 0 && (
           <p className="mb-3 rounded-lg bg-amber-50 p-2.5 text-xs text-amber-800">
