@@ -281,6 +281,16 @@ export async function recupererEnvoi(id: string): Promise<Envoi> {
   };
 }
 
+/** Raison d'un envoi en échec (ex. ANNOUNCEMENT_FAILED) — Sendcloud la renvoie dans `errors` au
+ * niveau de l'envoi (cf. incident du 2026-09-14, commande #27714 : "le poids volumétrique du
+ * colis comporte plus de 3 décimales"), pas dans le statut du colis lui-même. null si Sendcloud ne
+ * fournit rien d'exploitable ici. */
+export async function recupererRaisonEchecEnvoi(id: string): Promise<string | null> {
+  const data = await sendcloudFetch<{ data: { errors?: { detail?: string; code?: string }[] } }>(`/shipments/${id}`);
+  const erreur = data.data.errors?.[0];
+  return erreur ? (erreur.detail ?? erreur.code ?? null) : null;
+}
+
 /** Annule un envoi — utile si une étiquette a été créée par erreur. Refusé (409) si déjà livré/
  * annulé ou après 42 jours (cf. doc Sendcloud). */
 export async function annulerEnvoi(id: string): Promise<void> {

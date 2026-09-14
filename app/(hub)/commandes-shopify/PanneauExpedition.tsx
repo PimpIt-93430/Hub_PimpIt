@@ -84,7 +84,13 @@ export function PanneauExpedition({
   const [confirmer, setConfirmer] = useState(false);
   const [enCours, setEnCours] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
-  const [resultat, setResultat] = useState<{ id: string; etiquetteUrl: string | null; fulfillmentShopifyId?: string | null } | null>(null);
+  const [resultat, setResultat] = useState<{
+    id: string;
+    etiquetteUrl: string | null;
+    fulfillmentShopifyId?: string | null;
+    echec?: boolean;
+    raisonEchec?: string | null;
+  } | null>(null);
   // Cf. retour utilisateur du 2026-09-05 : "il faut pouvoir dupliquer une commande, cest a dire
   // recréer une nouvelle etiquette si jamais un jour il y a un probleme" — échappatoire volontaire
   // et explicite (jamais automatique) pour forcer un nouvel envoi même quand un existe déjà, ex.
@@ -138,7 +144,7 @@ export function PanneauExpedition({
         if (existante) {
           setResultat({ id: existante.sendcloudShipmentId, etiquetteUrl: null });
           chargerEtiquetteExistante(existante.sendcloudShipmentId)
-            .then((url) => setResultat((r) => (r ? { ...r, etiquetteUrl: url } : r)))
+            .then((r) => setResultat((prev) => (prev ? { ...prev, etiquetteUrl: r.etiquetteUrl, echec: r.echec, raisonEchec: r.raisonEchec } : prev)))
             .catch(() => {});
         }
       })
@@ -334,7 +340,35 @@ export function PanneauExpedition({
     );
   }
 
-  if (resultat && !forcerNouvelle) {
+  // Envoi en échec définitif (ex. ANNOUNCEMENT_FAILED) — cf. incident du 2026-09-14, commande
+  // #27714 : jamais d'étiquette à venir, jamais la peine d'attendre. Directement le formulaire de
+  // création plutôt que la case verte trompeuse "Étiquette créée" (l'ancien comportement, qui
+  // laissait croire que tout allait bien et cachait le bouton de nouvelle tentative derrière un
+  // petit lien).
+  if (resultat?.echec && !forcerNouvelle) {
+    return (
+      <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3.5">
+        <p className="mb-1 text-sm font-bold text-red-800">Échec de l&apos;envoi {resultat.id}</p>
+        <p className="mb-2 text-xs text-red-700">
+          Le transporteur a rejeté cet envoi — aucune étiquette n&apos;a jamais existé ni n&apos;existera pour celui-ci.
+          {resultat.raisonEchec && (
+            <>
+              {' '}Raison : <span className="font-semibold">{resultat.raisonEchec}</span>
+            </>
+          )}
+        </p>
+        <button
+          type="button"
+          onClick={() => setForcerNouvelle(true)}
+          className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700"
+        >
+          Créer une nouvelle étiquette
+        </button>
+      </div>
+    );
+  }
+
+  if (resultat && !resultat.echec && !forcerNouvelle) {
     return (
       <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3.5">
         <p className="mb-1 text-sm font-bold text-emerald-800">Étiquette créée — envoi {resultat.id}</p>
@@ -390,13 +424,21 @@ export function PanneauExpedition({
 
   return (
     <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50 p-3.5">
-      {resultat && forcerNouvelle && (
+      {resultat && forcerNouvelle && !resultat.echec && (
         <p className="mb-3 rounded-lg bg-red-50 p-2.5 text-xs font-semibold text-red-700">
           Une étiquette existe déjà pour cette commande (envoi {resultat.id}) — vérifie que c&apos;est justifié
           (colis perdu, erreur…) avant de continuer : ceci facture une 2ᵉ fois.{' '}
           <button type="button" onClick={() => setForcerNouvelle(false)} className="underline">
             Annuler, revenir à l&apos;étiquette existante
           </button>
+        </p>
+      )}
+      {resultat && forcerNouvelle && resultat.echec && (
+        // Le précédent envoi a échoué (jamais facturé de service rendu, cf. bloc rouge ci-dessus) —
+        // pas la même mise en garde trompeuse que pour un envoi qui a réellement réussi.
+        <p className="mb-3 rounded-lg bg-slate-100 p-2.5 text-xs font-semibold text-slate-600">
+          L&apos;envoi précédent ({resultat.id}) a échoué côté transporteur — cette nouvelle tentative est la bonne
+          marche à suivre.
         </p>
       )}
       <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">

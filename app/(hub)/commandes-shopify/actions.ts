@@ -11,6 +11,7 @@ import {
   recupererEnvoi,
   recupererPointEtCarrierCommande,
   recupererPointRelais,
+  recupererRaisonEchecEnvoi,
   type Envoi,
   type OptionExpedition,
   type PointEtCarrierConnu,
@@ -304,11 +305,43 @@ export async function verifierExpeditionExistante(commandeShopifyId: number): Pr
   return chargerExpeditionSendcloudPourCommande(commandeShopifyId);
 }
 
+/** Codes de statut Sendcloud considérés comme un échec définitif — jamais d'étiquette à venir,
+ * pas la peine de dire "pas encore prête, réessaie dans une minute" (cf. incident du 2026-09-14,
+ * commande #27714 : ANNOUNCEMENT_FAILED reste ANNOUNCEMENT_FAILED indéfiniment, l'annonce au
+ * transporteur a été rejetée une fois pour toutes, ce n'est pas une histoire de délai). */
+const STATUTS_ECHEC_SENDCLOUD = ['ANNOUNCEMENT_FAILED', 'ERROR', 'CANCELLED'];
+
+function estStatutEchecSendcloud(statutCode: string): boolean {
+  return STATUTS_ECHEC_SENDCLOUD.includes(statutCode);
+}
+
 /** Étiquette d'un envoi Sendcloud déjà créé (cf. verifierExpeditionExistante ci-dessus) — lecture
- * seule, aucun coût, contrairement à creerEtiquette. */
-export async function chargerEtiquetteExistante(sendcloudShipmentId: string): Promise<string | null> {
+ * seule, aucun coût, contrairement à creerEtiquette. Renvoie aussi le statut/l'éventuelle raison
+ * d'échec : un envoi ANNOUNCEMENT_FAILED n'a jamais eu et n'aura jamais d'étiquette, à distinguer
+ * d'un envoi simplement pas encore prêt côté transporteur (cf. STATUTS_ECHEC_SENDCLOUD). */
+export async function chargerEtiquetteExistante(
+  sendcloudShipmentId: string,
+): Promise<{ etiquetteUrl: string | null; statutCode: string; echec: boolean; raisonEchec: string | null }> {
   const envoi = await recupererEnvoi(sendcloudShipmentId);
-  return `/api/etiquette-sendcloud/${envoi.parcelId}`;
+  const echec = estStatutEchecSendcloud(envoi.statutCode);
+  return {
+    etiquetteUrl: echec ? null : `/api/etiquette-sendcloud/${envoi.parcelId}`,
+    statutCode: envoi.statutCode,
+    echec,
+    raisonEchec: echec ? await raisonEchecSendcloud(sendcloudShipmentId) : null,
+  };
+}
+
+/** Message d'erreur détaillé d'un envoi en échec (ex. "le poids volumétrique du colis comporte
+ * plus de 3 décimales") — cf. incident du 2026-09-14, pour afficher la vraie cause plutôt qu'un
+ * simple "échec" sans explication. Best-effort : jamais bloquant si Sendcloud ne renvoie rien
+ * d'exploitable ici. */
+async function raisonEchecSendcloud(sendcloudShipmentId: string): Promise<string | null> {
+  try {
+    return await recupererRaisonEchecEnvoi(sendcloudShipmentId);
+  } catch {
+    return null;
+  }
 }
 
 /** Interroge Sendcloud pour de vrai (cf. lib/expeditions-sendcloud.ts) — à n'appeler que depuis un
