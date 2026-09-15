@@ -270,6 +270,17 @@ export async function creerEtiquetteEnvoi(params: CreerEnvoiParams): Promise<Env
   if (estStatutEchecSendcloud(parcel.status.code)) {
     const raison = data.data.errors?.[0]?.detail ?? data.data.errors?.[0]?.code ?? 'raison inconnue';
     console.error(`[Sendcloud] Envoi ${data.data.id} créé mais annonce en échec (${parcel.status.code}) : ${raison}`);
+    // Cf. retour utilisateur du 2026-09-15 : "il faut qu'on annule si des étiquettes ont été
+    // créées" — sans ça, un envoi en échec reste facturé et traînant côté Sendcloud tant que
+    // personne ne l'annule à la main (cf. #27714, 3 envois nettoyés manuellement la veille).
+    // Best-effort : l'échec de l'annonce doit remonter à l'appelant même si cette annulation
+    // échoue elle-même.
+    try {
+      await annulerEnvoi(data.data.id);
+      console.log(`[Sendcloud] Envoi ${data.data.id} annulé automatiquement après échec d'annonce.`);
+    } catch (e) {
+      console.warn(`[Sendcloud] Annulation auto de ${data.data.id} échouée :`, e instanceof Error ? e.message : e);
+    }
     throw new Error(`Envoi créé mais rejeté par le transporteur (${parcel.status.code}) : ${raison}`);
   }
 
