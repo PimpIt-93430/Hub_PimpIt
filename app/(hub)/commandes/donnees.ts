@@ -38,7 +38,7 @@ export async function chargerPinsPourCommandes(): Promise<HubPinLite[]> {
   const supabase = await creerClientSupabaseServeur();
   const { data, error } = await supabase
     .from('stock_pins')
-    .select('airtable_record_id, nom, sku_pimpit, sku_fournisseur, fournisseur, stock_general, seuil_cible, photo_url')
+    .select('airtable_record_id, nom, sku_pimpit, sku_fournisseur, fournisseur, stock_general, seuil_cible, photo_url, prix_fournisseur')
     .order('nom', { ascending: true });
   if (error) throw new Error(error.message);
   return (data ?? []).map((r) => ({
@@ -50,5 +50,7 @@ export async function chargerPinsPourCommandes(): Promise<HubPinLite[]> {
     stock: r.stock_general as number | null,
     seuil_cible: r.seuil_cible as number | null,
     image_url: r.photo_url as string | null,
+    // `numeric` revient en string via PostgREST (même piège que StockCibleClient/PinsClient).
+    prix_fournisseur: r.prix_fournisseur === null ? null : Number(r.prix_fournisseur),
   }));
 }

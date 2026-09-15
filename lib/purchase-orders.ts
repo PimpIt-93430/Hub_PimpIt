@@ -74,4 +74,8 @@ export interface HubPinLite {
   stock: number | null;
   seuil_cible: number | null;
   image_url: string | null;
+  /** Cf. migration stock_pins_prix_fournisseur (retour utilisateur du 2026-09-15, écran "Prix
+   * fournisseurs") — affiché en lecture seule ici pour donner le coût de la commande en cours de
+   * saisie ; ce fichier n'écrit jamais ce prix. */
+  prix_fournisseur: number | null;
 }

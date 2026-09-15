@@ -14,4 +14,8 @@ export interface LigneCreation {
    * juste un indicateur de volume vendu/commandé dans le temps, pas une contrainte. */
   commandeDepuisToujours: number;
   qty: number;
+  /** Cf. retour utilisateur du 2026-09-15 : "pour les commandes fournisseurs... ajoute le prix
+   * pendant que je les fais" — prix unitaire fournisseur (écran "Prix fournisseurs"), affiché en
+   * lecture seule pour donner le coût de la commande en cours de saisie. */
+  prixFournisseur: number | null;
 }

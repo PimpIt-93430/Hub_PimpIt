@@ -16,6 +16,10 @@ function libelleFournisseur(code: string): string {
   return FOURNISSEURS[code]?.label ?? code ?? '—';
 }
 
+function formatMontant(n: number): string {
+  return n.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' });
+}
+
 /** Pas des flèches (natives et clavier) sur les quantités : 0 → 50 → 100 → 200 puis +100 à chaque
  * cran — porté de l'ancien admin (public/index.html nextQtyStep/prevQtyStep). La saisie manuelle
  * au clavier (taper un nombre) reste libre — seul un delta de ±1 (ce que le navigateur applique
@@ -190,11 +194,16 @@ export function CommandesClient({
         stockActuel: Math.round(p.stock ?? 0),
         commandeDepuisToujours: commandeDepuisToujoursParId.get(p.airtable_id) ?? 0,
         qty: qtyParPin[p.airtable_id] ?? 0,
+        prixFournisseur: p.prix_fournisseur,
       }));
   }, [pinsInitiaux, recherche, commandeDepuisToujoursParId, qtyParPin]);
 
   const nbSelectionnes = Object.values(qtyParPin).filter((q) => q > 0).length;
   const totalPieces = Object.values(qtyParPin).reduce((s, q) => s + (q > 0 ? q : 0), 0);
+  // Cf. retour utilisateur du 2026-09-15 : coût total de la commande en cours de saisie, calculé à
+  // la volée à partir du prix fournisseur de chaque pin (ignoré si prix pas encore renseigné).
+  const totalCout = lignes.reduce((s, l) => s + (l.qty > 0 ? l.qty * (l.prixFournisseur ?? 0) : 0), 0);
+  const nbSansPrix = lignes.filter((l) => l.qty > 0 && l.prixFournisseur === null).length;
 
   function definirQty(airtableId: string, brut: number) {
     setQtyParPin((prev) => {
@@ -355,13 +364,15 @@ export function CommandesClient({
                   <th className="px-3 py-2">SKU fournisseur</th>
                   <th className="px-3 py-2 text-right">Stock</th>
                   <th className="px-3 py-2 text-right">Commandé depuis toujours</th>
+                  <th className="px-3 py-2 text-right">Prix</th>
                   <th className="px-3 py-2 text-right">Qté à commander</th>
+                  <th className="px-3 py-2 text-right">Sous-total</th>
                 </tr>
               </thead>
               <tbody>
                 {lignes.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-4 py-8 text-center text-slate-400">
+                    <td colSpan={9} className="px-4 py-8 text-center text-slate-400">
                       Aucun résultat
                     </td>
                   </tr>
@@ -381,6 +392,9 @@ export function CommandesClient({
                       <td className="px-3 py-2 text-slate-500">{l.skuFournisseur || '—'}</td>
                       <td className="px-3 py-2 text-right text-slate-700">{l.stockActuel}</td>
                       <td className="px-3 py-2 text-right text-slate-500">{l.commandeDepuisToujours}</td>
+                      <td className="px-3 py-2 text-right text-slate-500">
+                        {l.prixFournisseur === null ? '—' : formatMontant(l.prixFournisseur)}
+                      </td>
                       <td className="px-3 py-2 text-right">
                         <input
                           ref={(el) => {
@@ -399,6 +413,9 @@ export function CommandesClient({
                           className="w-20 rounded-lg border border-slate-200 px-2 py-1 text-right text-sm outline-none focus:border-slate-400"
                         />
                       </td>
+                      <td className="px-3 py-2 text-right font-medium text-slate-700">
+                        {l.qty > 0 && l.prixFournisseur !== null ? formatMontant(l.qty * l.prixFournisseur) : '—'}
+                      </td>
                     </tr>
                   ))
                 )}
@@ -411,7 +428,12 @@ export function CommandesClient({
           <div className="flex items-center justify-between">
             <p className="text-sm text-slate-500">
               {nbSelectionnes} pin{nbSelectionnes > 1 ? 's' : ''} sélectionné{nbSelectionnes > 1 ? 's' : ''} · {totalPieces} pièce
-              {totalPieces > 1 ? 's' : ''}
+              {totalPieces > 1 ? 's' : ''} · <span className="font-semibold text-slate-700">{formatMontant(totalCout)}</span>
+              {nbSansPrix > 0 && (
+                <span className="ml-1.5 text-amber-600">
+                  ({nbSansPrix} sans prix renseigné, non compté{nbSansPrix > 1 ? 's' : ''})
+                </span>
+              )}
             </p>
             <button
               onClick={confirmerCommandes}
