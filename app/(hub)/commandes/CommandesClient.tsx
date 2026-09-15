@@ -456,6 +456,7 @@ export function CommandesClient({
                 <th className="px-4 py-3">Date</th>
                 <th className="px-4 py-3">Fournisseur</th>
                 <th className="px-4 py-3">Contenu</th>
+                <th className="px-4 py-3 text-right">Coût</th>
                 <th className="px-4 py-3">Statut</th>
                 <th className="px-4 py-3">Actions</th>
               </tr>
@@ -463,7 +464,7 @@ export function CommandesClient({
             <tbody>
               {commandesInitiales.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-10 text-center text-sm text-slate-400">
+                  <td colSpan={7} className="px-4 py-10 text-center text-sm text-slate-400">
                     Aucune commande
                   </td>
                 </tr>
@@ -472,6 +473,19 @@ export function CommandesClient({
                   const total = c.items.reduce((s, i) => s + (i.qty || 0), 0);
                   const modifiable = c.status === 'pending' && c.type !== 'b2b';
                   const basculeIncrementPossible = c.status === 'received' && c.type !== 'popup' && c.type !== 'b2b';
+                  // Cf. retour utilisateur du 2026-09-15 : coût aussi pour l'historique — au prix
+                  // fournisseur ACTUEL (pas de prix figé à la création de la commande), donc une
+                  // estimation, pas un montant facturé réel. B2B hors périmètre (prix négociés à
+                  // part, cf. ArticleCommande.priceHT) — coût non affiché pour ce type.
+                  let coutCommande = 0;
+                  let nbSansPrixCommande = 0;
+                  if (c.type !== 'b2b') {
+                    for (const i of c.items) {
+                      const prix = pinsParId.get(i.airtableId)?.prix_fournisseur;
+                      if (prix === null || prix === undefined) nbSansPrixCommande++;
+                      else coutCommande += prix * (i.qty || 0);
+                    }
+                  }
                   return (
                     <tr key={c.id} className={`border-b border-slate-50 last:border-0 ${c.stockIncremente ? 'opacity-60' : ''}`}>
                       <td className="px-4 py-2.5 font-semibold text-slate-800">{c.ref || 'Sans référence'}</td>
@@ -489,6 +503,23 @@ export function CommandesClient({
                       </td>
                       <td className="px-4 py-2.5 text-slate-500">
                         {c.items.length} réf. · {total} pcs
+                      </td>
+                      <td className="px-4 py-2.5 text-right">
+                        {c.type === 'b2b' ? (
+                          <span className="text-slate-300">—</span>
+                        ) : (
+                          <>
+                            <span className="font-semibold text-slate-700">{formatMontant(coutCommande)}</span>
+                            {nbSansPrixCommande > 0 && (
+                              <span
+                                className="ml-1 text-[10px] text-amber-600"
+                                title={`${nbSansPrixCommande} référence(s) sans prix fournisseur renseigné, non comptée(s)`}
+                              >
+                                *
+                              </span>
+                            )}
+                          </>
+                        )}
                       </td>
                       <td className="px-4 py-2.5">
                         <button
