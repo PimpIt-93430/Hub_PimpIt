@@ -4,6 +4,7 @@ import { debutJourFrance, debutMoisFrance } from '@/lib/dateFrance';
 import { ventesShopifyDepuis } from '@/lib/shopify';
 import { determinerRoleHub } from '@/lib/roles';
 import { creerClientSupabaseServeur } from '@/lib/supabase/server';
+import { paginerToutesLesLignes } from '@/lib/supabase/pagination';
 import { chargerTachesQuotidiennes } from './taches-quotidiennes-actions';
 import { TachesQuotidiennesCard } from './TachesQuotidiennesCard';
 
@@ -91,13 +92,29 @@ export default async function DashboardPage() {
 
   const requetePopUpVide = Promise.resolve({ data: null });
 
+  interface VenteSumupLite {
+    montant: number;
+    statut: string;
+    sumup_email?: string | null;
+  }
+  interface VenteEspeceLite {
+    montant: number;
+    statut: string;
+    pop_up_id?: string | null;
+  }
+
+  // Cf. incident du 2026-09-15 : "CA du mois" affichait un chiffre trop bas passé un certain volume
+  // — PostgREST plafonne .select() à 1000 lignes par défaut sans erreur, et ventes_sumup/
+  // ventes_especes dépassent largement ce volume sur un mois entier (cf. lib/supabase/pagination.ts).
+  // Paginé ici plutôt qu'un simple .select(), y compris pour "le jour" par prudence (le volume
+  // quotidien reste sous 1000 aujourd'hui mais grossira).
   const [
     { data: popUps },
     { data: emailsSumUp },
-    { data: ventesSumup },
-    { data: ventesEspeces },
-    { data: ventesMoisSumup },
-    { data: ventesMoisEspeces },
+    ventesSumup,
+    ventesEspeces,
+    ventesMoisSumup,
+    ventesMoisEspeces,
     ventesShopifyJour,
     ventesShopifyMois,
     { data: commandesFournisseurRecentes },
@@ -108,17 +125,33 @@ export default async function DashboardPage() {
     estAdmin ? supabase.from('pop_ups').select('id, nom').order('nom') : requetePopUpVide,
     estAdmin ? supabase.from('sumup_emails_pop_up').select('email, pop_up_id') : requetePopUpVide,
     estAdmin
-      ? supabase.from('ventes_sumup').select('montant, statut, sumup_email').gte('horodatage', debutJour.toISOString())
-      : requetePopUpVide,
+      ? paginerToutesLesLignes<VenteSumupLite>((debut, fin) =>
+          supabase
+            .from('ventes_sumup')
+            .select('montant, statut, sumup_email')
+            .gte('horodatage', debutJour.toISOString())
+            .range(debut, fin),
+        )
+      : Promise.resolve([]),
     estAdmin
-      ? supabase.from('ventes_especes').select('montant, statut, pop_up_id').gte('created_at', debutJour.toISOString())
-      : requetePopUpVide,
+      ? paginerToutesLesLignes<VenteEspeceLite>((debut, fin) =>
+          supabase
+            .from('ventes_especes')
+            .select('montant, statut, pop_up_id')
+            .gte('created_at', debutJour.toISOString())
+            .range(debut, fin),
+        )
+      : Promise.resolve([]),
     estAdmin
-      ? supabase.from('ventes_sumup').select('montant, statut').gte('horodatage', debutMois.toISOString())
-      : requetePopUpVide,
+      ? paginerToutesLesLignes<VenteSumupLite>((debut, fin) =>
+          supabase.from('ventes_sumup').select('montant, statut').gte('horodatage', debutMois.toISOString()).range(debut, fin),
+        )
+      : Promise.resolve([]),
     estAdmin
-      ? supabase.from('ventes_especes').select('montant, statut').gte('created_at', debutMois.toISOString())
-      : requetePopUpVide,
+      ? paginerToutesLesLignes<VenteEspeceLite>((debut, fin) =>
+          supabase.from('ventes_especes').select('montant, statut').gte('created_at', debutMois.toISOString()).range(debut, fin),
+        )
+      : Promise.resolve([]),
     // Chiffres en ligne (Shopify + TikTok Shop) — cf. discussion 2026-08-27 : le tableau de bord ne
     // montrait que les ventes en pop-up (SumUp/espèces), pas la boutique en ligne.
     ventesShopifyDepuis(debutJour.toISOString()),

@@ -11,6 +11,7 @@ import {
 } from '@/lib/dateFrance';
 import { creerClientSupabaseServeur } from '@/lib/supabase/server';
 import { exigerAdmin } from '@/lib/roles';
+import { paginerToutesLesLignes } from '@/lib/supabase/pagination';
 import { PeriodeSelecteur } from './PeriodeSelecteur';
 import { SyncButton } from './SyncButton';
 import { VentesClient } from './VentesClient';
@@ -65,34 +66,43 @@ export default async function VentesPage({
   const { debut, fin } = calculerPeriode(periode, debutPerso, finPerso);
 
   const supabase = await creerClientSupabaseServeur();
-  const [{ data: ventes, error: erreurVentes }, { data: lignes }, { data: popUps }, { data: profils }, { data: shifts }] =
-    await Promise.all([
+  // Paginé (cf. lib/supabase/pagination.ts) : PostgREST plafonne .select() à 1000 lignes par défaut
+  // sans erreur — incident du 2026-09-15 où une période "mois"/personnalisée dépassant ce volume
+  // (ventes_sumup_lignes en particulier, plusieurs lignes par vente) tronquait en silence les
+  // ventes les plus anciennes de la période, faussant le chiffre d'affaires affiché à la baisse.
+  const [ventes, lignes, { data: popUps }, { data: profils }, { data: shifts }] = await Promise.all([
+    paginerToutesLesLignes<VenteSumupLite>((debutLigne, finLigne) =>
       supabase
         .from('ventes_sumup')
         .select('id, pop_up_id, profile_id, montant, frais_montant, pourboire_montant, statut, horodatage')
         .gte('horodatage', debut.toISOString())
         .lte('horodatage', fin.toISOString())
-        .order('horodatage', { ascending: false }),
+        .order('horodatage', { ascending: false })
+        .range(debutLigne, finLigne),
+    ),
+    paginerToutesLesLignes<VenteSumupLigneLite>((debutLigne, finLigne) =>
       supabase
         .from('ventes_sumup_lignes')
         .select('id, vente_id, nom_produit, quantite')
         .gte('horodatage', debut.toISOString())
-        .lte('horodatage', fin.toISOString()),
-      supabase.from('pop_ups').select('id, nom, couleur').eq('actif', true).order('nom'),
-      supabase
-        .from('profiles')
-        .select('id, nom_complet, email, couleur, type_contrat')
-        .eq('actif', true)
-        .order('nom_complet'),
-      // Bornes en date locale France (dateDuJourFrance), pas horodatage : planning_shifts.date est
-      // une date "murale" du point de vente, sans notion de fuseau — cf. kpiLib.ts pour le
-      // rattachement heure par heure de chaque vente à son créneau.
-      supabase
-        .from('planning_shifts')
-        .select('id, profile_id, pop_up_id, date, heure_debut, heure_fin, pause_debut, pause_fin')
-        .gte('date', dateDuJourFrance(debut))
-        .lte('date', dateDuJourFrance(fin)),
-    ]);
+        .lte('horodatage', fin.toISOString())
+        .range(debutLigne, finLigne),
+    ),
+    supabase.from('pop_ups').select('id, nom, couleur').eq('actif', true).order('nom'),
+    supabase
+      .from('profiles')
+      .select('id, nom_complet, email, couleur, type_contrat')
+      .eq('actif', true)
+      .order('nom_complet'),
+    // Bornes en date locale France (dateDuJourFrance), pas horodatage : planning_shifts.date est
+    // une date "murale" du point de vente, sans notion de fuseau — cf. kpiLib.ts pour le
+    // rattachement heure par heure de chaque vente à son créneau.
+    supabase
+      .from('planning_shifts')
+      .select('id, profile_id, pop_up_id, date, heure_debut, heure_fin, pause_debut, pause_fin')
+      .gte('date', dateDuJourFrance(debut))
+      .lte('date', dateDuJourFrance(fin)),
+  ]);
 
   return (
     <div>
@@ -105,26 +115,20 @@ export default async function VentesPage({
 
       <PeriodeSelecteur periode={periode} debut={debutPerso} fin={finPerso} />
 
-      {erreurVentes ? (
-        <p className="mt-6 text-sm text-red-600">Erreur de chargement des ventes : {erreurVentes.message}</p>
-      ) : (
-        <>
-          <PerformanceClient
-            ventes={(ventes ?? []) as VenteSumupLite[]}
-            lignes={(lignes ?? []) as VenteSumupLigneLite[]}
-            shifts={(shifts ?? []) as ShiftLite[]}
-            popUps={(popUps ?? []) as PopUpLite[]}
-            profils={(profils ?? []) as ProfilAvecContrat[]}
-            periode={periode}
-          />
-          <VentesClient
-            ventes={(ventes ?? []) as VenteSumupLite[]}
-            lignes={(lignes ?? []) as VenteSumupLigneLite[]}
-            popUps={(popUps ?? []) as PopUpLite[]}
-            profils={(profils ?? []) as ProfilLite[]}
-          />
-        </>
-      )}
+      <PerformanceClient
+        ventes={ventes}
+        lignes={lignes}
+        shifts={(shifts ?? []) as ShiftLite[]}
+        popUps={(popUps ?? []) as PopUpLite[]}
+        profils={(profils ?? []) as ProfilAvecContrat[]}
+        periode={periode}
+      />
+      <VentesClient
+        ventes={ventes}
+        lignes={lignes}
+        popUps={(popUps ?? []) as PopUpLite[]}
+        profils={(profils ?? []) as ProfilLite[]}
+      />
     </div>
   );
 }
