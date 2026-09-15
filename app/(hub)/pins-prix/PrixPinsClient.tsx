@@ -2,8 +2,8 @@
 
 import { useMemo, useState, useTransition } from 'react';
 
-import { definirPrixFournisseur, definirPrixFournisseurEnMasse, PRIX_FOURNISSEUR_VALEURS } from './actions';
-import type { PinPrix } from './types';
+import { definirPrixFournisseur, definirPrixFournisseurEnMasse } from './actions';
+import { PRIX_FOURNISSEUR_VALEURS, type PinPrix } from './types';
 
 function formatPrix(p: number): string {
   return p.toFixed(2).replace('.', ',') + ' €';
