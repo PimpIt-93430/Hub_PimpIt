@@ -1,5 +1,6 @@
 import Link from 'next/link';
 
+import { debutJourFrance, debutMoisFrance } from '@/lib/dateFrance';
 import { ventesShopifyDepuis } from '@/lib/shopify';
 import { determinerRoleHub } from '@/lib/roles';
 import { creerClientSupabaseServeur } from '@/lib/supabase/server';
@@ -81,9 +82,12 @@ export default async function DashboardPage() {
   // juste cacher l'affichage : pas de données sensibles chargées côté serveur pour rien.
   const estAdmin = role === 'admin';
 
-  const debutJour = new Date();
-  debutJour.setHours(0, 0, 0, 0);
-  const debutMois = new Date(debutJour.getFullYear(), debutJour.getMonth(), 1);
+  // Cf. lib/dateFrance.ts — jamais `new Date(); setHours(0,0,0,0)`, qui utilise le fuseau du
+  // serveur (UTC sur Railway) et décalait "aujourd'hui" de 1-2h par rapport à la France (incident
+  // du 2026-09-15 : 139 € affichés en ligne au lieu de 436 €, ventes du tout début de journée
+  // exclues en silence).
+  const debutJour = debutJourFrance();
+  const debutMois = debutMoisFrance();
 
   const requetePopUpVide = Promise.resolve({ data: null });
 
@@ -162,6 +166,15 @@ export default async function DashboardPage() {
   const chiffresParPopUp = (popUps ?? [])
     .map((p) => ({ nom: p.nom, sumup: sumupParPopUp.get(p.id) ?? 0, appli: especesParPopUp.get(p.id) ?? 0 }))
     .filter((p) => p.sumup > 0 || p.appli > 0);
+
+  // Cf. retour utilisateur du 2026-09-15 : même agrégation que caMois (SumUp + espèces + Shopify +
+  // TikTok), mais sur la journée en cours plutôt que le mois — pour un visuel du jour tous canaux
+  // confondus, pas seulement pop-up par pop-up.
+  const caJour =
+    (ventesSumup ?? []).filter((v) => v.statut === 'SUCCESSFUL').reduce((s, v) => s + v.montant, 0) +
+    (ventesEspeces ?? []).filter((v) => v.statut === 'confirmee').reduce((s, v) => s + v.montant, 0) +
+    ventesShopifyJour.shopify +
+    ventesShopifyJour.tiktok;
 
   const caMois =
     (ventesMoisSumup ?? []).filter((v) => v.statut === 'SUCCESSFUL').reduce((s, v) => s + v.montant, 0) +
@@ -258,9 +271,15 @@ export default async function DashboardPage() {
               )}
             </div>
             {estAdmin && (
-              <div className="flex flex-1 flex-col justify-center rounded-2xl bg-emerald-50 p-6">
-                <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">CA du mois (tous canaux)</p>
-                <p className="mt-2 text-4xl font-bold text-emerald-800">{formatMontant(caMois)}</p>
+              <div className="grid flex-1 grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="flex flex-col justify-center rounded-2xl bg-sky-50 p-6">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-sky-700">CA du jour (tous canaux)</p>
+                  <p className="mt-2 text-4xl font-bold text-sky-800">{formatMontant(caJour)}</p>
+                </div>
+                <div className="flex flex-col justify-center rounded-2xl bg-emerald-50 p-6">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">CA du mois (tous canaux)</p>
+                  <p className="mt-2 text-4xl font-bold text-emerald-800">{formatMontant(caMois)}</p>
+                </div>
               </div>
             )}
           </div>

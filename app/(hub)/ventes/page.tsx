@@ -1,3 +1,14 @@
+import {
+  dateDuJourFrance,
+  debutJourFrance,
+  debutJourIsoFrance,
+  debutMoisFrance,
+  debutSemaineFrance,
+  finJourFrance,
+  finJourIsoFrance,
+  finMoisFrance,
+  finSemaineFrance,
+} from '@/lib/dateFrance';
 import { creerClientSupabaseServeur } from '@/lib/supabase/server';
 import { exigerAdmin } from '@/lib/roles';
 import { PeriodeSelecteur } from './PeriodeSelecteur';
@@ -9,56 +20,20 @@ import type { ProfilAvecContrat, ShiftLite } from './PerformanceClient';
 
 type PeriodePreset = 'jour' | 'semaine' | 'mois' | 'debut_mois' | 'personnalise';
 
-function debutDeJournee(d: Date): Date {
-  const x = new Date(d);
-  x.setHours(0, 0, 0, 0);
-  return x;
-}
-
-function finDeJournee(d: Date): Date {
-  const x = new Date(d);
-  x.setHours(23, 59, 59, 999);
-  return x;
-}
-
-// Semaine ISO (lundi -> dimanche), même convention que FinanceEcran.tsx (weekStartsOn: 1).
-function debutDeSemaine(d: Date): Date {
-  const x = debutDeJournee(d);
-  const jour = x.getDay();
-  const decalage = jour === 0 ? -6 : 1 - jour;
-  x.setDate(x.getDate() + decalage);
-  return x;
-}
-
-function finDeSemaine(d: Date): Date {
-  const x = debutDeSemaine(d);
-  x.setDate(x.getDate() + 6);
-  return finDeJournee(x);
-}
-
-function debutDeMois(d: Date): Date {
-  return new Date(d.getFullYear(), d.getMonth(), 1, 0, 0, 0, 0);
-}
-
-function finDeMois(d: Date): Date {
-  return new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59, 999);
-}
-
+// Cf. lib/dateFrance.ts — jamais `new Date(); setHours(...)`/`.toISOString().slice(0, 10)`, qui
+// utilisent le fuseau du serveur (UTC sur Railway) au lieu de celui de la France (incident du
+// 2026-09-15 sur le tableau de bord : "aujourd'hui" démarrait 1-2h trop tard, ventes du tout début
+// de journée exclues en silence — même calcul ici, mêmes chiffres, même bug).
 function calculerPeriode(preset: PeriodePreset, debutPerso: string, finPerso: string): { debut: Date; fin: Date } {
-  const maintenant = new Date();
-  if (preset === 'jour') return { debut: debutDeJournee(maintenant), fin: finDeJournee(maintenant) };
-  if (preset === 'mois') return { debut: debutDeMois(maintenant), fin: finDeMois(maintenant) };
+  if (preset === 'jour') return { debut: debutJourFrance(), fin: finJourFrance() };
+  if (preset === 'mois') return { debut: debutMoisFrance(), fin: finMoisFrance() };
   // "Début de mois" = mois en cours jusqu'à aujourd'hui (month-to-date) — distinct de "Ce mois",
   // qui couvre tout le mois calendaire (dates futures comprises, vide en fin de période sinon).
-  if (preset === 'debut_mois') return { debut: debutDeMois(maintenant), fin: finDeJournee(maintenant) };
+  if (preset === 'debut_mois') return { debut: debutMoisFrance(), fin: finJourFrance() };
   if (preset === 'personnalise') {
-    return { debut: new Date(`${debutPerso}T00:00:00`), fin: new Date(`${finPerso}T23:59:59`) };
+    return { debut: debutJourIsoFrance(debutPerso), fin: finJourIsoFrance(finPerso) };
   }
-  return { debut: debutDeSemaine(maintenant), fin: finDeSemaine(maintenant) };
-}
-
-function formatDateInput(d: Date): string {
-  return d.toISOString().slice(0, 10);
+  return { debut: debutSemaineFrance(), fin: finSemaineFrance() };
 }
 
 /** Réplique de l'écran Finance de l'app Pimp It (App PIMP IT/src/components/finance/
@@ -79,7 +54,7 @@ export default async function VentesPage({
 }) {
   await exigerAdmin();
   const params = await searchParams;
-  const aujourdhui = formatDateInput(new Date());
+  const aujourdhui = dateDuJourFrance();
   const periode: PeriodePreset =
     params.periode === 'jour' || params.periode === 'mois' || params.periode === 'debut_mois' || params.periode === 'personnalise'
       ? params.periode
@@ -109,14 +84,14 @@ export default async function VentesPage({
         .select('id, nom_complet, email, couleur, type_contrat')
         .eq('actif', true)
         .order('nom_complet'),
-      // Bornes en date locale (formatDateInput), pas horodatage : planning_shifts.date est une
-      // date "murale" du point de vente, sans notion de fuseau — cf. kpiLib.ts pour le rattachement
-      // heure par heure de chaque vente à son créneau.
+      // Bornes en date locale France (dateDuJourFrance), pas horodatage : planning_shifts.date est
+      // une date "murale" du point de vente, sans notion de fuseau — cf. kpiLib.ts pour le
+      // rattachement heure par heure de chaque vente à son créneau.
       supabase
         .from('planning_shifts')
         .select('id, profile_id, pop_up_id, date, heure_debut, heure_fin, pause_debut, pause_fin')
-        .gte('date', formatDateInput(debut))
-        .lte('date', formatDateInput(fin)),
+        .gte('date', dateDuJourFrance(debut))
+        .lte('date', dateDuJourFrance(fin)),
     ]);
 
   return (

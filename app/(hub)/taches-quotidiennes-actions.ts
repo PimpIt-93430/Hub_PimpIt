@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 
+import { dateDuJourFrance } from '@/lib/dateFrance';
 import { creerClientSupabaseServeur } from '@/lib/supabase/server';
 
 export interface TacheQuotidienne {
@@ -12,10 +13,11 @@ export interface TacheQuotidienne {
   valideAujourdhui: boolean;
 }
 
+// Cf. lib/dateFrance.ts — jamais `new Date(); setHours(...).toISOString().slice(0, 10)`, qui reste
+// bloqué sur la veille pendant les 1-2 premières heures de chaque journée (fuseau serveur UTC en
+// retard sur la France) : la checklist ne se réinitialiserait pas pile à minuit à Paris.
 function aujourdhui(): string {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  return d.toISOString().slice(0, 10);
+  return dateDuJourFrance();
 }
 
 /** Checklist quotidienne de l'accueil (cf. migration hub_taches_quotidiennes) — tâches récurrentes
