@@ -227,10 +227,23 @@ export async function commandesShopifyEnCache(
     after(() => synchroniser(supabaseArrierePlan, expeditionsSendcloud));
   }
 
-  const { data, error } = await supabase
-    .from('hub_commandes_shopify_cache')
-    .select('*')
-    .order('cree_le', { ascending: false });
-  if (error) throw new Error(error.message);
-  return (data as LigneBrute[]).map(versCommandeShopify);
+  // Paginé par blocs de 1000 plutôt qu'un .select('*') seul — PostgREST plafonne sinon
+  // silencieusement à sa limite de lignes par défaut (aucune erreur renvoyée). Cf. incident
+  // 2026-09-15 : le cache dépassant les 1000 lignes (1177 à ce moment), les commandes les plus
+  // ANCIENNES de la fenêtre de 6 mois (triées par cree_le décroissant) disparaissaient purement et
+  // simplement de l'écran — recherche y compris — sans le moindre message d'erreur (#17933,
+  // vieille de 3 mois, en a fait les frais). Boucle jusqu'à une page incomplète (fin des données).
+  const TAILLE_PAGE = 1000;
+  const lignes: LigneBrute[] = [];
+  for (let debut = 0; ; debut += TAILLE_PAGE) {
+    const { data, error } = await supabase
+      .from('hub_commandes_shopify_cache')
+      .select('*')
+      .order('cree_le', { ascending: false })
+      .range(debut, debut + TAILLE_PAGE - 1);
+    if (error) throw new Error(error.message);
+    lignes.push(...(data as LigneBrute[]));
+    if (!data || data.length < TAILLE_PAGE) break;
+  }
+  return lignes.map(versCommandeShopify);
 }
