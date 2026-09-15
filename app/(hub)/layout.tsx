@@ -7,6 +7,12 @@ import { definirApercuProfil } from './profil/actions';
 import { SidebarNav, type CategorieNav } from './SidebarNav';
 
 const ACCUEIL = { href: '/', label: 'Tableau de bord', icone: '🏠' };
+// Épinglé (pas dans une catégorie repliable) : cf. retour utilisateur du 2026-09-15 — "Commandes
+// Shopify" était rangé dans "Logistique", qui ne s'ouvre pas automatiquement tant qu'on n'est pas
+// déjà sur une de ses pages. L'équipe du local (rôle 'local', mêmes droits qu'un admin sur cette
+// page) ne le voyait donc pas au premier coup d'œil comme un admin habitué à cliquer dessus —
+// toujours visible en haut évite ce piège, pour tout le monde de la même façon.
+const COMMANDES_SHOPIFY = { href: '/commandes-shopify', label: 'Commandes Shopify', icone: '🛒' };
 
 /** Menu en catégories par pôle d'activité (cf. discussion 2026-08-27, réorganisé le 2026-08-28 :
  * Logistique = commandes uniquement, Pop up = tout ce qui concerne les lieux de vente) plutôt qu'un
@@ -32,10 +38,7 @@ const CATEGORIES: CategorieNav[] = [
     titre: 'Logistique',
     icone: '🚚',
     couleur: 'sky',
-    liens: [
-      { href: '/commandes', label: 'Commandes fournisseurs', icone: '📦' },
-      { href: '/commandes-shopify', label: 'Commandes Shopify', icone: '🛒' },
-    ],
+    liens: [{ href: '/commandes', label: 'Commandes fournisseurs', icone: '📦' }],
   },
   {
     titre: 'Pop up',
@@ -95,9 +98,9 @@ export default async function HubLayout({ children }: { children: React.ReactNod
       : CATEGORIES.filter((c) => c.titre !== 'Finance').map((c) =>
           c.titre === 'Planning & RH' ? { ...c, liens: seulementPlanning(c.liens) } : c,
         );
-  // Pas de "Tableau de bord" pour un comptable : le middleware le renverrait de toute façon vers
-  // /planning, autant ne pas afficher un lien mort.
-  const epingles = estComptable ? [] : [ACCUEIL];
+  // Pas de "Tableau de bord" ni "Commandes Shopify" pour un comptable : le middleware le renverrait
+  // de toute façon vers /planning, autant ne pas afficher des liens morts.
+  const epingles = estComptable ? [] : [ACCUEIL, COMMANDES_SHOPIFY];
 
   const nomAffiche = profil?.nom_complet ?? profil?.email ?? '';
   const initiale = (profil?.nom_complet || profil?.email || '?').slice(0, 1).toUpperCase();
