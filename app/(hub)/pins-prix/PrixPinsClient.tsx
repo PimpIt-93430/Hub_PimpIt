@@ -213,11 +213,21 @@ export function PrixPinsClient({ pinsInitiaux }: { pinsInitiaux: PinPrix[] }) {
               />
               {p.photo_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={p.photo_url} alt="" className="h-9 w-9 shrink-0 rounded-md object-cover" />
+                <img src={p.photo_url} alt="" className="h-11 w-11 shrink-0 rounded-md object-cover" />
               ) : (
-                <div className="h-9 w-9 shrink-0 rounded-md bg-slate-100" />
+                <div className="h-11 w-11 shrink-0 rounded-md bg-slate-100" />
               )}
-              <div className="min-w-0 flex-1">
+              {/* Sélecteur juste après l'image (retour utilisateur du 2026-09-15 : "ils sont aux
+                  deux extrémités je me fie mal aux yeux à voir quelle image est à quel prix") —
+                  nom/SKU relégués à droite, moins critiques à associer visuellement à l'image. */}
+              <div onClick={(e) => e.stopPropagation()} className="shrink-0">
+                <SelecteurPrix
+                  valeur={p.prix_fournisseur}
+                  enCours={idEnCours === p.id}
+                  onChoisir={(prix) => choisirPrix(p.id, prix)}
+                />
+              </div>
+              <div className="min-w-0 flex-1 text-right">
                 <p className="truncate font-medium text-slate-900">{p.nom ?? '—'}</p>
                 <p className="text-xs text-slate-400">
                   SKU {p.sku_pimpit ?? '—'}
@@ -226,13 +236,6 @@ export function PrixPinsClient({ pinsInitiaux }: { pinsInitiaux: PinPrix[] }) {
                     <span className="ml-1.5 rounded-full bg-red-100 px-1.5 py-0.5 text-[10px] font-semibold text-red-700">Sans prix</span>
                   )}
                 </p>
-              </div>
-              <div onClick={(e) => e.stopPropagation()}>
-                <SelecteurPrix
-                  valeur={p.prix_fournisseur}
-                  enCours={idEnCours === p.id}
-                  onChoisir={(prix) => choisirPrix(p.id, prix)}
-                />
               </div>
             </div>
           ))
