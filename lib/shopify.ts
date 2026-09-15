@@ -796,6 +796,28 @@ export async function creerFulfillmentShopify(params: {
   return { fulfillmentId };
 }
 
+/** Annule un fulfillment créé par erreur — remet la commande en "pas encore expédiée" côté
+ * Shopify. Cf. incident du 2026-09-14 : creerFulfillmentShopify était appelée même quand l'envoi
+ * Sendcloud avait en réalité échoué (fix côté lib/sendcloud.ts creerEtiquetteEnvoi), donc 5
+ * commandes se sont retrouvées marquées expédiées (et le client notifié) sans étiquette réelle. Ne
+ * déclenche pas de notification client, contrairement à la création (fulfillmentCreateV2 a un
+ * paramètre notifyCustomer, fulfillmentCancel n'en a pas). */
+export async function annulerFulfillmentShopify(fulfillmentId: string): Promise<void> {
+  const data = await shopifyGraphQL<{
+    fulfillmentCancel: { fulfillment: { id: string } | null; userErrors: { field: string[]; message: string }[] };
+  }>(
+    `mutation($id: ID!) {
+      fulfillmentCancel(id: $id) {
+        fulfillment { id }
+        userErrors { field message }
+      }
+    }`,
+    { id: fulfillmentId },
+  );
+  const erreurs = data.fulfillmentCancel.userErrors;
+  if (erreurs.length) throw new Error(erreurs.map((e) => e.message).join(', '));
+}
+
 // Cf. discussion 2026-08-29 : la mise à jour du suivi manquant vers Shopify tourne désormais en
 // cron (Edge Function envoyer-suivis-boxtal, toutes les 24h) plutôt que depuis le Hub — logique
 // équivalente réimplémentée en Deno, cf. supabase/functions/envoyer-suivis-boxtal/index.ts.

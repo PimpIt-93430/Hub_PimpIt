@@ -142,7 +142,7 @@ export function PanneauExpedition({
       .then((existante) => {
         setVerificationExpedition(existante ?? null);
         if (existante) {
-          setResultat({ id: existante.sendcloudShipmentId, etiquetteUrl: null });
+          setResultat({ id: existante.sendcloudShipmentId, etiquetteUrl: null, fulfillmentShopifyId: existante.fulfillmentShopifyId });
           chargerEtiquetteExistante(existante.sendcloudShipmentId)
             .then((r) => setResultat((prev) => (prev ? { ...prev, etiquetteUrl: r.etiquetteUrl, echec: r.echec, raisonEchec: r.raisonEchec } : prev)))
             .catch(() => {});
@@ -292,7 +292,7 @@ export function PanneauExpedition({
     if (!resultat) return;
     setEnCours(true);
     try {
-      await annulerEtiquette(resultat.id);
+      await annulerEtiquette(resultat.id, resultat.fulfillmentShopifyId);
       setResultat(null);
       setErreur(null);
     } catch (e) {

@@ -34,7 +34,14 @@ import {
   type ExpeditionLaPoste,
 } from '@/lib/expeditions-laposte';
 import { annulerEtiquetteLettre, creerEtiquetteLettre, type AdresseLaPoste, type ProduitLettre } from '@/lib/laposte';
-import { commandesEnSuspens, creerFulfillmentShopify, listerPossibilitesExpedition, type LigneCommande, type PossibiliteExpedition } from '@/lib/shopify';
+import {
+  annulerFulfillmentShopify,
+  commandesEnSuspens,
+  creerFulfillmentShopify,
+  listerPossibilitesExpedition,
+  type LigneCommande,
+  type PossibiliteExpedition,
+} from '@/lib/shopify';
 import { creerClientSupabaseServeur } from '@/lib/supabase/server';
 
 /** Décrémente stock_pins pour les pin's vendus dans une commande Shopify, au moment où son
@@ -298,8 +305,22 @@ export async function creerEtiquette(
   return { envoi, etiquetteUrl: `/api/etiquette-sendcloud/${envoi.parcelId}`, fulfillmentShopifyId };
 }
 
-export async function annulerEtiquette(id: string): Promise<void> {
+/** Annule un envoi Sendcloud créé par erreur — et le fulfillment Shopify associé s'il y en a un
+ * (cf. incident du 2026-09-14 : sans ça, la commande restait marquée "expédiée" côté Shopify même
+ * après avoir annulé l'envoi Sendcloud, un vrai risque pour la commande "annulée par erreur" que ce
+ * bouton est censé couvrir). Best-effort sur le fulfillment : l'annulation Sendcloud (le plus
+ * important — évite une 2ᵉ facturation si on recrée juste après) ne doit jamais échouer à cause
+ * d'un souci côté Shopify.
+ */
+export async function annulerEtiquette(id: string, fulfillmentShopifyId?: string | null): Promise<void> {
   await annulerEnvoi(id);
+  if (fulfillmentShopifyId) {
+    try {
+      await annulerFulfillmentShopify(fulfillmentShopifyId);
+    } catch (e) {
+      console.warn(`Annulation du fulfillment Shopify ${fulfillmentShopifyId} échouée :`, e instanceof Error ? e.message : e);
+    }
+  }
 }
 
 /** Vérifie si un envoi Sendcloud existe déjà pour cette commande Shopify (même garde-fou anti
