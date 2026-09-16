@@ -6,10 +6,13 @@ import { creerClientSupabaseServeur } from '@/lib/supabase/server';
 /** Sert le PDF (base64 stocké à la création, cf. lib/expeditions-laposte.ts — l'API La Poste n'a
  * pas d'endpoint pour retélécharger une étiquette déjà générée) d'une étiquette La Poste par id de
  * ligne `expeditions_laposte`. Même principe que /api/etiquette-sendcloud/[parcelId] (proxy
- * authentifié plutôt qu'un lien direct). Accès réservé aux admins. */
+ * authentifié plutôt qu'un lien direct). Cf. retour utilisateur du 2026-09-16 ("accès refusé sur le
+ * compte d'Edgar") : ouvert à tout le monde ayant accès au Hub, pas seulement les admins — cette
+ * route avait été oubliée lors de l'audit des droits sur "Commandes Shopify" (RLS + reste de
+ * l'écran déjà ouverts, cf. migrations expeditions_laposte_ouvre_role_local). */
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { role } = await determinerRoleHub();
-  if (role !== 'admin') {
+  if (role === 'inconnu') {
     return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
   }
 
