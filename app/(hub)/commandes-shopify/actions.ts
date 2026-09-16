@@ -31,6 +31,7 @@ import {
   chargerExpeditionLaPostePourCommande,
   enregistrerExpeditionLaPoste,
   marquerExpeditionLaPosteAnnulee,
+  marquerExpeditionLaPosteFulfillment,
   type ExpeditionLaPoste,
 } from '@/lib/expeditions-laposte';
 import { annulerEtiquetteLettre, creerEtiquetteLettre, type AdresseLaPoste, type ProduitLettre } from '@/lib/laposte';
@@ -403,13 +404,25 @@ export async function creerEtiquetteLaPoste(params: {
     reference: params.commandeNom,
   });
 
+  // Enregistré chez nous AVANT tout appel à Shopify — cf. incident du 2026-09-16 : l'étiquette est
+  // déjà facturée à ce stade (impossible à annuler gratuitement), donc si CETTE écriture échoue, on
+  // veut le savoir tout de suite (throw, pas de try/catch) plutôt que de découvrir après coup que
+  // Shopify a été marqué "expédié" (et le client notifié) sans PDF récupérable nulle part — même
+  // principe que lib/sendcloud.ts creerEtiquetteEnvoi (ne jamais notifier avant d'être sûr).
+  await enregistrerExpeditionLaPoste({
+    commandeShopifyId: params.commandeShopifyId,
+    commandeNom: params.commandeNom,
+    etiquette,
+    produit: params.produit,
+    fulfillmentShopifyId: null,
+  });
+
   try {
     await decrementerStockPourVente(params.lignes);
   } catch (e) {
     console.warn(`Décrément stock pin's échoué pour ${params.commandeNom}:`, e instanceof Error ? e.message : e);
   }
 
-  let fulfillmentShopifyId: string | null = null;
   try {
     const fulfillment = await creerFulfillmentShopify({
       commandeShopifyId: params.commandeShopifyId,
@@ -417,18 +430,10 @@ export async function creerEtiquetteLaPoste(params: {
       trackingUrl: `https://www.laposte.fr/outils/suivre-vos-envois?code=${etiquette.itemId}`,
       trackingCompany: 'La Poste',
     });
-    fulfillmentShopifyId = fulfillment.fulfillmentId;
+    await marquerExpeditionLaPosteFulfillment(etiquette.itemId, fulfillment.fulfillmentId);
   } catch (e) {
     console.warn(`Fulfillment Shopify échoué pour ${params.commandeNom}:`, e instanceof Error ? e.message : e);
   }
-
-  await enregistrerExpeditionLaPoste({
-    commandeShopifyId: params.commandeShopifyId,
-    commandeNom: params.commandeNom,
-    etiquette,
-    produit: params.produit,
-    fulfillmentShopifyId,
-  });
 
   const enregistree = await chargerExpeditionLaPostePourCommande(params.commandeShopifyId);
   if (!enregistree) throw new Error('Étiquette créée mais introuvable juste après enregistrement.');

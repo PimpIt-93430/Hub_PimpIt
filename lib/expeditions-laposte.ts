@@ -140,6 +140,19 @@ export async function enregistrerExpeditionLaPoste(params: {
   if (error) throw new Error(error.message);
 }
 
+/** Renseigne le fulfillment Shopify après coup — cf. actions.ts creerEtiquetteLaPoste, réordonné
+ * suite à l'incident du 2026-09-16 : l'étiquette (facturée chez La Poste) doit être enregistrée
+ * chez nous AVANT tout appel à Shopify (qui notifie le client), jamais l'inverse — sinon un échec
+ * d'enregistrement laisse Shopify marqué "expédié" (client notifié) sans PDF récupérable. */
+export async function marquerExpeditionLaPosteFulfillment(laposteItemId: string, fulfillmentShopifyId: string): Promise<void> {
+  const supabase = await creerClientSupabaseServeur();
+  const { error } = await supabase
+    .from('expeditions_laposte')
+    .update({ fulfillment_shopify_id: fulfillmentShopifyId })
+    .eq('laposte_item_id', laposteItemId);
+  if (error) throw new Error(error.message);
+}
+
 export async function marquerExpeditionLaPosteAnnulee(itemId: string): Promise<void> {
   const supabase = await creerClientSupabaseServeur();
   const { error } = await supabase
