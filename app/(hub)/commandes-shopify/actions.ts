@@ -383,9 +383,12 @@ export async function verifierExpeditionLaPosteExistante(commandeShopifyId: numb
   return chargerExpeditionLaPostePourCommande(commandeShopifyId);
 }
 
-/** Génère une étiquette La Poste (recette) puis pousse le tracking sur Shopify — même principe que
- * creerEtiquette (Sendcloud) : la création elle-même ne doit jamais échouer à cause d'un souci
- * côté fulfillment Shopify (best-effort, cf. incident Boxtal #26586). */
+/** Génère une étiquette La Poste (recette) puis pousse le tracking sur Shopify — cf. retour
+ * utilisateur du 2026-09-16 : "si on envoie pas à Shopify pour x raison de bug ça annule
+ * l'étiquette" — contrairement à l'ancien comportement (fulfillment Shopify en best-effort, avec un
+ * simple avertissement en cas d'échec), un échec de synchro Shopify annule maintenant l'étiquette
+ * La Poste (remboursée) et fait échouer toute la création : jamais d'étiquette payée qui traîne
+ * sans être reflétée sur Shopify. */
 export async function creerEtiquetteLaPoste(params: {
   produit: ProduitLettre;
   poidsGrammes: number;
@@ -432,7 +435,23 @@ export async function creerEtiquetteLaPoste(params: {
     });
     await marquerExpeditionLaPosteFulfillment(etiquette.itemId, fulfillment.fulfillmentId);
   } catch (e) {
-    console.warn(`Fulfillment Shopify échoué pour ${params.commandeNom}:`, e instanceof Error ? e.message : e);
+    // Cf. retour utilisateur du 2026-09-16 : plutôt que de laisser une étiquette payée non reflétée
+    // sur Shopify (l'ancien comportement, best-effort), on annule tout — remboursée chez La Poste,
+    // marquée annulée chez nous, et l'erreur remonte pour que l'écran affiche clairement "échec"
+    // (la commande reste "à créer", rien à réimprimer par erreur).
+    console.warn(`Fulfillment Shopify échoué pour ${params.commandeNom}, annulation de l'étiquette La Poste :`, e instanceof Error ? e.message : e);
+    try {
+      await annulerEtiquetteLettre(etiquette.itemId);
+      await marquerExpeditionLaPosteAnnulee(etiquette.itemId);
+    } catch (eAnnulation) {
+      console.error(
+        `Annulation de l'étiquette La Poste ${etiquette.itemId} (${params.commandeNom}) échouée après échec Shopify — À VÉRIFIER MANUELLEMENT :`,
+        eAnnulation instanceof Error ? eAnnulation.message : eAnnulation,
+      );
+    }
+    throw new Error(
+      `Étiquette La Poste créée puis annulée (échec de synchro Shopify) : ${e instanceof Error ? e.message : 'erreur inconnue'}`,
+    );
   }
 
   const enregistree = await chargerExpeditionLaPostePourCommande(params.commandeShopifyId);
