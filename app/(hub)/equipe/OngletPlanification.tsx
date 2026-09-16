@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 
+import { genererPlanningPourProfil } from '@/app/(hub)/planning/actions';
 import { enregistrerHoraireRecurrent, obtenirHorairesRecurrents, supprimerHoraireRecurrent } from './actions';
 import type { HoraireAEnregistrer } from './HoraireJourCard';
 import { HoraireJourCard } from './HoraireJourCard';
@@ -50,6 +51,14 @@ export function OngletPlanification({
     setErreur(null);
     try {
       await enregistrerHoraireRecurrent(horaire);
+      // Cf. retour utilisateur du 2026-09-16 ("j'ai changé Pierre le dimanche... quand
+      // j'enregistre ça change pas dans le planning") : ce bouton par jour n'enregistrait que
+      // l'horaire récurrent (le modèle), jamais les créneaux déjà générés dans le planning —
+      // seul le bouton "Enregistrer" en haut de la fiche (cf. FicheDetailMembre.tsx) déclenchait
+      // la génération. Les deux font maintenant la même chose. Reste additif (jamais destructeur,
+      // cf. genererPlanningPourProfil) : un créneau déjà généré avec d'anciennes heures n'est pas
+      // corrigé tout seul, seules les dates encore vides se remplissent.
+      await genererPlanningPourProfil(profil.id);
       charger();
     } catch (e) {
       setErreur(e instanceof Error ? e.message : "Échec de l'enregistrement de cet horaire.");
