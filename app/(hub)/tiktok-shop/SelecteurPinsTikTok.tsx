@@ -7,25 +7,46 @@ import type { PinOption } from './types';
 const MAX_VARIANTES = 100;
 
 /** Sélecteur de pin's pour un produit TikTok Shop — même principe que PinsUniteSelector
- * (pins-unite), avec deux différences : un plafond dur à 100 (limite du canal TikTok Shop, cf.
+ * (pins-unite), avec deux différences : un plafond dur (limite du canal TikTok Shop, cf.
  * actions.ts) qui bloque toute case au-delà, et un prix personnalisable par pin sélectionné (sinon
- * le prix global du formulaire s'applique) au lieu d'un prix fixe. */
-export function SelecteurPinsTikTok({ pins, prixGlobal }: { pins: PinOption[]; prixGlobal: string }) {
+ * le prix global du formulaire s'applique) au lieu d'un prix fixe. `dejaPresents` (panneau "Gérer
+ * les variantes" d'un produit existant) masque les pin's déjà en variante — un ajout redondant
+ * créerait un doublon plutôt qu'une modification, pas ce que veut l'utilisateur ici. `maxVariantes`
+ * reste 100 par défaut (création) mais se réduit au nombre de places restantes lors d'un ajout. */
+export function SelecteurPinsTikTok({
+  pins,
+  prixGlobal,
+  dejaPresents,
+  maxVariantes = MAX_VARIANTES,
+}: {
+  pins: PinOption[];
+  prixGlobal: string;
+  dejaPresents?: Set<string>;
+  maxVariantes?: number;
+}) {
   const [recherche, setRecherche] = useState('');
   const [selectionnes, setSelectionnes] = useState<Set<string>>(new Set());
   const [prixParPin, setPrixParPin] = useState<Record<string, string>>({});
 
-  const q = recherche.trim().toLowerCase();
-  const pinsFiltres = useMemo(
-    () => (q ? pins.filter((p) => (p.name ?? '').toLowerCase().includes(q) || (p.sku_pimpit ?? '').includes(q)) : pins),
-    [pins, q],
-  );
-  const pinsSelectionnes = useMemo(
-    () => pins.filter((p) => selectionnes.has(p.airtable_id)),
-    [pins, selectionnes],
+  const pinsDisponibles = useMemo(
+    () => (dejaPresents ? pins.filter((p) => !dejaPresents.has(p.airtable_id)) : pins),
+    [pins, dejaPresents],
   );
 
-  const plafondAtteint = selectionnes.size >= MAX_VARIANTES;
+  const q = recherche.trim().toLowerCase();
+  const pinsFiltres = useMemo(
+    () =>
+      q
+        ? pinsDisponibles.filter((p) => (p.name ?? '').toLowerCase().includes(q) || (p.sku_pimpit ?? '').includes(q))
+        : pinsDisponibles,
+    [pinsDisponibles, q],
+  );
+  const pinsSelectionnes = useMemo(
+    () => pinsDisponibles.filter((p) => selectionnes.has(p.airtable_id)),
+    [pinsDisponibles, selectionnes],
+  );
+
+  const plafondAtteint = selectionnes.size >= maxVariantes;
 
   function basculer(id: string) {
     setSelectionnes((s) => {
@@ -33,7 +54,7 @@ export function SelecteurPinsTikTok({ pins, prixGlobal }: { pins: PinOption[]; p
       if (copie.has(id)) {
         copie.delete(id);
       } else {
-        if (copie.size >= MAX_VARIANTES) return s;
+        if (copie.size >= maxVariantes) return s;
         copie.add(id);
       }
       return copie;
@@ -52,7 +73,7 @@ export function SelecteurPinsTikTok({ pins, prixGlobal }: { pins: PinOption[]; p
       <div className="mb-1.5 flex items-center justify-between">
         <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Pin&apos;s à inclure</p>
         <p className={`text-xs font-semibold ${plafondAtteint ? 'text-amber-600' : 'text-slate-400'}`}>
-          {selectionnes.size} / {MAX_VARIANTES}
+          {selectionnes.size} / {maxVariantes}
           {plafondAtteint && ' — plafond TikTok Shop atteint'}
         </p>
       </div>

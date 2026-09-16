@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 
+import { GererProduitTikTokModal } from './GererProduitTikTokModal';
 import { NouveauProduitTikTokModal } from './NouveauProduitTikTokModal';
 import type { PinOption, ProduitTikTokExistant } from './types';
 
@@ -85,9 +86,12 @@ export function TikTokShopClient({ pins, produitsExistants }: { pins: PinOption[
                     </span>
                   </td>
                   <td className="px-4 py-2.5 text-right">
-                    <a href={p.adminUrl} target="_blank" rel="noreferrer" className="text-xs font-semibold text-indigo-600 hover:underline">
-                      Voir sur Shopify →
-                    </a>
+                    <div className="flex items-center justify-end gap-3">
+                      <GererProduitTikTokModal pins={pins} produit={p} />
+                      <a href={p.adminUrl} target="_blank" rel="noreferrer" className="text-xs font-semibold text-indigo-600 hover:underline">
+                        Voir sur Shopify →
+                      </a>
+                    </div>
                   </td>
                 </tr>
               ))

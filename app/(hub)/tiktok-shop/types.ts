@@ -8,6 +8,7 @@ export interface PinOption {
 
 export interface ProduitTikTokExistant {
   id: string;
+  numericId: string;
   title: string;
   status: string;
   variantCount: number;

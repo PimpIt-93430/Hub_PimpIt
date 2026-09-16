@@ -78,9 +78,10 @@ export async function chargerProduitsTikTokExistants(): Promise<ProduitTikTokExi
     for (const { node } of data.products.edges) {
       const nb = node.variants.edges.length;
       if (nb > 30 && /^pin.?s\b/i.test(node.title.trim())) {
-        const numericId = node.id.split('/').pop();
+        const numericId = node.id.split('/').pop() ?? '';
         resultats.push({
           id: node.id,
+          numericId,
           title: node.title,
           status: node.status,
           variantCount: nb,
@@ -217,4 +218,151 @@ export async function creerProduitTikTok(formData: FormData) {
 function champTexteNombre(v: string | undefined): string | null {
   if (!v || v.trim() === '' || Number.isNaN(Number(v))) return null;
   return v.trim();
+}
+
+export interface VarianteTikTok {
+  id: number;
+  option1: string;
+  sku: string | null;
+  price: string;
+  inventoryItemId: number | null;
+  image: string | null;
+}
+
+interface ProduitTikTokDetailBrut {
+  id: number;
+  title: string;
+  images?: { id: number; variant_ids?: number[]; src: string }[];
+  variants?: {
+    id: number;
+    option1: string | null;
+    sku: string | null;
+    price: string;
+    inventory_item_id: number | null;
+  }[];
+}
+
+/** Détail complet (variantes) d'un produit TikTok Shop déjà créé, pour le panneau "Gérer les
+ * variantes" (retour utilisateur du 2026-09-16) — chargé à la demande (pas dans la liste de
+ * chargerProduitsTikTokExistants, déjà coûteuse sur tout le catalogue Shopify). */
+export async function chargerProduitTikTokDetail(productId: string): Promise<{ variants: VarianteTikTok[] }> {
+  const data = await shopifyFetch(`/products/${productId}.json?fields=id,title,variants,images`);
+  const produit = data.product as ProduitTikTokDetailBrut;
+  const images = produit.images ?? [];
+
+  const variants: VarianteTikTok[] = (produit.variants ?? []).map((v) => ({
+    id: v.id,
+    option1: v.option1 ?? '',
+    sku: v.sku,
+    price: v.price,
+    inventoryItemId: v.inventory_item_id,
+    image: images.find((img) => img.variant_ids?.includes(v.id))?.src ?? null,
+  }));
+
+  return { variants };
+}
+
+/** Ajoute des variantes (pin's) à un produit TikTok Shop déjà en ligne — même squelette que la
+ * création (creerProduitTikTok) mais un POST /variants.json par pin, comme
+ * ajouterVarianteAProduitExistant côté pins-unite/actions.ts (Shopify REST ne permet pas de créer
+ * plusieurs variantes en un seul appel sur un produit existant). Revérifie le plafond de 100 côté
+ * serveur (pas seulement dans SelecteurPinsTikTok). */
+export async function ajouterVariantesTikTok(
+  productId: string,
+  pinIds: string[],
+  prixGlobal: string,
+  prixParPin: Record<string, string>,
+): Promise<void> {
+  if (pinIds.length === 0) throw new Error("Sélectionne au moins un pin's");
+
+  const supabase = await creerClientSupabaseServeur();
+  const { variants: variantsExistantes } = await chargerProduitTikTokDetail(productId);
+  if (variantsExistantes.length + pinIds.length > 100) {
+    throw new Error(
+      `TikTok Shop refuse plus de 100 variantes par produit (${variantsExistantes.length} déjà présentes, ${pinIds.length} demandées).`,
+    );
+  }
+
+  const { data: pinsData } = await supabase
+    .from('stock_pins')
+    .select('airtable_record_id, nom, sku_pimpit, stock_general, photo_url')
+    .in('airtable_record_id', pinIds);
+  const pinsById = Object.fromEntries((pinsData ?? []).map((p) => [p.airtable_record_id, p]));
+
+  const locationData = await shopifyFetch('/locations.json');
+  const locationId = locationData.locations?.[0]?.id;
+
+  for (const id of pinIds) {
+    const pin = pinsById[id];
+    const prix = champTexteNombre(prixParPin[id]) ?? prixGlobal;
+
+    const varResult = await shopifyFetch(`/products/${productId}/variants.json`, 'POST', {
+      variant: {
+        option1: pin?.nom || id,
+        sku: pin?.sku_pimpit != null ? String(pin.sku_pimpit) : '',
+        price: prix,
+        inventory_policy: 'continue',
+        weight: 0.6,
+        weight_unit: 'g',
+      },
+    });
+    if (!varResult.variant) throw new Error(JSON.stringify(varResult));
+    const variant = varResult.variant as ShopifyVariant;
+
+    try {
+      await shopifyFetch(`/variants/${variant.id}.json`, 'PUT', { variant: { id: variant.id, inventory_management: 'shopify' } });
+    } catch {
+      // même comportement que creerProduitTikTok : on continue même si une variante échoue
+    }
+    if (variant.inventory_item_id) await setHsCode(variant.inventory_item_id);
+
+    if (locationId && variant.inventory_item_id) {
+      const qte = pin?.stock_general != null ? Math.round(Number(pin.stock_general)) : 0;
+      try {
+        await shopifyFetch('/inventory_levels/set.json', 'POST', {
+          location_id: locationId,
+          inventory_item_id: variant.inventory_item_id,
+          available: qte,
+        });
+      } catch (e) {
+        console.warn(`Stock error variant ${variant.id}:`, e instanceof Error ? e.message : e);
+      }
+    }
+
+    if (pin?.photo_url) {
+      try {
+        await shopifyFetch(`/products/${productId}/images.json`, 'POST', {
+          image: { src: pin.photo_url, variant_ids: [variant.id] },
+        });
+      } catch (e) {
+        console.warn(`Image error variant ${variant.id}:`, e instanceof Error ? e.message : e);
+      }
+    }
+  }
+
+  revalidatePath('/tiktok-shop');
+}
+
+/** Modifie le prix et/ou le nom (option1) d'une variante déjà en ligne — utilisé par le panneau
+ * "Gérer les variantes" pour corriger un prix ou un intitulé sans repasser par l'admin Shopify. */
+export async function modifierVarianteTikTok(
+  variantId: number,
+  champs: { price?: string; option1?: string },
+): Promise<void> {
+  if (champs.price !== undefined && (champs.price.trim() === '' || Number.isNaN(Number(champs.price)))) {
+    throw new Error('Prix invalide');
+  }
+  if (champs.option1 !== undefined && champs.option1.trim() === '') {
+    throw new Error('Nom de variante requis');
+  }
+  await shopifyFetch(`/variants/${variantId}.json`, 'PUT', { variant: { id: variantId, ...champs } });
+  revalidatePath('/tiktok-shop');
+}
+
+/** Supprime une variante d'un produit TikTok Shop déjà en ligne. Shopify refuse de supprimer la
+ * dernière variante d'un produit (le produit doit toujours en garder au moins une) — l'erreur
+ * remonte telle quelle à l'écran dans ce cas. */
+export async function supprimerVarianteTikTok(productId: string, variantId: number): Promise<void> {
+  await shopifyFetch(`/products/${productId}/variants/${variantId}.json`, 'DELETE');
+  revalidatePath('/tiktok-shop');
 }
