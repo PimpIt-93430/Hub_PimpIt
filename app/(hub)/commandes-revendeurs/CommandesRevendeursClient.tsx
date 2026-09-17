@@ -232,6 +232,11 @@ function CarteCommande({
           </p>
         </div>
         <div className="flex items-center gap-3">
+          {commande.remisePourcentage > 0 && (
+            <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+              -{commande.remisePourcentage}%
+            </span>
+          )}
           <span className="text-lg font-bold text-slate-900">{fmt(commande.totalHt)}</span>
           <span className="text-slate-400">{ouverte ? '▲' : '▼'}</span>
         </div>
@@ -261,6 +266,18 @@ function CarteCommande({
               ))}
             </tbody>
           </table>
+
+          <div className="mt-3 flex flex-col items-end gap-0.5 text-sm">
+            {commande.remisePourcentage > 0 && (
+              <>
+                <p className="text-slate-400">Sous-total : {fmt(commande.sousTotalHt)}</p>
+                <p className="font-semibold text-emerald-700">
+                  Réduction -{commande.remisePourcentage}% : -{fmt(commande.sousTotalHt - commande.totalHt)}
+                </p>
+              </>
+            )}
+            <p className="text-base font-bold text-slate-900">Total : {fmt(commande.totalHt)}</p>
+          </div>
 
           <div className="mt-4 flex justify-end gap-2.5">
             <button

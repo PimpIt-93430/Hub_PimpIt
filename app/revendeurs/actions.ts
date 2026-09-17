@@ -3,6 +3,7 @@
 import { randomUUID } from 'crypto';
 
 import { creerClientSupabaseServeur } from '@/lib/supabase/server';
+import { calculerRemise } from './remises';
 
 export interface PinRevendeur {
   id: string;
@@ -76,7 +77,11 @@ export async function envoyerCommandeRevendeur(entreprise: string, lignes: Ligne
 
   if (lignesValides.length === 0) throw new Error('Aucun article valide (quantité minimum 10)');
 
-  const totalHT = lignesValides.reduce((s, l) => s + l.prix_unitaire_ht * l.quantite, 0);
+  const sousTotalHT = lignesValides.reduce((s, l) => s + l.prix_unitaire_ht * l.quantite, 0);
+  // Remise recalculée ici, jamais confiance dans un pourcentage envoyé par le navigateur — cf.
+  // remises.ts (paliers 1500/3000/6000/10000€, retour utilisateur du 2026-09-17).
+  const { pourcentage: remisePourcentage } = calculerRemise(sousTotalHT);
+  const totalHT = sousTotalHT * (1 - remisePourcentage / 100);
 
   // Id généré ici (pas de .select() après l'insert) : une personne anonyme (page publique) n'a
   // aucune policy SELECT sur commandes_revendeurs — or Supabase exige que le rôle qui écrit ait le
@@ -84,9 +89,13 @@ export async function envoyerCommandeRevendeur(entreprise: string, lignes: Ligne
   // return=representation, déclenché par .select()), même pour un simple insert. Générer l'id
   // nous-mêmes évite ce aller-retour et garde la table illisible pour le public, comme voulu.
   const commandeId = randomUUID();
-  const { error: eCommande } = await supabase
-    .from('commandes_revendeurs')
-    .insert({ id: commandeId, entreprise: nomEntreprise, total_ht: totalHT });
+  const { error: eCommande } = await supabase.from('commandes_revendeurs').insert({
+    id: commandeId,
+    entreprise: nomEntreprise,
+    sous_total_ht: sousTotalHT,
+    remise_pourcentage: remisePourcentage,
+    total_ht: totalHT,
+  });
   if (eCommande) throw new Error(eCommande.message);
 
   const { error: eLignes } = await supabase

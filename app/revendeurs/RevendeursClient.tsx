@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 
 import { envoyerCommandeRevendeur, type PinRevendeur } from './actions';
+import { PALIERS_REMISE, calculerRemise } from './remises';
 
 function fmt(n: number): string {
   return n.toFixed(2).replace('.', ',') + ' €';
@@ -42,7 +43,13 @@ export function RevendeursClient({ pins }: { pins: PinRevendeur[] }) {
     [panier, pins],
   );
   const totalArticles = lignesPanier.reduce((s, l) => s + l.qty, 0);
-  const totalHT = lignesPanier.reduce((s, l) => s + l.qty * l.pin.priceHT, 0);
+  const sousTotalHT = lignesPanier.reduce((s, l) => s + l.qty * l.pin.priceHT, 0);
+  // Retour utilisateur du 2026-09-17 : paliers de réduction volume — recalculés aussi côté serveur
+  // (envoyerCommandeRevendeur), jamais confiance dans ce qui est envoyé par le navigateur.
+  const remise = calculerRemise(sousTotalHT);
+  const totalHT = sousTotalHT * (1 - remise.pourcentage / 100);
+  const montantRemise = sousTotalHT - totalHT;
+  const prochainPalier = PALIERS_REMISE.find((p) => p.seuil > sousTotalHT) ?? null;
 
   function ajuster(id: string, delta: number) {
     setPanier((p) => {
@@ -112,6 +119,17 @@ export function RevendeursClient({ pins }: { pins: PinRevendeur[] }) {
         .rv-count-lbl { font-size: 12px; color: #9ca3af; margin-left: auto; }
         .rv-btn-reset { padding: 7px 14px; border: 1.5px solid #e5e7eb; border-radius: 8px; font-size: 13px; cursor: pointer; background: white; color: #6b7280; }
         .rv-btn-reset:hover { border-color: #7c3aed; color: #7c3aed; }
+        .rv-remises { max-width: 1400px; margin: 16px auto 0; padding: 0 24px; }
+        .rv-remises-box { background: white; border: 1px solid #e5e7eb; border-radius: 12px; padding: 14px 18px; }
+        .rv-remises-titre { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: #7c3aed; margin-bottom: 10px; }
+        .rv-remises-liste { display: flex; gap: 10px; flex-wrap: wrap; }
+        .rv-remise-item { flex: 1; min-width: 110px; padding: 8px 12px; border-radius: 9px; background: #f8fafc; border: 1.5px solid #e5e7eb; text-align: center; }
+        .rv-remise-item.rv-remise-active { background: #7c3aed; border-color: #7c3aed; }
+        .rv-remise-seuil { font-size: 11px; color: #6b7280; }
+        .rv-remise-item.rv-remise-active .rv-remise-seuil { color: #ddd6fe; }
+        .rv-remise-pct { font-size: 18px; font-weight: 800; color: #111; margin-top: 2px; }
+        .rv-remise-item.rv-remise-active .rv-remise-pct { color: white; }
+        .rv-remises-prochain { margin-top: 10px; font-size: 12px; color: #6b7280; }
         .rv-grid { max-width: 1400px; margin: 0 auto; padding: 20px 24px 140px; display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 14px; }
         .rv-grid-empty { grid-column: 1 / -1; text-align: center; padding: 80px 0; color: #9ca3af; font-size: 15px; }
         .rv-card { background: white; border-radius: 12px; overflow: hidden; border: 2px solid #e5e7eb; transition: box-shadow .15s, border-color .15s; }
@@ -160,6 +178,8 @@ export function RevendeursClient({ pins }: { pins: PinRevendeur[] }) {
         @media (max-width: 640px) {
           .rv-header { padding: 14px 16px; }
           .rv-company-bar, .rv-filter-bar { padding: 12px 16px; }
+          .rv-remises { padding: 0 16px; }
+          .rv-remise-item { min-width: 45%; }
           .rv-grid { padding: 12px 12px 130px; grid-template-columns: repeat(2, 1fr); gap: 10px; }
           .rv-bottom-bar { padding: 12px 16px; }
           .rv-stat-val { font-size: 16px; }
@@ -208,6 +228,25 @@ export function RevendeursClient({ pins }: { pins: PinRevendeur[] }) {
           >
             Vider
           </button>
+        </div>
+      </div>
+
+      <div className="rv-remises">
+        <div className="rv-remises-box">
+          <div className="rv-remises-titre">Réductions par palier (sur le total HT de la commande)</div>
+          <div className="rv-remises-liste">
+            {PALIERS_REMISE.map((p) => (
+              <div key={p.seuil} className={`rv-remise-item${remise.seuil === p.seuil ? ' rv-remise-active' : ''}`}>
+                <div className="rv-remise-seuil">dès {p.seuil.toLocaleString('fr')} €</div>
+                <div className="rv-remise-pct">-{p.pourcentage}%</div>
+              </div>
+            ))}
+          </div>
+          {prochainPalier && (
+            <div className="rv-remises-prochain">
+              Plus que <strong>{fmt(prochainPalier.seuil - sousTotalHT)}</strong> pour passer à -{prochainPalier.pourcentage}%
+            </div>
+          )}
         </div>
       </div>
 
@@ -270,8 +309,11 @@ export function RevendeursClient({ pins }: { pins: PinRevendeur[] }) {
           </div>
           <div className="rv-sep" />
           <div>
+            {remise.pourcentage > 0 && (
+              <div style={{ fontSize: 11, color: '#a5b4fc', textDecoration: 'line-through' }}>{fmt(sousTotalHT)}</div>
+            )}
             <div className="rv-stat-val">{fmt(totalHT)}</div>
-            <div className="rv-stat-lbl">total HT</div>
+            <div className="rv-stat-lbl">{remise.pourcentage > 0 ? `total HT (-${remise.pourcentage}%)` : 'total HT'}</div>
           </div>
           <div className="rv-spacer" />
           <button className="rv-btn-generate" disabled={lignesPanier.length === 0} onClick={ouvrirRecap}>
@@ -307,6 +349,14 @@ export function RevendeursClient({ pins }: { pins: PinRevendeur[] }) {
                 <div className="rv-modal-title">Récapitulatif</div>
                 <div className="rv-modal-sub">{entreprise}</div>
                 <div className="rv-summary-box">
+                  {remise.pourcentage > 0 && (
+                    <>
+                      <div style={{ fontSize: 13, color: '#9ca3af', textDecoration: 'line-through' }}>{fmt(sousTotalHT)}</div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: '#059669', marginBottom: 4 }}>
+                        Réduction -{remise.pourcentage}% : -{fmt(montantRemise)}
+                      </div>
+                    </>
+                  )}
                   <div className="rv-summary-total-lbl">Total de votre commande</div>
                   <div className="rv-summary-total-amt">{fmt(totalHT)}</div>
                   <div className="rv-summary-detail">

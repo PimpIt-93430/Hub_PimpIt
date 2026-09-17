@@ -18,6 +18,8 @@ export interface CommandeRevendeurHub {
   id: string;
   entreprise: string;
   statut: 'nouvelle' | 'traitee';
+  sousTotalHt: number;
+  remisePourcentage: number;
   totalHt: number;
   createdAt: string;
   lignes: LigneCommandeRevendeurHub[];
@@ -31,7 +33,7 @@ export async function chargerCommandesRevendeurs(): Promise<CommandeRevendeurHub
   const supabase = await creerClientSupabaseServeur();
   const { data: commandes, error: eCommandes } = await supabase
     .from('commandes_revendeurs')
-    .select('id, entreprise, statut, total_ht, created_at')
+    .select('id, entreprise, statut, sous_total_ht, remise_pourcentage, total_ht, created_at')
     .order('created_at', { ascending: false });
   if (eCommandes) throw new Error(eCommandes.message);
 
@@ -71,6 +73,8 @@ export async function chargerCommandesRevendeurs(): Promise<CommandeRevendeurHub
     id: c.id,
     entreprise: c.entreprise,
     statut: c.statut,
+    sousTotalHt: Number(c.sous_total_ht ?? c.total_ht),
+    remisePourcentage: Number(c.remise_pourcentage ?? 0),
     totalHt: Number(c.total_ht),
     createdAt: c.created_at,
     lignes: lignesParCommande.get(c.id) ?? [],
