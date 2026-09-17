@@ -46,12 +46,22 @@ export function CommandesRevendeursClient({ commandesInitiales }: { commandesIni
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-900">Commandes revendeurs</h1>
-        <p className="mt-1 text-sm text-slate-400">
-          Reçues depuis l&apos;espace revendeur public (pimpitstore.../revendeurs). Aucune alerte automatique
-          n&apos;est configurée pour l&apos;instant — pense à revenir régulièrement sur cet écran.
-        </p>
+      <div className="mb-6 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Commandes revendeurs</h1>
+          <p className="mt-1 text-sm text-slate-400">
+            Reçues depuis l&apos;espace revendeur public. Aucune alerte automatique n&apos;est configurée pour
+            l&apos;instant — pense à revenir régulièrement sur cet écran.
+          </p>
+        </div>
+        <a
+          href="/revendeurs"
+          target="_blank"
+          rel="noreferrer"
+          className="shrink-0 whitespace-nowrap rounded-lg bg-indigo-600 px-3.5 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+        >
+          Ouvrir l&apos;espace revendeur →
+        </a>
       </div>
 
       {erreur && <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm font-semibold text-red-600">{erreur}</p>}
