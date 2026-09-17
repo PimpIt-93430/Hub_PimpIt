@@ -70,7 +70,12 @@ export async function creerPin(params: PinParams): Promise<void> {
   revalidatePath('/pins');
 }
 
-export async function modifierPin(airtableId: string, params: PinParams): Promise<void> {
+// Keyées sur `id` (uuid, toujours renseigné) plutôt que airtable_record_id (retour utilisateur du
+// 2026-09-17 : "je n'arrive toujours pas à supprimer" — certains pins n'ont pas d'airtable_record_id,
+// jamais synchronisés depuis Airtable ; .eq('airtable_record_id', null) ne correspond à aucune
+// ligne côté PostgREST, la suppression/modification échouait silencieusement pour ces pins-là.
+// Même correctif déjà appliqué à pins-prix/actions.ts pour la même raison.
+export async function modifierPin(id: string, params: PinParams): Promise<void> {
   const supabase = await creerClientSupabaseServeur();
 
   const { data, error } = await supabase
@@ -90,7 +95,7 @@ export async function modifierPin(airtableId: string, params: PinParams): Promis
       photo_url: params.imageUrl,
       updated_at: new Date().toISOString(),
     })
-    .eq('airtable_record_id', airtableId)
+    .eq('id', id)
     .select();
   if (error) throw new Error(error.message);
   if (!data || data.length === 0) throw new Error('Modification bloquée (droits insuffisants ?)');
@@ -98,13 +103,13 @@ export async function modifierPin(airtableId: string, params: PinParams): Promis
   revalidatePath('/pins');
 }
 
-export async function supprimerPin(airtableId: string): Promise<void> {
+export async function supprimerPin(id: string): Promise<void> {
   const supabase = await creerClientSupabaseServeur();
 
   // .select() force Supabase/PostgREST à renvoyer les lignes supprimées : sans ça, une RLS qui
   // bloque silencieusement la suppression ne remonte aucune erreur (piège déjà rencontré sur ce
   // projet — cf. mémoire "Supabase delete RLS silent").
-  const { data, error } = await supabase.from('stock_pins').delete().eq('airtable_record_id', airtableId).select();
+  const { data, error } = await supabase.from('stock_pins').delete().eq('id', id).select();
   if (error) throw new Error(error.message);
   if (!data || data.length === 0) throw new Error('Suppression bloquée (droits insuffisants ?)');
 

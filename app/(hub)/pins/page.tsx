@@ -19,10 +19,11 @@ export default async function PinsPage() {
   const { data } = await supabase
     .from('stock_pins')
     .select(
-      'airtable_record_id, nom, sku_pimpit, sku_fournisseur, stock_general, seuil_cible, fournisseur, boite, poids_unitaire, poids_total, custom, pas_dans_unite, description, photo_url',
+      'id, airtable_record_id, nom, sku_pimpit, sku_fournisseur, stock_general, seuil_cible, fournisseur, boite, poids_unitaire, poids_total, custom, pas_dans_unite, description, photo_url',
     )
     .order('nom');
   const pins: HubPin[] = (data ?? []).map((p) => ({
+    id: p.id,
     airtable_id: p.airtable_record_id,
     name: p.nom,
     sku_pimpit: p.sku_pimpit,

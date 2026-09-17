@@ -40,7 +40,7 @@ export function AlertesModal({ pins, onClose }: { pins: HubPin[]; onClose: () =>
             alertes.map(({ pin, stock, cible, pct }) => {
               const couleur = pct <= 10 ? 'text-red-600' : pct <= 20 ? 'text-amber-500' : 'text-amber-600';
               return (
-                <div key={pin.airtable_id} className="flex items-center gap-3 rounded-xl bg-slate-50 p-3">
+                <div key={pin.id} className="flex items-center gap-3 rounded-xl bg-slate-50 p-3">
                   {pin.image_url ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={pin.image_url} alt="" className="h-10 w-10 shrink-0 rounded-md object-cover" />

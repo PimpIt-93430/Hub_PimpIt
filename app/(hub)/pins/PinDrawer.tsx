@@ -105,7 +105,7 @@ export function PinDrawer({ pin, onClose }: { pin: HubPin | null; onClose: () =>
     setErreur(null);
     demarrer(async () => {
       try {
-        if (enEdition) await modifierPin(pin.airtable_id, params);
+        if (enEdition) await modifierPin(pin.id, params);
         else await creerPin(params);
         onClose();
         // revalidatePath (actions.ts) invalide le cache Next mais ne suffit pas à rafraîchir
@@ -121,11 +121,11 @@ export function PinDrawer({ pin, onClose }: { pin: HubPin | null; onClose: () =>
   }
 
   function supprimer() {
-    if (!pin || !confirm(`Supprimer le pin « ${pin.name ?? pin.airtable_id} » ?`)) return;
+    if (!pin || !confirm(`Supprimer le pin « ${pin.name ?? pin.id} » ?`)) return;
     setErreur(null);
     demarrer(async () => {
       try {
-        await supprimerPin(pin.airtable_id);
+        await supprimerPin(pin.id);
         onClose();
         router.refresh();
       } catch (e) {

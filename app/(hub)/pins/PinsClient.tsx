@@ -196,7 +196,7 @@ export function PinsClient({ pinsInitiaux }: { pinsInitiaux: HubPin[] }) {
                 const bas = stock <= seuil * 0.25;
                 return (
                   <tr
-                    key={p.airtable_id}
+                    key={p.id}
                     onClick={() => ouvrirEdition(p)}
                     className="cursor-pointer border-b border-slate-50 last:border-0 hover:bg-slate-50/60"
                   >

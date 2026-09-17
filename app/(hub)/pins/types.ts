@@ -1,5 +1,10 @@
 export interface HubPin {
-  airtable_id: string;
+  id: string;
+  // Cf. retour utilisateur du 2026-09-17 : "je n'arrive toujours pas à supprimer" — certains pins
+  // n'ont pas d'airtable_record_id (jamais synchronisés depuis Airtable), donc nullable ici. Les
+  // actions (modifier/supprimerPin) sont keyées sur `id` (uuid, toujours renseigné), jamais sur ce
+  // champ — cf. actions.ts.
+  airtable_id: string | null;
   name: string | null;
   sku_pimpit: string | null;
   sku_fournisseur: string | null;
