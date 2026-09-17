@@ -2,8 +2,13 @@
 
 import { useMemo, useState, useTransition } from 'react';
 
-import { definirPrixFournisseur, definirPrixFournisseurEnMasse } from './actions';
-import { PRIX_FOURNISSEUR_VALEURS, type PinPrix } from './types';
+import {
+  definirPrixFournisseur,
+  definirPrixFournisseurEnMasse,
+  definirPrixRevente,
+  definirPrixReventeEnMasse,
+} from './actions';
+import { PRIX_FOURNISSEUR_VALEURS, PRIX_REVENTE_VALEURS, type PinPrix } from './types';
 
 function formatPrix(p: number): string {
   return p.toFixed(2).replace('.', ',') + ' €';
@@ -15,17 +20,19 @@ type Filtre = 'tous' | 'non_defini' | number;
  * optimiste locale, revert si l'appel serveur échoue). Cf. retour utilisateur du 2026-09-15 :
  * "faut que ce soit rapide". */
 function SelecteurPrix({
+  valeurs,
   valeur,
   enCours,
   onChoisir,
 }: {
+  valeurs: readonly number[];
   valeur: number | null;
   enCours: boolean;
   onChoisir: (prix: number) => void;
 }) {
   return (
     <div className="flex flex-wrap gap-1.5">
-      {PRIX_FOURNISSEUR_VALEURS.map((prix) => {
+      {valeurs.map((prix) => {
         const actif = valeur === prix;
         return (
           <button
@@ -53,6 +60,7 @@ export function PrixPinsClient({ pinsInitiaux }: { pinsInitiaux: PinPrix[] }) {
   const [filtre, setFiltre] = useState<Filtre>('tous');
   const [selection, setSelection] = useState<Set<string>>(new Set());
   const [idEnCours, setIdEnCours] = useState<string | null>(null);
+  const [idEnCoursRevente, setIdEnCoursRevente] = useState<string | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
   const [, startTransition] = useTransition();
 
@@ -67,9 +75,13 @@ export function PrixPinsClient({ pinsInitiaux }: { pinsInitiaux: PinPrix[] }) {
   }, [pins, recherche, filtre]);
 
   const nonDefinis = pins.filter((p) => p.prix_fournisseur === null).length;
+  const nonDefinisRevente = pins.filter((p) => p.prix_revente_ht === null).length;
 
   const appliquerLocalement = (ids: string[], prix: number) => {
     setPins((ps) => ps.map((p) => (ids.includes(p.id) ? { ...p, prix_fournisseur: prix } : p)));
+  };
+  const appliquerLocalementRevente = (ids: string[], prix: number) => {
+    setPins((ps) => ps.map((p) => (ids.includes(p.id) ? { ...p, prix_revente_ht: prix } : p)));
   };
 
   const choisirPrix = (id: string, prix: number) => {
@@ -85,6 +97,23 @@ export function PrixPinsClient({ pinsInitiaux }: { pinsInitiaux: PinPrix[] }) {
         setErreur(e instanceof Error ? e.message : 'Erreur inconnue');
       } finally {
         setIdEnCours(null);
+      }
+    });
+  };
+
+  const choisirPrixRevente = (id: string, prix: number) => {
+    const avant = pins.find((p) => p.id === id)?.prix_revente_ht ?? null;
+    setErreur(null);
+    setIdEnCoursRevente(id);
+    appliquerLocalementRevente([id], prix);
+    startTransition(async () => {
+      try {
+        await definirPrixRevente(id, prix);
+      } catch (e) {
+        appliquerLocalementRevente([id], avant as number);
+        setErreur(e instanceof Error ? e.message : 'Erreur inconnue');
+      } finally {
+        setIdEnCoursRevente(null);
       }
     });
   };
@@ -106,6 +135,23 @@ export function PrixPinsClient({ pinsInitiaux }: { pinsInitiaux: PinPrix[] }) {
     });
   };
 
+  const appliquerEnMasseRevente = (prix: number) => {
+    const ids = [...selection];
+    if (ids.length === 0) return;
+    const avant = new Map(pins.map((p) => [p.id, p.prix_revente_ht]));
+    setErreur(null);
+    appliquerLocalementRevente(ids, prix);
+    startTransition(async () => {
+      try {
+        await definirPrixReventeEnMasse(ids, prix);
+        setSelection(new Set());
+      } catch (e) {
+        setPins((ps) => ps.map((p) => (ids.includes(p.id) ? { ...p, prix_revente_ht: avant.get(p.id) ?? null } : p)));
+        setErreur(e instanceof Error ? e.message : 'Erreur inconnue');
+      }
+    });
+  };
+
   const basculerSelection = (id: string) => {
     setSelection((s) => {
       const copie = new Set(s);
@@ -121,10 +167,15 @@ export function PrixPinsClient({ pinsInitiaux }: { pinsInitiaux: PinPrix[] }) {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-900">Prix fournisseurs des pin&apos;s</h1>
+        <h1 className="text-2xl font-bold text-slate-900">Prix des pin&apos;s</h1>
         <p className="mt-1 text-sm text-slate-400">
           {pins.length} pin&apos;s
-          {nonDefinis > 0 && <span className="font-semibold text-red-500"> · {nonDefinis} sans prix</span>}
+          {nonDefinis > 0 && (
+            <span className="font-semibold text-red-500"> · {nonDefinis} sans prix fournisseur</span>
+          )}
+          {nonDefinisRevente > 0 && (
+            <span className="font-semibold text-amber-600"> · {nonDefinisRevente} sans prix de revente</span>
+          )}
         </p>
       </div>
 
@@ -177,17 +228,31 @@ export function PrixPinsClient({ pinsInitiaux }: { pinsInitiaux: PinPrix[] }) {
           </button>
         )}
         {selection.size > 0 && (
-          <div className="ml-auto flex items-center gap-1.5">
-            <span className="text-xs text-slate-400">Appliquer :</span>
-            {PRIX_FOURNISSEUR_VALEURS.map((prix) => (
-              <button
-                key={prix}
-                onClick={() => appliquerEnMasse(prix)}
-                className="rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-700 hover:bg-indigo-100"
-              >
-                {formatPrix(prix)}
-              </button>
-            ))}
+          <div className="ml-auto flex flex-col items-end gap-1.5">
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-slate-400">Fournisseur :</span>
+              {PRIX_FOURNISSEUR_VALEURS.map((prix) => (
+                <button
+                  key={prix}
+                  onClick={() => appliquerEnMasse(prix)}
+                  className="rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-700 hover:bg-indigo-100"
+                >
+                  {formatPrix(prix)}
+                </button>
+              ))}
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-slate-400">Revente :</span>
+              {PRIX_REVENTE_VALEURS.map((prix) => (
+                <button
+                  key={prix}
+                  onClick={() => appliquerEnMasseRevente(prix)}
+                  className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 hover:bg-emerald-100"
+                >
+                  {formatPrix(prix)}
+                </button>
+              ))}
+            </div>
           </div>
         )}
       </div>
@@ -217,15 +282,28 @@ export function PrixPinsClient({ pinsInitiaux }: { pinsInitiaux: PinPrix[] }) {
               ) : (
                 <div className="h-11 w-11 shrink-0 rounded-md bg-slate-100" />
               )}
-              {/* Sélecteur juste après l'image (retour utilisateur du 2026-09-15 : "ils sont aux
+              {/* Sélecteurs juste après l'image (retour utilisateur du 2026-09-15 : "ils sont aux
                   deux extrémités je me fie mal aux yeux à voir quelle image est à quel prix") —
                   nom/SKU relégués à droite, moins critiques à associer visuellement à l'image. */}
-              <div onClick={(e) => e.stopPropagation()} className="shrink-0">
-                <SelecteurPrix
-                  valeur={p.prix_fournisseur}
-                  enCours={idEnCours === p.id}
-                  onChoisir={(prix) => choisirPrix(p.id, prix)}
-                />
+              <div onClick={(e) => e.stopPropagation()} className="flex shrink-0 flex-col gap-1.5">
+                <div>
+                  <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-400">Fournisseur</p>
+                  <SelecteurPrix
+                    valeurs={PRIX_FOURNISSEUR_VALEURS}
+                    valeur={p.prix_fournisseur}
+                    enCours={idEnCours === p.id}
+                    onChoisir={(prix) => choisirPrix(p.id, prix)}
+                  />
+                </div>
+                <div>
+                  <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-400">Revente</p>
+                  <SelecteurPrix
+                    valeurs={PRIX_REVENTE_VALEURS}
+                    valeur={p.prix_revente_ht}
+                    enCours={idEnCoursRevente === p.id}
+                    onChoisir={(prix) => choisirPrixRevente(p.id, prix)}
+                  />
+                </div>
               </div>
               <div className="min-w-0 flex-1 text-right">
                 <p className="truncate font-medium text-slate-900">{p.nom ?? '—'}</p>
@@ -233,7 +311,10 @@ export function PrixPinsClient({ pinsInitiaux }: { pinsInitiaux: PinPrix[] }) {
                   SKU {p.sku_pimpit ?? '—'}
                   {p.custom && <span className="ml-1.5 rounded-full bg-violet-100 px-1.5 py-0.5 text-[10px] font-semibold text-violet-700">Custom</span>}
                   {p.prix_fournisseur === null && (
-                    <span className="ml-1.5 rounded-full bg-red-100 px-1.5 py-0.5 text-[10px] font-semibold text-red-700">Sans prix</span>
+                    <span className="ml-1.5 rounded-full bg-red-100 px-1.5 py-0.5 text-[10px] font-semibold text-red-700">Sans prix fournisseur</span>
+                  )}
+                  {p.prix_revente_ht === null && (
+                    <span className="ml-1.5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700">Sans prix de revente</span>
                   )}
                 </p>
               </div>

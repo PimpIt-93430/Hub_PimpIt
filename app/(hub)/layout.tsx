@@ -28,7 +28,7 @@ const CATEGORIES: CategorieNav[] = [
     liens: [
       { href: '/pins', label: "Pin's", icone: '📌' },
       { href: '/pins-unite', label: "Pin's à l'unité", icone: '🔗' },
-      { href: '/pins-prix', label: 'Prix fournisseurs', icone: '💶' },
+      { href: '/pins-prix', label: "Prix des pin's", icone: '💶' },
       { href: '/packs', label: "Packs de pin's", icone: '🎁' },
       { href: '/profil-expedition', label: "Profil d'expédition", icone: '🚚' },
       { href: '/tiktok-shop', label: 'TikTok Shop', icone: '🎵' },

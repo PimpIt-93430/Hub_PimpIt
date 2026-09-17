@@ -17,7 +17,7 @@ export default async function PinsPrixPage() {
   const supabase = await creerClientSupabaseServeur();
   const { data } = await supabase
     .from('stock_pins')
-    .select('id, nom, sku_pimpit, custom, photo_url, prix_fournisseur')
+    .select('id, nom, sku_pimpit, custom, photo_url, prix_fournisseur, prix_revente_ht')
     .order('nom');
   const pins: PinPrix[] = (data ?? []).map((p) => ({
     id: p.id,
@@ -26,6 +26,7 @@ export default async function PinsPrixPage() {
     custom: p.custom,
     photo_url: p.photo_url,
     prix_fournisseur: versNombre(p.prix_fournisseur),
+    prix_revente_ht: versNombre(p.prix_revente_ht),
   }));
 
   return <PrixPinsClient pinsInitiaux={pins} />;
