@@ -59,6 +59,11 @@ function imprimerCommandeRevendeur(c: CommandeRevendeurHub) {
     thead th{background:#f3f4f6;padding:10px 12px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:#666}
     thead th:last-child{text-align:right}
     tbody td{padding:8px 12px;border-bottom:1px solid #f0f0f0;vertical-align:middle}
+    .addresses{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px}
+    .addr-block{padding:14px 16px;border:1px solid #e5e7eb;border-radius:8px}
+    .addr-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#999;margin-bottom:6px}
+    .addr-name{font-weight:700;font-size:13px;margin-bottom:2px}
+    .addr-line{color:#555;line-height:1.5}
     .total-row{margin-top:16px;text-align:right;font-weight:700;font-size:15px;padding-right:12px}
     .print-btn{margin-top:24px;padding:10px 24px;background:#111;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px}
     @media print{.print-btn{display:none}}
@@ -76,6 +81,18 @@ function imprimerCommandeRevendeur(c: CommandeRevendeurHub) {
   <div class="header">
     <div><div class="company-name">Pimp It Store</div><div class="company-sub">Bon de commande — ${c.entreprise}</div></div>
     <div class="po-info"><div class="po-number">Revendeur</div><div class="po-date">${fmtDate(c.createdAt)}</div></div>
+  </div>
+  <div class="addresses">
+    <div class="addr-block">
+      <div class="addr-label">Livraison à</div>
+      <div class="addr-name">Pimp It Store</div>
+      <div class="addr-line">3 rue des Carrières<br>93800 Épinay-sur-Seine<br>France</div>
+    </div>
+    <div class="addr-block">
+      <div class="addr-label">Facturation à</div>
+      <div class="addr-name">Pimp It Store</div>
+      <div class="addr-line">3 rue des Carrières<br>93800 Épinay-sur-Seine<br>France</div>
+    </div>
   </div>
   <table>
     <thead><tr><th></th><th>Nom</th><th>SKU interne</th><th>SKU fournisseur</th><th style="text-align:right">Qté</th></tr></thead>
