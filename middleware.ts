@@ -29,8 +29,12 @@ export async function middleware(request: NextRequest) {
 
   const surPageConnexion =
     request.nextUrl.pathname.startsWith('/login') || request.nextUrl.pathname.startsWith('/premiere-connexion');
+  // /revendeurs (cf. app/revendeurs) : catalogue B2B public, remplace l'ancienne page Railway
+  // "Espace Revendeur" — jamais derrière /login, accessible sans compte, aussi bien pour un
+  // revendeur que pour un admin qui la prévisualise (pas de redirection dans un sens ni l'autre).
+  const surPageRevendeurs = request.nextUrl.pathname.startsWith('/revendeurs');
 
-  if (!user && !surPageConnexion) {
+  if (!user && !surPageConnexion && !surPageRevendeurs) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
     return NextResponse.redirect(url);
@@ -47,7 +51,7 @@ export async function middleware(request: NextRequest) {
   // plutôt que de rajouter un exigerAdmin-like sur chacune des ~15 autres routes du Hub. Une seule
   // requête profiles de plus, uniquement pour une personne connectée qui vise une page hors de
   // cette liste.
-  if (user && !surPageConnexion) {
+  if (user && !surPageConnexion && !surPageRevendeurs) {
     const autorise =
       request.nextUrl.pathname.startsWith('/planning') || request.nextUrl.pathname.startsWith('/profil');
     if (!autorise) {

@@ -38,7 +38,10 @@ const CATEGORIES: CategorieNav[] = [
     titre: 'Logistique',
     icone: '🚚',
     couleur: 'sky',
-    liens: [{ href: '/commandes', label: 'Commandes fournisseurs', icone: '📦' }],
+    liens: [
+      { href: '/commandes', label: 'Commandes fournisseurs', icone: '📦' },
+      { href: '/commandes-revendeurs', label: 'Commandes revendeurs', icone: '🤝' },
+    ],
   },
   {
     titre: 'Pop up',
