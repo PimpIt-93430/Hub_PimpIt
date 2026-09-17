@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 
 import { chargerProchainSku, creerPin, modifierPin, supprimerPin, type PinParams } from './actions';
 import { BOITE_VALEURS, FOURNISSEUR_VALEURS, type HubPin } from './types';
@@ -15,6 +16,7 @@ const champInput =
  * modifiable. L'ancien site n'exposait pas de suppression dans ce tiroir — un lien discret est
  * ajouté ici pour ne pas perdre la fonctionnalité, sans en faire un élément visuel dominant. */
 export function PinDrawer({ pin, onClose }: { pin: HubPin | null; onClose: () => void }) {
+  const router = useRouter();
   const enEdition = pin !== null;
   const [nom, setNom] = useState(pin?.name ?? '');
   const [sku, setSku] = useState<string>(pin?.sku_pimpit ?? '');
@@ -106,6 +108,12 @@ export function PinDrawer({ pin, onClose }: { pin: HubPin | null; onClose: () =>
         if (enEdition) await modifierPin(pin.airtable_id, params);
         else await creerPin(params);
         onClose();
+        // revalidatePath (actions.ts) invalide le cache Next mais ne suffit pas à rafraîchir
+        // PinsClient : pinsInitiaux reste un prop figé tant que rien ne redemande le rendu du
+        // Server Component — sans ça, un pin créé/modifié/supprimé restait visible tel quel dans
+        // la liste jusqu'au rechargement manuel de la page (retour utilisateur du 2026-09-17 : "le
+        // bouton supprimer ne marche pas").
+        router.refresh();
       } catch (e) {
         setErreur(e instanceof Error ? e.message : 'Erreur inconnue');
       }
@@ -119,6 +127,7 @@ export function PinDrawer({ pin, onClose }: { pin: HubPin | null; onClose: () =>
       try {
         await supprimerPin(pin.airtable_id);
         onClose();
+        router.refresh();
       } catch (e) {
         setErreur(e instanceof Error ? e.message : 'Erreur inconnue');
       }
