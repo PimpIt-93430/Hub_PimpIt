@@ -14,7 +14,7 @@ function formatPrix(p: number): string {
   return p.toFixed(2).replace('.', ',') + ' €';
 }
 
-type Filtre = 'tous' | 'non_defini' | number;
+type Filtre = 'tous' | 'non_defini' | 'non_defini_revente' | number;
 
 /** Sélecteur rapide des 5 prix autorisés — un clic = enregistré tout de suite (mise à jour
  * optimiste locale, revert si l'appel serveur échoue). Cf. retour utilisateur du 2026-09-15 :
@@ -70,6 +70,7 @@ export function PrixPinsClient({ pinsInitiaux }: { pinsInitiaux: PinPrix[] }) {
       if (q && !(p.nom ?? '').toLowerCase().includes(q)) return false;
       if (filtre === 'tous') return true;
       if (filtre === 'non_defini') return p.prix_fournisseur === null;
+      if (filtre === 'non_defini_revente') return p.prix_revente_ht === null;
       return p.prix_fournisseur === filtre;
     });
   }, [pins, recherche, filtre]);
@@ -201,7 +202,13 @@ export function PrixPinsClient({ pinsInitiaux }: { pinsInitiaux: PinPrix[] }) {
             onClick={() => setFiltre('non_defini')}
             className={`rounded-full px-3 py-1 text-xs font-semibold ${filtre === 'non_defini' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
           >
-            Sans prix
+            Sans prix fournisseur
+          </button>
+          <button
+            onClick={() => setFiltre('non_defini_revente')}
+            className={`rounded-full px-3 py-1 text-xs font-semibold ${filtre === 'non_defini_revente' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+          >
+            Sans prix de revente
           </button>
           {PRIX_FOURNISSEUR_VALEURS.map((prix) => (
             <button
