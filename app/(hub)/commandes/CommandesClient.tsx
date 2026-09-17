@@ -45,10 +45,16 @@ function palierPrecedent(v: number): number {
  * sur Supabase Storage, qui sait re-générer une version réduite à la volée (endpoint
  * /render/image/, cf. doc Supabase Storage) : ~7,5 Ko contre ~100 Ko en pleine résolution pour la
  * même image, largement suffisant pour une vignette 64×64 imprimée. Retombe sur l'URL d'origine si
- * ce n'est pas une URL Supabase Storage reconnue (autre hébergeur, ou vide). */
+ * ce n'est pas une URL Supabase Storage reconnue (autre hébergeur, ou vide).
+ *
+ * `height` + `resize=cover` obligatoires (retour utilisateur du 2026-09-17, repéré sur le PDF
+ * revendeurs mais touche ce fichier-ci à l'identique) : sans `height`, Supabase ne redimensionne
+ * QUE la largeur et garde la hauteur d'origine telle quelle — une image carrée 591×591 ressortait
+ * en 80×591, déformée en fine bande verticale une fois recadrée dans la case 64×64 avec
+ * object-fit:cover, plutôt qu'une vraie vignette carrée proportionnelle. */
 function miniature(url: string): string {
   if (!url.includes('/storage/v1/object/public/')) return url;
-  return `${url.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/')}?width=80&quality=60`;
+  return `${url.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/')}?width=80&height=80&resize=cover&quality=60`;
 }
 
 /** Bon de commande fournisseur imprimable (image, SKU interne, SKU fournisseur, quantité) — même

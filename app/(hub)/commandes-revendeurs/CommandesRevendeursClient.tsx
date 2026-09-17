@@ -18,10 +18,15 @@ function fmtDate(iso: string): string {
 
 /** Miniature légère plutôt que l'image d'origine — même optimisation que photoParId dans
  * commandes/CommandesClient.tsx (imprimerCommande) : un PDF avec beaucoup de références et
- * l'image d'origine de chacune peut mettre très longtemps à charger. */
+ * l'image d'origine de chacune peut mettre très longtemps à charger.
+ *
+ * `height` + `resize=cover` obligatoires (retour utilisateur du 2026-09-17, image à l'appui) :
+ * sans `height`, Supabase ne redimensionne QUE la largeur et garde la hauteur d'origine — une
+ * image carrée 591×591 ressortait en 80×591, déformée en fine bande verticale une fois recadrée
+ * dans la case 64×64 avec object-fit:cover, plutôt qu'une vraie vignette carrée proportionnelle. */
 function miniature(url: string): string {
   if (!url.includes('/storage/v1/object/public/')) return url;
-  return `${url.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/')}?width=80&quality=60`;
+  return `${url.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/')}?width=80&height=80&resize=cover&quality=60`;
 }
 
 /** Bon de commande imprimable pour une commande revendeur — retour utilisateur du 2026-09-17 :
