@@ -106,6 +106,22 @@ export async function chargerExpeditionsLaPoste(
  * fulfillment Shopify ayant déjà réussi) affichait à tort "Échec" alors que tout avait fonctionné.
  * La plus récente est la bonne référence à afficher/réimprimer ; une ancienne ligne orpheline reste
  * en base pour audit (statut 'cree') mais doit être annulée à la main si elle ne sert plus. */
+/** Historique complet (créées + annulées) des étiquettes La Poste d'une commande — retour
+ * utilisateur du 2026-09-18 : "quand on recrée une étiquette faudrait créer une nouvelle ligne avec
+ * le nouveau numéro de suivi et la date" — jusqu'ici seule la plus récente 'cree' était visible
+ * (chargerExpeditionLaPostePourCommande, .limit(1)), une étiquette de remplacement remplaçait donc
+ * l'affichage de la précédente au lieu de s'y ajouter. */
+export async function chargerHistoriqueExpeditionLaPoste(commandeShopifyId: number): Promise<ExpeditionLaPoste[]> {
+  const supabase = await creerClientSupabaseServeur();
+  const { data, error } = await supabase
+    .from('expeditions_laposte')
+    .select('*')
+    .eq('commande_shopify_id', commandeShopifyId)
+    .order('cree_le', { ascending: false });
+  if (error) throw new Error(error.message);
+  return ((data ?? []) as LigneBrute[]).map(versExpeditionLaPoste);
+}
+
 export async function chargerExpeditionLaPostePourCommande(commandeShopifyId: number): Promise<ExpeditionLaPoste | null> {
   const supabase = await creerClientSupabaseServeur();
   const { data, error } = await supabase

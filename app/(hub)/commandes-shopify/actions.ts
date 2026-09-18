@@ -29,6 +29,7 @@ import {
 import {
   chargerEtiquettesLaPosteRecentes,
   chargerExpeditionLaPostePourCommande,
+  chargerHistoriqueExpeditionLaPoste,
   enregistrerExpeditionLaPoste,
   marquerExpeditionLaPosteAnnulee,
   marquerExpeditionLaPosteFulfillment,
@@ -381,6 +382,12 @@ export async function rafraichirSuivisLivraison(): Promise<[number, ExpeditionSe
 
 export async function verifierExpeditionLaPosteExistante(commandeShopifyId: number): Promise<ExpeditionLaPoste | null> {
   return chargerExpeditionLaPostePourCommande(commandeShopifyId);
+}
+
+/** Historique complet (créées + annulées) — retour utilisateur du 2026-09-18 : voir chaque
+ * étiquette créée pour cette commande (numéro de suivi + date), pas seulement la plus récente. */
+export async function chargerHistoriqueEtiquettesLaPoste(commandeShopifyId: number): Promise<ExpeditionLaPoste[]> {
+  return chargerHistoriqueExpeditionLaPoste(commandeShopifyId);
 }
 
 /** Génère une étiquette La Poste (recette) puis pousse le tracking sur Shopify — cf. retour

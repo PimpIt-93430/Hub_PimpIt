@@ -5,7 +5,13 @@ import { useEffect, useMemo, useState } from 'react';
 import type { ExpeditionLaPoste } from '@/lib/expeditions-laposte';
 import { PRIX_LETTRE_VERTE_SUIVIE_HT, type ProduitLettre } from '@/lib/laposte';
 import type { CommandeShopify } from '@/lib/shopify';
-import { annulerEtiquetteLaPoste, creerEtiquetteLaPoste, verifierCommandesEnSuspens, verifierExpeditionLaPosteExistante } from './actions';
+import {
+  annulerEtiquetteLaPoste,
+  chargerHistoriqueEtiquettesLaPoste,
+  creerEtiquetteLaPoste,
+  verifierCommandesEnSuspens,
+  verifierExpeditionLaPosteExistante,
+} from './actions';
 import {
   adresseLivraisonVersDestinataire,
   base64VersBlobUrl,
@@ -42,6 +48,10 @@ const LIBELLE_PRODUIT: Record<ProduitLettre, string> = {
 
 function formatPrix(n: number): string {
   return `${n.toFixed(2)} €`;
+}
+
+function formatDateHeure(iso: string): string {
+  return new Date(iso).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' });
 }
 
 // Seule la Lettre Verte Suivie est utilisée en pratique (retour utilisateur du 2026-09-03 : "il
@@ -92,6 +102,17 @@ export function PanneauExpeditionLaPoste({
   // sur le hub" — undefined = vérification en cours, jamais le formulaire de création tant que ce
   // n'est pas confirmé.
   const [enSuspens, setEnSuspens] = useState<boolean | undefined>(undefined);
+  // Historique complet (créées + annulées) — retour utilisateur du 2026-09-18 : "quand on recrée
+  // une étiquette faudrait créer une nouvelle ligne avec le nouveau numéro de suivi et la date" —
+  // `resultat` (ci-dessus) reste la plus récente 'cree' (celle qu'on imprime/annule au premier
+  // plan), cet historique s'affiche en plus, jamais à sa place.
+  const [historique, setHistorique] = useState<ExpeditionLaPoste[]>([]);
+
+  const rafraichirHistorique = () => {
+    chargerHistoriqueEtiquettesLaPoste(commande.id)
+      .then(setHistorique)
+      .catch(() => {});
+  };
 
   useEffect(() => {
     setExpediteur(chargerExpediteur());
@@ -101,6 +122,7 @@ export function PanneauExpeditionLaPoste({
     verifierCommandesEnSuspens([commande.id])
       .then((ids) => setEnSuspens(ids.includes(commande.id)))
       .catch(() => setEnSuspens(false));
+    rafraichirHistorique();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -129,8 +151,10 @@ export function PanneauExpeditionLaPoste({
       });
       setResultat(expedition);
       setForcerNouvelle(false);
+      rafraichirHistorique();
     } catch (e) {
       setErreur(e instanceof Error ? e.message : 'Échec de la création.');
+      rafraichirHistorique();
     } finally {
       setEnCours(false);
       setConfirmer(false);
@@ -144,6 +168,7 @@ export function PanneauExpeditionLaPoste({
       await annulerEtiquetteLaPoste(resultat.laposteItemId);
       setResultat(null);
       setErreur(null);
+      rafraichirHistorique();
     } catch (e) {
       setErreur(e instanceof Error ? e.message : "Échec de l'annulation.");
     } finally {
@@ -231,6 +256,7 @@ export function PanneauExpeditionLaPoste({
         >
           Un problème avec ce colis ? Créer une nouvelle étiquette
         </button>
+        <HistoriqueEtiquettes historique={historique} />
       </div>
     );
   }
@@ -318,6 +344,53 @@ export function PanneauExpeditionLaPoste({
           Générer l&apos;étiquette (payant)
         </button>
       )}
+      <HistoriqueEtiquettes historique={historique} />
+    </div>
+  );
+}
+
+/** Une ligne par étiquette La Poste créée pour cette commande (numéro de suivi, date, statut) —
+ * retour utilisateur du 2026-09-18 : chaque nouvelle étiquette (ex. colis perdu, à renvoyer)
+ * s'ajoute ici plutôt que de remplacer l'affichage de la précédente. Rien n'est rendu s'il n'y a
+ * qu'une seule ligne 'cree' et aucune 'annulee' — déjà visible au premier plan au-dessus. */
+function HistoriqueEtiquettes({ historique }: { historique: ExpeditionLaPoste[] }) {
+  if (historique.length <= 1) return null;
+  return (
+    <div className="mt-3 border-t border-slate-200 pt-2.5">
+      <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+        Historique des étiquettes ({historique.length})
+      </p>
+      <div className="flex flex-col gap-1">
+        {historique.map((e) => (
+          <LigneHistoriqueEtiquette key={e.id} expedition={e} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function LigneHistoriqueEtiquette({ expedition }: { expedition: ExpeditionLaPoste }) {
+  const blobUrl = useMemo(
+    () => base64VersBlobUrl(expedition.visualOutputBase64, 'application/pdf'),
+    [expedition.visualOutputBase64],
+  );
+  useEffect(() => {
+    return () => URL.revokeObjectURL(blobUrl);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return (
+    <div className="flex items-center justify-between gap-2 rounded-lg bg-white/60 px-2.5 py-1.5 text-xs">
+      <div>
+        <span className={`mr-1.5 font-semibold ${expedition.statut === 'annulee' ? 'text-slate-400 line-through' : 'text-slate-800'}`}>
+          {expedition.laposteItemId}
+        </span>
+        <span className="text-slate-400">{formatDateHeure(expedition.creeLe)}</span>
+        {expedition.statut === 'annulee' && <span className="ml-1.5 text-red-500">(annulée)</span>}
+      </div>
+      <a href={blobUrl} target="_blank" rel="noreferrer" className="font-semibold text-indigo-600 hover:underline">
+        Ouvrir
+      </a>
     </div>
   );
 }
