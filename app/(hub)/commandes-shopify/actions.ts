@@ -435,23 +435,36 @@ export async function creerEtiquetteLaPoste(params: {
     });
     await marquerExpeditionLaPosteFulfillment(etiquette.itemId, fulfillment.fulfillmentId);
   } catch (e) {
-    // Cf. retour utilisateur du 2026-09-16 : plutôt que de laisser une étiquette payée non reflétée
-    // sur Shopify (l'ancien comportement, best-effort), on annule tout — remboursée chez La Poste,
-    // marquée annulée chez nous, et l'erreur remonte pour que l'écran affiche clairement "échec"
-    // (la commande reste "à créer", rien à réimprimer par erreur).
-    console.warn(`Fulfillment Shopify échoué pour ${params.commandeNom}, annulation de l'étiquette La Poste :`, e instanceof Error ? e.message : e);
-    try {
-      await annulerEtiquetteLettre(etiquette.itemId);
-      await marquerExpeditionLaPosteAnnulee(etiquette.itemId);
-    } catch (eAnnulation) {
-      console.error(
-        `Annulation de l'étiquette La Poste ${etiquette.itemId} (${params.commandeNom}) échouée après échec Shopify — À VÉRIFIER MANUELLEMENT :`,
-        eAnnulation instanceof Error ? eAnnulation.message : eAnnulation,
+    const message = e instanceof Error ? e.message : String(e);
+    // Cf. retour utilisateur du 2026-09-18 (incident #27229/#27029) : une commande déjà expédiée
+    // (fulfillment order déjà fermé côté Shopify) ne doit plus déclencher l'annulation — c'est le
+    // cas légitime d'une étiquette de remplacement (colis perdu, à renvoyer) demandée sur une
+    // commande déjà marquée expédiée. On laisse l'étiquette telle quelle (créée, non liée à un
+    // fulfillment) plutôt que de l'annuler puis d'échouer, comme c'est arrivé ce jour-là (annulation
+    // elle-même en échec juste après création, trop tôt côté La Poste — étiquette restée facturée
+    // et bloquante).
+    if (message === 'Aucun fulfillment order ouvert pour cette commande') {
+      console.warn(
+        `Étiquette La Poste créée pour ${params.commandeNom} sans fulfillment Shopify (commande déjà expédiée) :`,
+        message,
       );
+    } else {
+      // Cf. retour utilisateur du 2026-09-16 : plutôt que de laisser une étiquette payée non
+      // reflétée sur Shopify (l'ancien comportement, best-effort), on annule tout — remboursée chez
+      // La Poste, marquée annulée chez nous, et l'erreur remonte pour que l'écran affiche
+      // clairement "échec" (la commande reste "à créer", rien à réimprimer par erreur).
+      console.warn(`Fulfillment Shopify échoué pour ${params.commandeNom}, annulation de l'étiquette La Poste :`, message);
+      try {
+        await annulerEtiquetteLettre(etiquette.itemId);
+        await marquerExpeditionLaPosteAnnulee(etiquette.itemId);
+      } catch (eAnnulation) {
+        console.error(
+          `Annulation de l'étiquette La Poste ${etiquette.itemId} (${params.commandeNom}) échouée après échec Shopify — À VÉRIFIER MANUELLEMENT :`,
+          eAnnulation instanceof Error ? eAnnulation.message : eAnnulation,
+        );
+      }
+      throw new Error(`Étiquette La Poste créée puis annulée (échec de synchro Shopify) : ${message}`);
     }
-    throw new Error(
-      `Étiquette La Poste créée puis annulée (échec de synchro Shopify) : ${e instanceof Error ? e.message : 'erreur inconnue'}`,
-    );
   }
 
   const enregistree = await chargerExpeditionLaPostePourCommande(params.commandeShopifyId);
