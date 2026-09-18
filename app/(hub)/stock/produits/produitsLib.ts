@@ -28,14 +28,28 @@ export interface ChaussureMappingSumup {
   taille: TailleChaussure;
 }
 
-export type ModeleCoque = 'Iphone 13' | 'Iphone 14' | 'Iphone 15' | 'Iphone 16' | 'Iphone 17';
-export type VarianteCoque = 'Normal' | 'Pro' | 'Pro Max' | 'Plus';
+/** Retour utilisateur du 2026-09-18 : plusieurs générations iPhone partagent la même coque —
+ * regroupement en 13 modèles (remplace l'ancien modele x variante), cf. même type côté app
+ * (src/types/database.types.ts). */
+export type ModeleCoque =
+  | '13/14/15'
+  | '13/14 Pro'
+  | '13/14 Pro Max'
+  | '15 Pro'
+  | '15 Pro Max'
+  | '15 Plus'
+  | '16'
+  | '16 Pro'
+  | '16 Pro Max'
+  | '16 Plus'
+  | '17'
+  | '17 Pro'
+  | '17 Pro Max';
 export type CouleurCoqueSac = 'Rose' | 'Noir';
 
 export interface CoqueStock {
   id: string;
   modele: ModeleCoque;
-  variante: VarianteCoque;
   couleur: CouleurCoqueSac;
   stock_initial: number;
 }
@@ -43,7 +57,6 @@ export interface CoqueInventaire {
   id: string;
   pop_up_id: string;
   modele: ModeleCoque;
-  variante: VarianteCoque;
   couleur: CouleurCoqueSac;
   quantite_comptee: number;
   profile_id: string;
@@ -53,7 +66,6 @@ export interface CoqueMappingSumup {
   id: string;
   nom_produit: string;
   modele: ModeleCoque;
-  variante: VarianteCoque;
   couleur: CouleurCoqueSac;
 }
 
@@ -92,8 +104,21 @@ export interface VenteSumupLigne {
 
 export const COULEURS_CHAUSSURES: CouleurChaussure[] = ['Noir', 'Kaki', 'Rose', 'Gris'];
 export const TAILLES_CHAUSSURES: TailleChaussure[] = ['36-37', '38-39', '40-41', '41-42', '43-44', '45-46'];
-export const MODELES_COQUES: ModeleCoque[] = ['Iphone 13', 'Iphone 14', 'Iphone 15', 'Iphone 16', 'Iphone 17'];
-export const VARIANTES_COQUES: VarianteCoque[] = ['Normal', 'Pro', 'Pro Max', 'Plus'];
+export const MODELES_COQUES: ModeleCoque[] = [
+  '13/14/15',
+  '13/14 Pro',
+  '13/14 Pro Max',
+  '15 Pro',
+  '15 Pro Max',
+  '15 Plus',
+  '16',
+  '16 Pro',
+  '16 Pro Max',
+  '16 Plus',
+  '17',
+  '17 Pro',
+  '17 Pro Max',
+];
 export const COULEURS_COQUES_SACS: CouleurCoqueSac[] = ['Rose', 'Noir'];
 export const PRODUITS_SACS: ProduitSac[] = ['Grandes Pochettes', 'Petites Pochettes', "Sac Pimp-it + 6 pin's"];
 
@@ -193,38 +218,62 @@ export function calculerARamener(
 
 export interface VenteCoque {
   modele: ModeleCoque;
-  variante: VarianteCoque;
   couleur: CouleurCoqueSac;
   quantite: number;
   horodatage: string;
 }
 
-function parserModeleVarianteCouleur(
-  description: string | null,
-): { modele: ModeleCoque; variante: VarianteCoque; couleur: CouleurCoqueSac } | null {
+/** Le catalogue SumUp ("Coque Iphone + 5 pin's") n'a pas été changé — il garde ses 40 versions au
+ * format "Iphone XX · Variante · Couleur" (Normal/Pro/Pro Max/Plus x 13 à 17), cf. même table côté
+ * app (src/utils/coques.ts REGROUPEMENT_SUMUP) : 13/14/15/Normal ont le même gabarit, 13 Pro/14 Pro
+ * pareil, 13 Pro Max/14 Pro Max pareil, 15 Pro et 15 Pro Max changent de gabarit (bords titane) donc
+ * restent seuls, 14 Plus rejoint 15 Plus (même gabarit 6,7" hors Pro). "Iphone 13 · Plus" et
+ * "Iphone 17 · Plus" n'existent pas chez Apple (SKU du catalogue jamais vendable) et ne sont donc
+ * volontairement pas mappés. */
+const REGROUPEMENT_SUMUP: Record<string, ModeleCoque> = {
+  'iphone 13|normal': '13/14/15',
+  'iphone 14|normal': '13/14/15',
+  'iphone 15|normal': '13/14/15',
+  'iphone 13|pro': '13/14 Pro',
+  'iphone 14|pro': '13/14 Pro',
+  'iphone 15|pro': '15 Pro',
+  'iphone 13|pro max': '13/14 Pro Max',
+  'iphone 14|pro max': '13/14 Pro Max',
+  'iphone 15|pro max': '15 Pro Max',
+  'iphone 14|plus': '15 Plus',
+  'iphone 15|plus': '15 Plus',
+  'iphone 16|normal': '16',
+  'iphone 16|pro': '16 Pro',
+  'iphone 16|pro max': '16 Pro Max',
+  'iphone 16|plus': '16 Plus',
+  'iphone 17|normal': '17',
+  'iphone 17|pro': '17 Pro',
+  'iphone 17|pro max': '17 Pro Max',
+};
+
+function parserModeleCouleur(description: string | null): { modele: ModeleCoque; couleur: CouleurCoqueSac } | null {
   if (!description) return null;
   const parties = description.split('·').map((p) => p.trim());
   if (parties.length !== 3) return null;
-  const [modeleBrut, varianteBrute, couleurBrute] = parties;
-  const modele = MODELES_COQUES.find((m) => m.toLowerCase() === modeleBrut.toLowerCase());
-  const variante = VARIANTES_COQUES.find((v) => v.toLowerCase() === varianteBrute.toLowerCase());
+  const [generationBrute, varianteBrute, couleurBrute] = parties;
+  const modele = REGROUPEMENT_SUMUP[`${generationBrute.toLowerCase()}|${varianteBrute.toLowerCase()}`];
   const couleur = COULEURS_COQUES_SACS.find((c) => c.toLowerCase() === couleurBrute.toLowerCase());
-  if (!modele || !variante || !couleur) return null;
-  return { modele, variante, couleur };
+  if (!modele || !couleur) return null;
+  return { modele, couleur };
 }
 
 export function resoudreVentesSumupCoques(lignes: VenteSumupLigne[], mapping: CoqueMappingSumup[]): VenteCoque[] {
   const mappingParNom = new Map(mapping.map((m) => [m.nom_produit, m]));
   const ventes: VenteCoque[] = [];
   for (const ligne of lignes) {
-    const parsed = parserModeleVarianteCouleur(ligne.description);
+    const parsed = parserModeleCouleur(ligne.description);
     if (parsed) {
       ventes.push({ ...parsed, quantite: ligne.quantite, horodatage: ligne.horodatage });
       continue;
     }
     const m = mappingParNom.get(ligne.nom_produit);
     if (!m) continue;
-    ventes.push({ modele: m.modele, variante: m.variante, couleur: m.couleur, quantite: ligne.quantite, horodatage: ligne.horodatage });
+    ventes.push({ modele: m.modele, couleur: m.couleur, quantite: ligne.quantite, horodatage: ligne.horodatage });
   }
   return ventes;
 }
@@ -238,9 +287,9 @@ export function calculerARamenerCoques(
     stock,
     inventaires,
     ventes,
-    (item) => `${item.modele}|${item.variante}|${item.couleur}`,
-    (inv) => `${inv.modele}|${inv.variante}|${inv.couleur}`,
-    (vente) => `${vente.modele}|${vente.variante}|${vente.couleur}`,
+    (item) => `${item.modele}|${item.couleur}`,
+    (inv) => `${inv.modele}|${inv.couleur}`,
+    (vente) => `${vente.modele}|${vente.couleur}`,
   );
 }
 

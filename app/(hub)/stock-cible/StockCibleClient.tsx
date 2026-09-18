@@ -16,8 +16,21 @@ import {
 
 const COULEURS_CHAUSSURES = ['Noir', 'Kaki', 'Rose', 'Gris'];
 const TAILLES_CHAUSSURES = ['36-37', '38-39', '40-41', '41-42', '43-44', '45-46'];
-const MODELES_COQUES = ['Iphone 13', 'Iphone 14', 'Iphone 15', 'Iphone 16', 'Iphone 17'];
-const VARIANTES_COQUES = ['Normal', 'Pro', 'Pro Max', 'Plus'];
+const MODELES_COQUES = [
+  '13/14/15',
+  '13/14 Pro',
+  '13/14 Pro Max',
+  '15 Pro',
+  '15 Pro Max',
+  '15 Plus',
+  '16',
+  '16 Pro',
+  '16 Pro Max',
+  '16 Plus',
+  '17',
+  '17 Pro',
+  '17 Pro Max',
+];
 const COULEURS_COQUES_SACS = ['Rose', 'Noir'];
 const PRODUITS_SACS = ['Grandes Pochettes', 'Petites Pochettes', "Sac Pimp-it + 6 pin's"];
 
@@ -30,7 +43,6 @@ interface ChaussureStock {
 interface CoqueStock {
   id: string;
   modele: string;
-  variante: string;
   couleur: string;
   stock_initial: number;
 }
@@ -50,7 +62,6 @@ interface MappingCoque {
   id: string;
   nom_produit: string;
   modele: string;
-  variante: string;
   couleur: string;
 }
 interface MappingSac {
@@ -231,28 +242,23 @@ export function StockCibleClient({
       {onglet === 'stock' && categorie === 'coques' && (
         <div>
           <p className="mb-3 text-xs text-slate-400">
-            Le stock visé par modèle/variante/couleur, commun à tous les pop-ups.
+            Le stock visé par modèle/couleur, commun à tous les pop-ups.
           </p>
           {MODELES_COQUES.map((modele) => (
             <div key={modele} className="mb-4 rounded-2xl border border-slate-200 bg-white p-4">
-              <p className="mb-3 text-base font-bold text-slate-900">{modele}</p>
-              {VARIANTES_COQUES.map((variante) => (
-                <div key={variante} className="mb-3">
-                  <p className="mb-1.5 text-xs font-semibold text-slate-500">{variante}</p>
-                  <div className="flex flex-wrap gap-3">
-                    {coques
-                      .filter((c) => c.modele === modele && c.variante === variante)
-                      .map((item) => (
-                        <CelluleStock
-                          key={item.id}
-                          sousLabel={item.couleur}
-                          quantite={item.stock_initial}
-                          onDefinir={(q) => definirStockCoques(item.id, q)}
-                        />
-                      ))}
-                  </div>
-                </div>
-              ))}
+              <p className="mb-3 text-base font-bold text-slate-900">Iphone {modele}</p>
+              <div className="flex flex-wrap gap-3">
+                {coques
+                  .filter((c) => c.modele === modele)
+                  .map((item) => (
+                    <CelluleStock
+                      key={item.id}
+                      sousLabel={item.couleur}
+                      quantite={item.stock_initial}
+                      onDefinir={(q) => definirStockCoques(item.id, q)}
+                    />
+                  ))}
+              </div>
             </div>
           ))}
         </div>
@@ -323,10 +329,9 @@ export function StockCibleClient({
                   nomProduit={nom}
                   champs={[
                     { cle: 'modele', label: 'Modèle', options: MODELES_COQUES },
-                    { cle: 'variante', label: 'Variante', options: VARIANTES_COQUES },
                     { cle: 'couleur', label: 'Couleur', options: COULEURS_COQUES_SACS },
                   ]}
-                  onAssocier={(v) => definirMappingCoques(nom, v.modele, v.variante, v.couleur)}
+                  onAssocier={(v) => definirMappingCoques(nom, v.modele, v.couleur)}
                 />
               ))}
             </>
@@ -337,7 +342,7 @@ export function StockCibleClient({
             <LigneMappee
               key={m.id}
               texte={m.nom_produit}
-              sousTexte={`${m.modele} — ${m.variante} — ${m.couleur}`}
+              sousTexte={`Iphone ${m.modele} — ${m.couleur}`}
               onRetirer={() => supprimerMappingCoques(m.id)}
             />
           ))}

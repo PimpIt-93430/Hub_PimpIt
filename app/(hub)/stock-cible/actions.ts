@@ -48,11 +48,11 @@ export async function definirMappingChaussures(nomProduit: string, couleur: stri
   revalidatePath('/stock-cible');
 }
 
-export async function definirMappingCoques(nomProduit: string, modele: string, variante: string, couleur: string) {
+export async function definirMappingCoques(nomProduit: string, modele: string, couleur: string) {
   const supabase = await creerClientSupabaseServeur();
   const { error } = await supabase
     .from('coques_mapping_sumup')
-    .upsert({ nom_produit: nomProduit, modele, variante, couleur, updated_at: new Date().toISOString() }, { onConflict: 'nom_produit' });
+    .upsert({ nom_produit: nomProduit, modele, couleur, updated_at: new Date().toISOString() }, { onConflict: 'nom_produit' });
   if (error) throw new Error(error.message);
   revalidatePath('/stock-cible');
 }

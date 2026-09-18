@@ -5,7 +5,6 @@ import { useEffect, useMemo, useState, useTransition } from 'react';
 import { chargerCoquesInventaires, chargerVentesSumupLignes, enregistrerInventaireCoques, synchroniserVentesSumup } from './actions';
 import {
   MODELES_COQUES,
-  VARIANTES_COQUES,
   calculerARamenerCoques,
   resoudreVentesSumupCoques,
   type CoqueInventaire,
@@ -32,7 +31,7 @@ function CelluleComptage({ couleur, valeur, onChange }: { couleur: string; valeu
 }
 
 /** Réplique CoquesScreen.tsx de l'app — mêmes principes que ChaussuresScreen, groupé par
- * modèle > variante > couleur. */
+ * modèle > couleur. */
 export function CoquesScreen({
   popUpId,
   popUpNom,
@@ -77,7 +76,7 @@ export function CoquesScreen({
   const chargement = inventaires === null || ventesLignes === null;
 
   const validerInventaire = () => {
-    const lignes = stock.map((item) => ({ modele: item.modele, variante: item.variante, couleur: item.couleur, quantite_comptee: Number(comptage[item.id]) || 0 }));
+    const lignes = stock.map((item) => ({ modele: item.modele, couleur: item.couleur, quantite_comptee: Number(comptage[item.id]) || 0 }));
     if (!confirm("Enregistre ce comptage — ça recalcule directement ce qu'il faut ramener.")) return;
     demarrer(async () => {
       await enregistrerInventaireCoques(lignes, popUpId);
@@ -141,28 +140,23 @@ export function CoquesScreen({
       ) : onglet === 'inventaire' && !modeEdition ? (
         <>
           <p className="mb-3 text-xs text-slate-400">
-            Stock estimé en temps réel, par modèle/variante/couleur — dernier comptage moins les ventes SumUp survenues depuis.
+            Stock estimé en temps réel, par modèle/couleur — dernier comptage moins les ventes SumUp survenues depuis.
           </p>
           {MODELES_COQUES.map((modele) => (
             <div key={modele} className="mb-4 rounded-2xl border border-slate-200 bg-white p-4">
-              <p className="mb-3 text-base font-bold text-slate-900">{modele}</p>
-              {VARIANTES_COQUES.map((variante) => (
-                <div key={variante} className="mb-3">
-                  <p className="mb-1.5 text-xs font-semibold text-slate-500">{variante}</p>
-                  <div className="flex flex-wrap gap-3">
-                    {avecARamener
-                      .filter((item) => item.modele === modele && item.variante === variante)
-                      .map((item) => (
-                        <div key={item.id} className="flex flex-col items-center">
-                          <span className="mb-1 text-[11px] font-semibold text-slate-400">{item.couleur}</span>
-                          <div className="flex h-11 w-14 items-center justify-center rounded-lg border border-slate-200 bg-slate-50">
-                            <span className="text-sm font-semibold text-slate-700">{item.stockEstime !== null ? item.stockEstime : '—'}</span>
-                          </div>
-                        </div>
-                      ))}
-                  </div>
-                </div>
-              ))}
+              <p className="mb-3 text-base font-bold text-slate-900">Iphone {modele}</p>
+              <div className="flex flex-wrap gap-3">
+                {avecARamener
+                  .filter((item) => item.modele === modele)
+                  .map((item) => (
+                    <div key={item.id} className="flex flex-col items-center">
+                      <span className="mb-1 text-[11px] font-semibold text-slate-400">{item.couleur}</span>
+                      <div className="flex h-11 w-14 items-center justify-center rounded-lg border border-slate-200 bg-slate-50">
+                        <span className="text-sm font-semibold text-slate-700">{item.stockEstime !== null ? item.stockEstime : '—'}</span>
+                      </div>
+                    </div>
+                  ))}
+              </div>
             </div>
           ))}
           <button onClick={modifierInventaire} className="mt-2 w-full rounded-xl bg-slate-900 py-3.5 text-base font-bold text-white hover:bg-slate-800">
@@ -171,27 +165,20 @@ export function CoquesScreen({
         </>
       ) : onglet === 'inventaire' && modeEdition ? (
         <>
-          <p className="mb-3 text-xs text-slate-400">Compte ce qu&apos;il reste vraiment, par modèle/variante/couleur, puis valide.</p>
+          <p className="mb-3 text-xs text-slate-400">Compte ce qu&apos;il reste vraiment, par modèle/couleur, puis valide.</p>
           {MODELES_COQUES.map((modele) => (
             <div key={modele} className="mb-4 rounded-2xl border border-slate-200 bg-white p-4">
-              <p className="mb-3 text-base font-bold text-slate-900">{modele}</p>
-              {VARIANTES_COQUES.map((variante) => (
-                <div key={variante} className="mb-3">
-                  <p className="mb-1.5 text-xs font-semibold text-slate-500">{variante}</p>
-                  <div className="flex flex-wrap gap-3">
-                    {(parModele.get(modele) ?? [])
-                      .filter((item) => item.variante === variante)
-                      .map((item) => (
-                        <CelluleComptage
-                          key={item.id}
-                          couleur={item.couleur}
-                          valeur={comptage[item.id] ?? ''}
-                          onChange={(v) => setComptage((prev) => ({ ...prev, [item.id]: v }))}
-                        />
-                      ))}
-                  </div>
-                </div>
-              ))}
+              <p className="mb-3 text-base font-bold text-slate-900">Iphone {modele}</p>
+              <div className="flex flex-wrap gap-3">
+                {(parModele.get(modele) ?? []).map((item) => (
+                  <CelluleComptage
+                    key={item.id}
+                    couleur={item.couleur}
+                    valeur={comptage[item.id] ?? ''}
+                    onChange={(v) => setComptage((prev) => ({ ...prev, [item.id]: v }))}
+                  />
+                ))}
+              </div>
             </div>
           ))}
           <button
@@ -214,7 +201,7 @@ export function CoquesScreen({
               <div key={item.id} className="mb-1.5 flex items-center justify-between rounded-lg bg-amber-50 px-3 py-2.5">
                 <div>
                   <p className="text-sm text-slate-700">
-                    {item.modele} — {item.variante} — {item.couleur}
+                    Iphone {item.modele} — {item.couleur}
                   </p>
                   {item.venduDepuisInventaire > 0 && (
                     <p className="text-xs text-slate-400">

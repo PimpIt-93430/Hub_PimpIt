@@ -35,7 +35,7 @@ export default async function StockPage() {
     supabase.from('stock_pins').select('*').eq('actif', true).order('nom'),
     supabase.from('pop_up_pin_boites').select('id, pop_up_id, pin_id, case_position, a_commander, updated_at'),
     supabase.from('chaussures_stock').select('*').order('couleur').order('taille'),
-    supabase.from('coques_stock').select('*').order('modele').order('variante').order('couleur'),
+    supabase.from('coques_stock').select('*').order('modele').order('couleur'),
     supabase.from('sacs_stock').select('*').order('produit').order('couleur'),
     supabase.from('chaussures_mapping_sumup').select('*'),
     supabase.from('coques_mapping_sumup').select('*'),

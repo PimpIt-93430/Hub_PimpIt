@@ -36,8 +36,8 @@ export default async function StockCiblePage() {
     <div>
       <h1 className="mb-1 text-2xl font-bold text-slate-900">Stock cible</h1>
       <p className="mb-6 text-sm text-slate-400">
-        Le stock visé par variante, commun à tous les pop-ups — sert de référence pour calculer ce
-        qu&apos;il faut ramener après un inventaire.
+        Le stock visé par modèle/couleur ou taille, commun à tous les pop-ups — sert de référence
+        pour calculer ce qu&apos;il faut ramener après un inventaire.
       </p>
 
       <StockCibleClient

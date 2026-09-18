@@ -87,7 +87,6 @@ export async function enregistrerInventaireChaussures(
 export async function enregistrerInventaireCoques(
   lignes: {
     modele: CoqueInventaire['modele'];
-    variante: CoqueInventaire['variante'];
     couleur: CoqueInventaire['couleur'];
     quantite_comptee: number;
   }[],
