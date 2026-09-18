@@ -1,11 +1,12 @@
 'use client';
 
-/** Menu "Produits" : Chaussures/Coques/Sacs (fonctionnels) + Goodies (à venir) — cf. ProduitsMenu.tsx. */
-export function ProduitsMenu({ onOuvrir }: { onOuvrir: (categorie: 'chaussures' | 'coques' | 'sac' | 'goodies') => void }) {
-  const tuiles: { valeur: 'chaussures' | 'coques' | 'sac' | 'goodies'; label: string; couleur: string }[] = [
+/** Menu "Produits" : Chaussures/Coques (fonctionnels) + Goodies (à venir) — Sacs et Lanières
+ * n'ont plus de suivi de stock (retour utilisateur du 2026-09-18), gérés uniquement côté app via
+ * un panier de commande, cf. produitsLib.ts. */
+export function ProduitsMenu({ onOuvrir }: { onOuvrir: (categorie: 'chaussures' | 'coques' | 'goodies') => void }) {
+  const tuiles: { valeur: 'chaussures' | 'coques' | 'goodies'; label: string; couleur: string }[] = [
     { valeur: 'chaussures', label: 'Chaussures', couleur: '#F59E0B' },
     { valeur: 'coques', label: 'Coques', couleur: '#6366F1' },
-    { valeur: 'sac', label: 'Sac', couleur: '#EC4899' },
     { valeur: 'goodies', label: 'Goodies', couleur: '#10B981' },
   ];
 

@@ -5,13 +5,10 @@ import { useState, useTransition } from 'react';
 import {
   definirMappingChaussures,
   definirMappingCoques,
-  definirMappingSacs,
   definirStockChaussures,
   definirStockCoques,
-  definirStockSacs,
   supprimerMappingChaussures,
   supprimerMappingCoques,
-  supprimerMappingSacs,
 } from './actions';
 
 const COULEURS_CHAUSSURES = ['Noir', 'Kaki', 'Rose', 'Gris'];
@@ -32,7 +29,6 @@ const MODELES_COQUES = [
   '17 Pro Max',
 ];
 const COULEURS_COQUES_SACS = ['Rose', 'Noir'];
-const PRODUITS_SACS = ['Grandes Pochettes', 'Petites Pochettes', "Sac Pimp-it + 6 pin's"];
 
 interface ChaussureStock {
   id: string;
@@ -46,12 +42,6 @@ interface CoqueStock {
   couleur: string;
   stock_initial: number;
 }
-interface SacStock {
-  id: string;
-  produit: string;
-  couleur: string;
-  stock_initial: number;
-}
 interface MappingChaussure {
   id: string;
   nom_produit: string;
@@ -62,12 +52,6 @@ interface MappingCoque {
   id: string;
   nom_produit: string;
   modele: string;
-  couleur: string;
-}
-interface MappingSac {
-  id: string;
-  nom_produit: string;
-  produit: string;
   couleur: string;
 }
 
@@ -161,40 +145,37 @@ function LigneMappee({ texte, sousTexte, onRetirer }: { texte: string; sousTexte
   );
 }
 
+/** Sacs et Lanières n'ont plus de suivi de stock (retour utilisateur du 2026-09-18 : "c'est pas un
+ * inventaire qui se décrémente, c'est juste... un bouton ajouter à la commande") — seules
+ * Chaussures/Coques gardent un stock cible et une correspondance SumUp ici. */
 export function StockCibleClient({
   chaussures,
   coques,
-  sacs,
   mappingChaussures,
   mappingCoques,
-  mappingSacs,
   nomsNonMappesChaussures,
   nomsNonMappesCoques,
-  nomsNonMappesSacs,
 }: {
   chaussures: ChaussureStock[];
   coques: CoqueStock[];
-  sacs: SacStock[];
   mappingChaussures: MappingChaussure[];
   mappingCoques: MappingCoque[];
-  mappingSacs: MappingSac[];
   nomsNonMappesChaussures: string[];
   nomsNonMappesCoques: string[];
-  nomsNonMappesSacs: string[];
 }) {
-  const [categorie, setCategorie] = useState<'chaussures' | 'coques' | 'sacs'>('chaussures');
+  const [categorie, setCategorie] = useState<'chaussures' | 'coques'>('chaussures');
   const [onglet, setOnglet] = useState<'stock' | 'mapping'>('stock');
 
   return (
     <div>
       <div className="mb-3 flex gap-2">
-        {(['chaussures', 'coques', 'sacs'] as const).map((c) => (
+        {(['chaussures', 'coques'] as const).map((c) => (
           <button
             key={c}
             onClick={() => setCategorie(c)}
             className={`rounded-lg px-3 py-2 text-sm font-semibold ${categorie === c ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
           >
-            {c === 'chaussures' ? 'Chaussures' : c === 'coques' ? 'Coques' : 'Sacs & pochettes'}
+            {c === 'chaussures' ? 'Chaussures' : 'Coques'}
           </button>
         ))}
       </div>
@@ -264,29 +245,6 @@ export function StockCibleClient({
         </div>
       )}
 
-      {onglet === 'stock' && categorie === 'sacs' && (
-        <div>
-          <p className="mb-3 text-xs text-slate-400">Le stock visé par produit et par couleur, commun à tous les pop-ups.</p>
-          {PRODUITS_SACS.map((produit) => (
-            <div key={produit} className="mb-4 rounded-2xl border border-slate-200 bg-white p-4">
-              <p className="mb-3 text-base font-bold text-slate-900">{produit}</p>
-              <div className="flex flex-wrap gap-3">
-                {sacs
-                  .filter((s) => s.produit === produit)
-                  .map((item) => (
-                    <CelluleStock
-                      key={item.id}
-                      sousLabel={item.couleur}
-                      quantite={item.stock_initial}
-                      onDefinir={(q) => definirStockSacs(item.id, q)}
-                    />
-                  ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
       {onglet === 'mapping' && categorie === 'chaussures' && (
         <div>
           {nomsNonMappesChaussures.length > 0 && (
@@ -344,37 +302,6 @@ export function StockCibleClient({
               texte={m.nom_produit}
               sousTexte={`Iphone ${m.modele} — ${m.couleur}`}
               onRetirer={() => supprimerMappingCoques(m.id)}
-            />
-          ))}
-        </div>
-      )}
-
-      {onglet === 'mapping' && categorie === 'sacs' && (
-        <div>
-          {nomsNonMappesSacs.length > 0 && (
-            <>
-              <p className="mb-2 text-xs font-semibold uppercase text-amber-600">À associer</p>
-              {nomsNonMappesSacs.map((nom) => (
-                <LigneAMapper
-                  key={nom}
-                  nomProduit={nom}
-                  champs={[
-                    { cle: 'produit', label: 'Produit', options: PRODUITS_SACS },
-                    { cle: 'couleur', label: 'Couleur', options: COULEURS_COQUES_SACS },
-                  ]}
-                  onAssocier={(v) => definirMappingSacs(nom, v.produit, v.couleur)}
-                />
-              ))}
-            </>
-          )}
-          <p className="mb-2 mt-4 text-xs font-semibold uppercase text-slate-400">Déjà associés</p>
-          {mappingSacs.length === 0 && <p className="text-sm text-slate-400">Aucune correspondance pour l&apos;instant.</p>}
-          {mappingSacs.map((m) => (
-            <LigneMappee
-              key={m.id}
-              texte={m.nom_produit}
-              sousTexte={`${m.produit} — ${m.couleur}`}
-              onRetirer={() => supprimerMappingSacs(m.id)}
             />
           ))}
         </div>

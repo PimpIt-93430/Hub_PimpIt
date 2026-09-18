@@ -26,20 +26,16 @@ export default async function StockPage() {
     { data: popUpPinBoites },
     { data: chaussuresStock },
     { data: coquesStock },
-    { data: sacsStock },
     { data: mappingChaussures },
     { data: mappingCoques },
-    { data: mappingSacs },
   ] = await Promise.all([
     supabase.from('pop_ups').select('id, nom, couleur, est_local').eq('actif', true).order('nom'),
     supabase.from('stock_pins').select('*').eq('actif', true).order('nom'),
     supabase.from('pop_up_pin_boites').select('id, pop_up_id, pin_id, case_position, a_commander, updated_at'),
     supabase.from('chaussures_stock').select('*').order('couleur').order('taille'),
     supabase.from('coques_stock').select('*').order('modele').order('couleur'),
-    supabase.from('sacs_stock').select('*').order('produit').order('couleur'),
     supabase.from('chaussures_mapping_sumup').select('*'),
     supabase.from('coques_mapping_sumup').select('*'),
-    supabase.from('sacs_mapping_sumup').select('*'),
   ]);
 
   return (
@@ -55,10 +51,8 @@ export default async function StockPage() {
         popUpPinBoites={popUpPinBoites ?? []}
         chaussuresStock={normaliserStockInitial(chaussuresStock ?? [])}
         coquesStock={normaliserStockInitial(coquesStock ?? [])}
-        sacsStock={normaliserStockInitial(sacsStock ?? [])}
         mappingChaussures={mappingChaussures ?? []}
         mappingCoques={mappingCoques ?? []}
-        mappingSacs={mappingSacs ?? []}
       />
     </div>
   );

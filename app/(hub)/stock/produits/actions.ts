@@ -3,13 +3,13 @@
 import { revalidatePath } from 'next/cache';
 
 import { creerClientSupabaseServeur } from '@/lib/supabase/server';
-import type { ChaussureInventaire, CoqueInventaire, SacInventaire, VenteSumupLigne } from './produitsLib';
+import type { ChaussureInventaire, CoqueInventaire, VenteSumupLigne } from './produitsLib';
 
-/** Réplique src/api/chaussures.ts, coques.ts, sacs.ts de l'app Pimp It (écrans Produits > Chaussures/
- * Coques/Sacs) — mêmes tables réelles (chaussures_inventaires/coques_inventaires/sacs_inventaires,
- * ventes_sumup_lignes), pas un miroir hub_*. `chaussures_stock`/`coques_stock`/`sacs_stock` et leurs
- * `*_mapping_sumup` sont lus (page.tsx) mais jamais écrits ici — leur édition reste le rôle de
- * /stock-cible, déjà construit. */
+/** Réplique src/api/chaussures.ts, coques.ts de l'app Pimp It (écrans Produits > Chaussures/
+ * Coques) — mêmes tables réelles (chaussures_inventaires/coques_inventaires, ventes_sumup_lignes),
+ * pas un miroir hub_*. `chaussures_stock`/`coques_stock` et leurs `*_mapping_sumup` sont lus
+ * (page.tsx) mais jamais écrits ici — leur édition reste le rôle de /stock-cible, déjà construit.
+ * Sacs et Lanières n'ont plus de suivi de stock (retour utilisateur du 2026-09-18). */
 
 async function idUtilisateurCourant(supabase: Awaited<ReturnType<typeof creerClientSupabaseServeur>>): Promise<string> {
   const {
@@ -46,17 +46,6 @@ export async function chargerCoquesInventaires(popUpId: string): Promise<CoqueIn
     .order('created_at', { ascending: false });
   if (error) throw new Error(error.message);
   return normaliserQuantite(data as CoqueInventaire[]);
-}
-
-export async function chargerSacsInventaires(popUpId: string): Promise<SacInventaire[]> {
-  const supabase = await creerClientSupabaseServeur();
-  const { data, error } = await supabase
-    .from('sacs_inventaires')
-    .select('*')
-    .eq('pop_up_id', popUpId)
-    .order('created_at', { ascending: false });
-  if (error) throw new Error(error.message);
-  return normaliserQuantite(data as SacInventaire[]);
 }
 
 export async function chargerVentesSumupLignes(popUpId: string): Promise<VenteSumupLigne[]> {
@@ -97,20 +86,6 @@ export async function enregistrerInventaireCoques(
   const profileId = await idUtilisateurCourant(supabase);
   const { error } = await supabase
     .from('coques_inventaires')
-    .insert(lignes.map((l) => ({ ...l, profile_id: profileId, pop_up_id: popUpId })));
-  if (error) throw new Error(error.message);
-  revalidatePath('/stock');
-}
-
-export async function enregistrerInventaireSacs(
-  lignes: { produit: SacInventaire['produit']; couleur: SacInventaire['couleur']; quantite_comptee: number }[],
-  popUpId: string,
-) {
-  if (lignes.length === 0) return;
-  const supabase = await creerClientSupabaseServeur();
-  const profileId = await idUtilisateurCourant(supabase);
-  const { error } = await supabase
-    .from('sacs_inventaires')
     .insert(lignes.map((l) => ({ ...l, profile_id: profileId, pop_up_id: popUpId })));
   if (error) throw new Error(error.message);
   revalidatePath('/stock');

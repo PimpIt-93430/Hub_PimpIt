@@ -1,7 +1,9 @@
-/** Types et calculs partagés par les 3 écrans Produits (Chaussures/Coques/Sacs) — réplique
- * src/utils/inventaireStock.ts + chaussures.ts/coques.ts/sacs.ts (résolution des ventes SumUp) de
- * l'app Pimp It. Distinct de /stock-cible : ici `stock_initial` n'est lu qu'en entrée du calcul
- * "à ramener", jamais modifié (l'édition du stock visé reste le rôle de /stock-cible). */
+/** Types et calculs partagés par les 2 écrans Produits (Chaussures/Coques) — réplique
+ * src/utils/inventaireStock.ts + chaussures.ts/coques.ts (résolution des ventes SumUp) de l'app
+ * Pimp It. Distinct de /stock-cible : ici `stock_initial` n'est lu qu'en entrée du calcul "à
+ * ramener", jamais modifié (l'édition du stock visé reste le rôle de /stock-cible). Sacs et
+ * Lanières n'ont plus de suivi de stock (retour utilisateur du 2026-09-18) — gérés uniquement côté
+ * app via un panier de commande. */
 
 export type CouleurChaussure = 'Noir' | 'Kaki' | 'Rose' | 'Gris';
 export type TailleChaussure = '36-37' | '38-39' | '40-41' | '41-42' | '43-44' | '45-46';
@@ -69,30 +71,6 @@ export interface CoqueMappingSumup {
   couleur: CouleurCoqueSac;
 }
 
-export type ProduitSac = 'Grandes Pochettes' | 'Petites Pochettes' | "Sac Pimp-it + 6 pin's";
-
-export interface SacStock {
-  id: string;
-  produit: ProduitSac;
-  couleur: CouleurCoqueSac;
-  stock_initial: number;
-}
-export interface SacInventaire {
-  id: string;
-  pop_up_id: string;
-  produit: ProduitSac;
-  couleur: CouleurCoqueSac;
-  quantite_comptee: number;
-  profile_id: string;
-  created_at: string;
-}
-export interface SacMappingSumup {
-  id: string;
-  nom_produit: string;
-  produit: ProduitSac;
-  couleur: CouleurCoqueSac;
-}
-
 export interface VenteSumupLigne {
   id: string;
   pop_up_id: string | null;
@@ -120,7 +98,6 @@ export const MODELES_COQUES: ModeleCoque[] = [
   '17 Pro Max',
 ];
 export const COULEURS_COQUES_SACS: CouleurCoqueSac[] = ['Rose', 'Noir'];
-export const PRODUITS_SACS: ProduitSac[] = ['Grandes Pochettes', 'Petites Pochettes', "Sac Pimp-it + 6 pin's"];
 
 export interface AvecARamener {
   id: string;
@@ -130,7 +107,7 @@ export interface AvecARamener {
   aRamener: number;
 }
 
-/** Calcul générique "à ramener" partagé par chaussures/coques/sacs — cf. calculerARamenerGenerique
+/** Calcul générique "à ramener" partagé par chaussures/coques — cf. calculerARamenerGenerique
  * (src/utils/inventaireStock.ts) : stock de départ moins le dernier inventaire compté par le
  * pop-up, corrigé des ventes SumUp survenues depuis ce comptage. */
 export function calculerARamenerGenerique<
@@ -290,53 +267,5 @@ export function calculerARamenerCoques(
     (item) => `${item.modele}|${item.couleur}`,
     (inv) => `${inv.modele}|${inv.couleur}`,
     (vente) => `${vente.modele}|${vente.couleur}`,
-  );
-}
-
-// ---- Sacs ----
-
-export interface VenteSac {
-  produit: ProduitSac;
-  couleur: CouleurCoqueSac;
-  quantite: number;
-  horodatage: string;
-}
-
-function parserCouleur(description: string | null): CouleurCoqueSac | null {
-  if (!description) return null;
-  const brut = description.trim();
-  return COULEURS_COQUES_SACS.find((c) => c.toLowerCase() === brut.toLowerCase()) ?? null;
-}
-
-function resoudreProduit(nomProduit: string): ProduitSac | null {
-  const brut = nomProduit.trim();
-  return PRODUITS_SACS.find((p) => p === brut) ?? null;
-}
-
-export function resoudreVentesSumupSacs(lignes: VenteSumupLigne[], mapping: SacMappingSumup[]): VenteSac[] {
-  const mappingParNom = new Map(mapping.map((m) => [m.nom_produit, m]));
-  const ventes: VenteSac[] = [];
-  for (const ligne of lignes) {
-    const produit = resoudreProduit(ligne.nom_produit);
-    const couleur = parserCouleur(ligne.description);
-    if (produit && couleur) {
-      ventes.push({ produit, couleur, quantite: ligne.quantite, horodatage: ligne.horodatage });
-      continue;
-    }
-    const m = mappingParNom.get(ligne.nom_produit);
-    if (!m) continue;
-    ventes.push({ produit: m.produit, couleur: m.couleur, quantite: ligne.quantite, horodatage: ligne.horodatage });
-  }
-  return ventes;
-}
-
-export function calculerARamenerSacs(stock: SacStock[], inventaires: SacInventaire[], ventes: VenteSac[]): (SacStock & AvecARamener)[] {
-  return calculerARamenerGenerique(
-    stock,
-    inventaires,
-    ventes,
-    (item) => `${item.produit}|${item.couleur}`,
-    (inv) => `${inv.produit}|${inv.couleur}`,
-    (vente) => `${vente.produit}|${vente.couleur}`,
   );
 }

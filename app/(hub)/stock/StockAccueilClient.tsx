@@ -6,7 +6,7 @@ import { ConsommablesScreen } from './consommables/ConsommablesScreen';
 import { PinsScreen } from './pins/PinsScreen';
 import type { PopUpPinBoite, StockPin } from './pins/stockLib';
 import { ProduitsScreen } from './produits/ProduitsScreen';
-import type { ChaussureMappingSumup, ChaussureStock, CoqueMappingSumup, CoqueStock, SacMappingSumup, SacStock } from './produits/produitsLib';
+import type { ChaussureMappingSumup, ChaussureStock, CoqueMappingSumup, CoqueStock } from './produits/produitsLib';
 
 interface PopUp {
   id: string;
@@ -36,20 +36,16 @@ export function StockAccueilClient({
   popUpPinBoites,
   chaussuresStock,
   coquesStock,
-  sacsStock,
   mappingChaussures,
   mappingCoques,
-  mappingSacs,
 }: {
   popUps: PopUp[];
   stockPins: StockPin[];
   popUpPinBoites: PopUpPinBoite[];
   chaussuresStock: ChaussureStock[];
   coquesStock: CoqueStock[];
-  sacsStock: SacStock[];
   mappingChaussures: ChaussureMappingSumup[];
   mappingCoques: CoqueMappingSumup[];
-  mappingSacs: SacMappingSumup[];
 }) {
   const [categorie, setCategorie] = useState<Categorie>('menu');
   const [popUpId, setPopUpId] = useState<string | undefined>(undefined);
@@ -71,10 +67,8 @@ export function StockAccueilClient({
         popUpNom={popUpNom}
         chaussuresStock={chaussuresStock}
         coquesStock={coquesStock}
-        sacsStock={sacsStock}
         mappingChaussures={mappingChaussures}
         mappingCoques={mappingCoques}
-        mappingSacs={mappingSacs}
         onRetour={() => setCategorie('menu')}
       />
     );
