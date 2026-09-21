@@ -19,15 +19,25 @@ export default function LoginPage() {
     e.preventDefault();
     setErreur(null);
     setEnCours(true);
-    const supabase = creerClientSupabaseNavigateur();
-    const { error } = await supabase.auth.signInWithPassword({ email, password: motDePasse });
-    setEnCours(false);
-    if (error) {
-      setErreur(error.message);
-      return;
+    try {
+      const supabase = creerClientSupabaseNavigateur();
+      const { error } = await supabase.auth.signInWithPassword({ email, password: motDePasse });
+      if (error) {
+        setErreur(error.message);
+        return;
+      }
+      // Rechargement complet plutôt que router.replace + router.refresh (retour utilisateur du
+      // 2026-09-21 : "elle appuie sur se connecter ça fait rien") — le cookie de session vient
+      // d'être posé par supabase-js, et le middleware doit le relire pour laisser passer /, mais
+      // une navigation client (router.replace) peut se déclencher avant que ce cookie soit
+      // pleinement synchronisé, laissant la page de connexion affichée sans erreur ni changement
+      // visible. window.location force une vraie requête, donc le cookie est forcément à jour.
+      window.location.href = '/';
+    } catch (e) {
+      setErreur(e instanceof Error ? e.message : 'Une erreur inattendue est survenue.');
+    } finally {
+      setEnCours(false);
     }
-    router.replace('/');
-    router.refresh();
   };
 
   return (
