@@ -12,6 +12,10 @@ export interface LigneCommandeRevendeurHub {
   photoUrl: string | null;
   prixUnitaireHt: number;
   quantite: number;
+  // Retour utilisateur du 2026-09-21 : "il faudrait créer les deux pdf en fonction du
+  // fournisseur" — une commande revendeur mélange souvent des pin's de plusieurs fournisseurs
+  // (J/JO/W/Wu), chacun devant recevoir son propre bon de commande, pas la liste complète.
+  fournisseur: string | null;
 }
 
 export interface CommandeRevendeurHub {
@@ -49,7 +53,7 @@ export async function chargerCommandesRevendeurs(): Promise<CommandeRevendeurHub
   const idsAirtable = [...new Set((lignes ?? []).map((l) => l.airtable_record_id).filter((v): v is string => !!v))];
   const { data: pins } =
     idsAirtable.length > 0
-      ? await supabase.from('stock_pins').select('airtable_record_id, sku_pimpit, photo_url').in('airtable_record_id', idsAirtable)
+      ? await supabase.from('stock_pins').select('airtable_record_id, sku_pimpit, photo_url, fournisseur').in('airtable_record_id', idsAirtable)
       : { data: [] };
   const pinParAirtableId = new Map((pins ?? []).map((p) => [p.airtable_record_id, p]));
 
@@ -65,6 +69,7 @@ export async function chargerCommandesRevendeurs(): Promise<CommandeRevendeurHub
       photoUrl: pin?.photo_url ?? null,
       prixUnitaireHt: Number(l.prix_unitaire_ht),
       quantite: l.quantite,
+      fournisseur: pin?.fournisseur ?? null,
     });
     lignesParCommande.set(l.commande_id, liste);
   }

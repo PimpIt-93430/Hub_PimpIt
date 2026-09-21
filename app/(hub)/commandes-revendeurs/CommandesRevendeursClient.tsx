@@ -6,6 +6,7 @@ import {
   marquerCommandeRevendeurTraitee,
   supprimerCommandeRevendeur,
   type CommandeRevendeurHub,
+  type LigneCommandeRevendeurHub,
 } from './actions';
 
 function fmt(n: number): string {
@@ -33,10 +34,15 @@ function miniature(url: string): string {
  * "exactement comme les commandes fournisseurs [...] pour envoyer au chinois directement". Même
  * gabarit que imprimerCommande (commandes/CommandesClient.tsx) : mêmes colonnes (photo, SKU
  * interne, SKU fournisseur, quantité), pas de prix — ce document part tel quel vers le fabricant,
- * qui n'a pas à voir le prix de revente. */
-function imprimerCommandeRevendeur(c: CommandeRevendeurHub) {
-  const total = c.lignes.reduce((s, l) => s + l.quantite, 0);
-  const rows = c.lignes
+ * qui n'a pas à voir le prix de revente.
+ *
+ * `fournisseur`/`lignes` : retour utilisateur du 2026-09-21 — une commande revendeur mélange
+ * souvent plusieurs fournisseurs (J/JO/W/Wu), chacun ne doit recevoir que SES références, pas la
+ * commande complète. Un PDF est donc généré par fournisseur (cf. boutons dans CarteCommande),
+ * `lignes` reçoit alors le sous-ensemble déjà filtré plutôt que c.lignes en entier. */
+function imprimerCommandeRevendeur(c: CommandeRevendeurHub, fournisseur: string, lignes: LigneCommandeRevendeurHub[]) {
+  const total = lignes.reduce((s, l) => s + l.quantite, 0);
+  const rows = lignes
     .map(
       (l) => `<tr>
         <td>${l.photoUrl ? `<img src="${miniature(l.photoUrl)}" style="width:64px;height:64px;object-fit:cover;border-radius:6px">` : ''}</td>
@@ -50,7 +56,7 @@ function imprimerCommandeRevendeur(c: CommandeRevendeurHub) {
 
   const w = window.open('', '_blank');
   if (!w) return;
-  w.document.write(`<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Commande ${c.entreprise}</title>
+  w.document.write(`<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Commande ${c.entreprise} — ${fournisseur}</title>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
     body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#111;padding:40px;max-width:960px;margin:auto;font-size:13px}
@@ -84,7 +90,7 @@ function imprimerCommandeRevendeur(c: CommandeRevendeurHub) {
   });
   </script>
   <div class="header">
-    <div><div class="company-name">Pimp It Store</div><div class="company-sub">Bon de commande — ${c.entreprise}</div></div>
+    <div><div class="company-name">Pimp It Store</div><div class="company-sub">Bon de commande — ${c.entreprise} — Fournisseur ${fournisseur}</div></div>
     <div class="po-info"><div class="po-number">Revendeur</div><div class="po-date">${fmtDate(c.createdAt)}</div></div>
   </div>
   <div class="addresses">
@@ -107,6 +113,13 @@ function imprimerCommandeRevendeur(c: CommandeRevendeurHub) {
   <button class="print-btn" onclick="window.print()">Imprimer / PDF</button>
   </body></html>`);
   w.document.close();
+}
+
+/** Fournisseurs distincts présents dans une commande, triés — un bouton PDF par fournisseur (cf.
+ * imprimerCommandeRevendeur). "Sans fournisseur" regroupe les pin's sans code fournisseur connu
+ * (retiré d'Airtable, etc.) plutôt que de les faire disparaître silencieusement. */
+function fournisseursCommande(c: CommandeRevendeurHub): string[] {
+  return [...new Set(c.lignes.map((l) => l.fournisseur ?? 'Sans fournisseur'))].sort();
 }
 
 /** Liste des commandes reçues depuis la page publique /revendeurs (cf. migration 0115) — pas
@@ -309,12 +322,15 @@ function CarteCommande({
             >
               {suppressionEnCours ? 'Suppression…' : 'Supprimer'}
             </button>
-            <button
-              onClick={() => imprimerCommandeRevendeur(commande)}
-              className="rounded-lg border border-slate-200 px-3.5 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-            >
-              Imprimer / PDF
-            </button>
+            {fournisseursCommande(commande).map((f) => (
+              <button
+                key={f}
+                onClick={() => imprimerCommandeRevendeur(commande, f, commande.lignes.filter((l) => (l.fournisseur ?? 'Sans fournisseur') === f))}
+                className="rounded-lg border border-slate-200 px-3.5 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              >
+                PDF — {f}
+              </button>
+            ))}
             {onMarquerTraitee && (
               <button
                 onClick={onMarquerTraitee}
