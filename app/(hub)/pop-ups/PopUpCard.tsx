@@ -9,6 +9,7 @@ import {
   modifierCoordonneesPopUp,
   modifierCreneauxPredefinisPopUp,
   modifierDatesPopUp,
+  modifierVentesAlternantsPopUp,
   renommerPopUp,
   retirerAffectationPopUp,
   supprimerPopUp,
@@ -32,6 +33,7 @@ interface PopUp {
   apres_midi_fin: string | null;
   apres_midi_pause_debut: string | null;
   apres_midi_pause_fin: string | null;
+  ventes_alternants: boolean;
 }
 interface Profil {
   id: string;
@@ -191,6 +193,7 @@ export function PopUpCard({ popUp, profils, popUpsParProfil }: { popUp: PopUp; p
   const [apresMidiPauseActive, setApresMidiPauseActive] = useState(!!(popUp.apres_midi_pause_debut && popUp.apres_midi_pause_fin));
   const [apresMidiPauseDebut, setApresMidiPauseDebut] = useState(popUp.apres_midi_pause_debut?.slice(0, 5) ?? '13:00');
   const [apresMidiPauseFin, setApresMidiPauseFin] = useState(popUp.apres_midi_pause_fin?.slice(0, 5) ?? '14:00');
+  const [ventesAlternants, setVentesAlternants] = useState(popUp.ventes_alternants);
   const [ajoutOuvert, setAjoutOuvert] = useState(false);
   const [horairesOuverts, setHorairesOuverts] = useState(false);
   const [horaires, setHoraires] = useState<RegleHoraire[] | null>(null);
@@ -325,6 +328,27 @@ export function PopUpCard({ popUp, profils, popUpsParProfil }: { popUp: PopUp; p
           setPauseFin={setApresMidiPauseFin}
           onBlur={validerCreneaux}
         />
+      </div>
+
+      <div className="mb-3 rounded-xl bg-slate-50 px-3 py-2.5">
+        <label className="flex cursor-pointer items-center justify-between gap-3">
+          <span>
+            <span className="block text-sm font-semibold text-slate-700">Onglet Ventes pour les alternants</span>
+            <span className="block text-xs text-slate-400">
+              Les alternants attribués à ce pop-up pourront déclarer des espèces et voir les chiffres du jour dans l&apos;app.
+            </span>
+          </span>
+          <input
+            type="checkbox"
+            checked={ventesAlternants}
+            onChange={(e) => {
+              const valeur = e.target.checked;
+              setVentesAlternants(valeur);
+              demarrer(() => modifierVentesAlternantsPopUp(popUp.id, valeur));
+            }}
+            className="h-5 w-5 shrink-0 rounded border-slate-300"
+          />
+        </label>
       </div>
 
       <p className="mb-1 text-xs font-semibold uppercase text-slate-400">Effectifs attribués (une personne peut être attribuée à plusieurs lieux)</p>

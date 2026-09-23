@@ -137,6 +137,8 @@ function imprimerCommande(c: { ref: string; label: string; createdAt: string; it
   w.document.close();
 }
 
+const CLE_BROUILLON_COMMANDE = 'hub-commande-fournisseur-brouillon';
+
 /** Écran "Commandes fournisseurs" — refonte du 2026-09-05 (retour utilisateur) : plus de choix
  * préalable de fournisseur ni de type (stock normal / pop-up store), un seul tableau avec tous
  * les pins (stock actuel + quantité déjà commandée depuis toujours, pour se faire une idée du
@@ -159,6 +161,43 @@ export function CommandesClient({
   const [erreur, setErreur] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const inputsRef = useRef<Record<string, HTMLInputElement | null>>({});
+  const brouillonCharge = useRef(false);
+
+  // Brouillon de la commande en cours mémorisé dans ce navigateur : en quittant l'écran puis en y
+  // revenant (même le lendemain), les quantités saisies sont toujours là — vidé à la création des
+  // bons de commande ou via "Tout remettre à 0". Chargé dans un effet (pas en état initial) pour ne
+  // pas créer d'écart d'hydratation avec le rendu serveur.
+  useEffect(() => {
+    try {
+      const brut = localStorage.getItem(CLE_BROUILLON_COMMANDE);
+      if (brut) {
+        const sauvegarde = JSON.parse(brut) as Record<string, number>;
+        if (Object.values(sauvegarde).some((q) => q > 0)) {
+          setQtyParPin(sauvegarde);
+          setCreationOuverte(true);
+        }
+      }
+    } catch {
+      // brouillon illisible : on repart de zéro
+    }
+    brouillonCharge.current = true;
+  }, []);
+
+  useEffect(() => {
+    if (!brouillonCharge.current) return;
+    try {
+      const nonNuls = Object.fromEntries(Object.entries(qtyParPin).filter(([, q]) => q > 0));
+      if (Object.keys(nonNuls).length === 0) localStorage.removeItem(CLE_BROUILLON_COMMANDE);
+      else localStorage.setItem(CLE_BROUILLON_COMMANDE, JSON.stringify(nonNuls));
+    } catch {
+      // stockage indisponible (navigation privée…) : pas de brouillon, rien de bloquant
+    }
+  }, [qtyParPin]);
+
+  function toutRemettreAZero() {
+    if (!confirm('Remettre toutes les quantités à 0 ?')) return;
+    setQtyParPin({});
+  }
 
   useEffect(() => {
     if (!toast) return;
@@ -441,13 +480,22 @@ export function CommandesClient({
                 </span>
               )}
             </p>
-            <button
-              onClick={confirmerCommandes}
-              disabled={enCours || nbSelectionnes === 0}
-              className="rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-indigo-700 disabled:opacity-50"
-            >
-              {enCours ? 'Création…' : 'Créer le(s) bon(s) de commande'}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={toutRemettreAZero}
+                disabled={enCours || nbSelectionnes === 0}
+                className="rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+              >
+                Tout remettre à 0
+              </button>
+              <button
+                onClick={confirmerCommandes}
+                disabled={enCours || nbSelectionnes === 0}
+                className="rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-indigo-700 disabled:opacity-50"
+              >
+                {enCours ? 'Création…' : 'Créer le(s) bon(s) de commande'}
+              </button>
+            </div>
           </div>
         </div>
       )}

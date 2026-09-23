@@ -95,6 +95,15 @@ export async function modifierCreneauxPredefinisPopUp(
   revalidatePath('/pop-ups');
 }
 
+/** Case "Onglet Ventes pour les alternants" : autorise les alternants attribués à ce pop-up à
+ * déclarer des espèces et voir les chiffres du jour dans l'app (cf. migration 0123). */
+export async function modifierVentesAlternantsPopUp(id: string, ventesAlternants: boolean) {
+  const supabase = await creerClientSupabaseServeur();
+  const { error } = await supabase.from('pop_ups').update({ ventes_alternants: ventesAlternants }).eq('id', id);
+  if (error) throw new Error(error.message);
+  revalidatePath('/pop-ups');
+}
+
 export async function supprimerPopUp(id: string) {
   const supabase = await creerClientSupabaseServeur();
   const { data, error } = await supabase.from('pop_ups').delete().eq('id', id).select();
