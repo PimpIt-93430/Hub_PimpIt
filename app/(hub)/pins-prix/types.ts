@@ -12,7 +12,8 @@ export interface PinPrix {
 // soit 0.25 soit 0.30 soit 0.60" — dans types.ts (pas actions.ts) car un fichier 'use server' ne
 // peut exporter que des fonctions async ; un composant client qui importerait cette constante
 // depuis actions.ts la recevrait cassée au runtime (piège déjà rencontré sur ce projet).
-export const PRIX_FOURNISSEUR_VALEURS = [0.05, 0.15, 0.25, 0.3, 0.6] as const;
+// 0.20 et 0.40 ajoutés le 2026-10-27 (migration 0126).
+export const PRIX_FOURNISSEUR_VALEURS = [0.05, 0.15, 0.2, 0.25, 0.3, 0.4, 0.6] as const;
 export type PrixFournisseur = (typeof PRIX_FOURNISSEUR_VALEURS)[number];
 
 // Cf. retour utilisateur du 2026-09-17 : prix de revente (utilisé par la page publique /revendeurs,
