@@ -6,7 +6,7 @@
 export type Role = 'admin' | 'employe';
 export type TypeContrat = 'manager' | 'employe' | 'alternant';
 export type StatutShift = 'brouillon' | 'valide' | 'publie';
-export type TypeConge = 'conge' | 'indisponibilite' | 'absence' | 'repos';
+export type TypeConge = 'conge' | 'indisponibilite' | 'absence' | 'repos' | 'maladie';
 export type StatutConge = 'en_attente' | 'validee' | 'refusee';
 export type SemaineReference = 'toutes' | 'premiere' | 'deuxieme';
 
@@ -19,6 +19,7 @@ export const LIBELLE_TYPE_CONGE: Record<TypeConge, string> = {
   indisponibilite: 'Indisponibilité',
   absence: 'Absence',
   repos: 'Repos',
+  maladie: 'Absence maladie',
 };
 
 export interface Profile {

@@ -43,7 +43,7 @@ export default async function ExportComptablePage({
         .lte('date', finFenetre),
       supabase
         .from('conges')
-        .select('profile_id, date_debut, date_fin, type, statut')
+        .select('profile_id, date_debut, date_fin, type, statut, note')
         .lte('date_debut', finFenetre)
         .gte('date_fin', debutFenetre),
       supabase.from('jours_ecole_alternant').select('profile_id, date').gte('date', debutFenetre).lte('date', finFenetre),

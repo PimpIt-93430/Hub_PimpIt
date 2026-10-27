@@ -39,8 +39,15 @@ export interface CongeCalcul {
   profile_id: string;
   date_debut: string;
   date_fin: string;
-  type: 'conge' | 'indisponibilite' | 'absence' | 'repos';
+  type: 'conge' | 'indisponibilite' | 'absence' | 'repos' | 'maladie';
   statut: 'en_attente' | 'validee' | 'refusee';
+  note?: string | null;
+}
+
+/** Absence maladie : le type dédié (posé depuis le Hub), ou une absence signalée depuis l'app avec
+ * le motif "Maladie" (PanneauAbsences côté app, type 'absence' + note 'Maladie'). */
+function estAbsenceMaladie(c: CongeCalcul): boolean {
+  return c.type === 'maladie' || (c.type === 'absence' && c.note === 'Maladie');
 }
 
 export interface JourEcoleCalcul {
@@ -54,6 +61,8 @@ export interface JourCalendrier {
   estDimanche: boolean;
   estEcole: boolean;
   estConge: boolean;
+  /** Absence maladie (retour utilisateur du 2026-10-27) — affichée à part des congés. */
+  estMaladie: boolean;
   heuresReelles: number;
   /** Après redistribution éventuelle des heures du dimanche (cf. en-tête du fichier). Identique à
    * heuresReelles si la personne n'a pas coché "exclure les dimanches". */
@@ -192,7 +201,11 @@ export function calculerSemainesProfil(params: {
           c.profile_id === profileId &&
           date >= c.date_debut &&
           date <= c.date_fin &&
+          !estAbsenceMaladie(c) &&
           (c.type !== 'conge' || c.statut === 'validee'),
+      ),
+      estMaladie: conges.some(
+        (c) => c.profile_id === profileId && estAbsenceMaladie(c) && c.statut !== 'refusee' && date >= c.date_debut && date <= c.date_fin,
       ),
       heuresReelles: Math.round(heuresParJour[i] * 100) / 100,
       heuresAffichees: Math.round(heuresAffichees[i] * 100) / 100,
@@ -244,6 +257,20 @@ export function joursCongesDuMois(debutMoisIso: string, profileId: string, conge
   const dates: string[] = [];
   for (const c of conges) {
     if (c.profile_id !== profileId || c.type !== 'conge' || c.statut !== 'validee') continue;
+    for (const jour of jours) {
+      if (jour >= c.date_debut && jour <= c.date_fin && estJourOuvrable(jour)) dates.push(jour);
+    }
+  }
+  return dates;
+}
+
+/** Jours d'absence maladie dans le mois (retour utilisateur du 2026-10-27), même décompte que les
+ * congés (jours ouvrables lundi → samedi). */
+export function joursMaladieDuMois(debutMoisIso: string, profileId: string, conges: CongeCalcul[]): string[] {
+  const jours = datesDuMois(debutMoisIso);
+  const dates: string[] = [];
+  for (const c of conges) {
+    if (c.profile_id !== profileId || !estAbsenceMaladie(c) || c.statut === 'refusee') continue;
     for (const jour of jours) {
       if (jour >= c.date_debut && jour <= c.date_fin && estJourOuvrable(jour)) dates.push(jour);
     }

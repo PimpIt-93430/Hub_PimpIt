@@ -516,7 +516,7 @@ export function PanneauShift({
 
                 <p className="mb-1.5 mt-4 text-[13px] font-semibold text-slate-700">Type d&apos;absence</p>
                 <div className="mb-4 flex rounded-xl bg-slate-100 p-1">
-                  {(['conge', 'indisponibilite', 'repos'] as TypeConge[]).map((t) => (
+                  {(['conge', 'indisponibilite', 'maladie', 'repos'] as TypeConge[]).map((t) => (
                     <button
                       key={t}
                       type="button"

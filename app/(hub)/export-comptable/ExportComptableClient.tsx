@@ -9,6 +9,7 @@ import {
   calculerSemainesProfil,
   HEURES_ECOLE_PAR_JOUR,
   joursCongesDuMois,
+  joursMaladieDuMois,
   totalHeuresDimancheMoisProfil,
   totalHeuresEcoleMoisProfil,
   totalHeuresMoisProfil,
@@ -118,6 +119,10 @@ interface Ligne {
   type: string;
   nbJoursPris: number;
   datesJoursPris: string;
+  /** Absence maladie (retour utilisateur du 2026-10-27). Optionnels : absents des exports déjà
+   * sauvegardés dans le navigateur avant cet ajout (complétés au chargement, cf. plus bas). */
+  nbJoursMaladie?: number;
+  datesJoursMaladie?: string;
   heuresDimanche: number;
   heuresEcole: number;
   heuresTravail: number;
@@ -151,6 +156,8 @@ function calculerLignes(
         type: LIBELLE_TYPE.admin,
         nbJoursPris: 0,
         datesJoursPris: '',
+        nbJoursMaladie: 0,
+        datesJoursMaladie: '',
         heuresDimanche: 0,
         heuresEcole: 0,
         heuresTravail: joursTravaillesAdmin * HEURES_ADMIN_PAR_JOUR,
@@ -160,6 +167,7 @@ function calculerLignes(
     const exclureDimanche = exclusionParProfil.get(p.id) ?? false;
     const semaines = calculerSemainesProfil({ debutMoisIso: moisIso, profileId: p.id, exclureDimanche, shifts, conges, joursEcole });
     const datesPrises = joursCongesDuMois(moisIso, p.id, conges);
+    const datesMaladie = joursMaladieDuMois(moisIso, p.id, conges);
 
     return {
       id: p.id,
@@ -167,6 +175,8 @@ function calculerLignes(
       type: LIBELLE_TYPE[p.type_contrat] ?? p.type_contrat,
       nbJoursPris: datesPrises.length,
       datesJoursPris: datesPrises.join(', '),
+      nbJoursMaladie: datesMaladie.length,
+      datesJoursMaladie: datesMaladie.join(', '),
       heuresDimanche: totalHeuresDimancheMoisProfil(semaines),
       heuresEcole: totalHeuresEcoleMoisProfil(semaines),
       heuresTravail: totalHeuresMoisProfil(semaines),
@@ -231,6 +241,7 @@ function CelluleJour({
       <div className="mt-1 flex flex-col gap-0.5 text-[9px] font-semibold leading-tight">
         {jour.estEcole && heures > 0 && <span className="text-cyan-600">École {formatDureeHeures(jour.heuresEcole)}</span>}
         {jour.estConge && <span className="text-red-500">Congé</span>}
+        {jour.estMaladie && <span className="text-purple-600">Maladie</span>}
         {jour.estDimanche && jour.heuresReelles > 0 && <span className="text-amber-600">Dimanche</span>}
       </div>
     </td>
@@ -248,6 +259,7 @@ function LegendeCalendrier() {
       <span className="text-amber-600">Dimanche — dimanche travaillé</span>
       <span className="text-cyan-600">École — jour d&apos;école (compté dans le total semaine)</span>
       <span className="text-red-500">Congé — congé posé</span>
+      <span className="text-purple-600">Maladie — absence maladie</span>
     </div>
   );
 }
@@ -494,8 +506,17 @@ export function ExportComptableClient({
       const parse: unknown = JSON.parse(sauvegarde);
       // Ancien format (avant l'ajout des notes) : un tableau de lignes brut plutôt que { lignes,
       // notes } — migration silencieuse à la lecture, pas de perte des éditions déjà sauvegardées.
-      if (Array.isArray(parse)) return { lignes: parse as Ligne[], notes: '' };
-      return parse as Etat;
+      const etatSauve = Array.isArray(parse) ? { lignes: parse as Ligne[], notes: '' } : (parse as Etat);
+      // Export sauvegardé avant l'ajout de l'absence maladie : on complète ces deux champs depuis le
+      // calcul, sans toucher aux autres modifications manuelles.
+      return {
+        ...etatSauve,
+        lignes: etatSauve.lignes.map((l) => {
+          if (l.nbJoursMaladie !== undefined) return l;
+          const calculee = defaut.lignes.find((c) => c.id === l.id);
+          return { ...l, nbJoursMaladie: calculee?.nbJoursMaladie ?? 0, datesJoursMaladie: calculee?.datesJoursMaladie ?? '' };
+        }),
+      };
     } catch {
       return defaut;
     }
@@ -547,6 +568,8 @@ export function ExportComptableClient({
           type: '—',
           nbJoursPris: 0,
           datesJoursPris: '',
+          nbJoursMaladie: 0,
+          datesJoursMaladie: '',
           heuresDimanche: 0,
           heuresEcole: 0,
           heuresTravail: 0,
@@ -581,6 +604,8 @@ export function ExportComptableClient({
                 <th className="px-2 py-1.5 font-semibold">Type</th>
                 <th className="px-2 py-1.5 font-semibold">Nb jours pris</th>
                 <th className="px-2 py-1.5 font-semibold">Dates jours pris</th>
+                <th className="px-2 py-1.5 font-semibold">Jours maladie</th>
+                <th className="px-2 py-1.5 font-semibold">Dates maladie</th>
                 <th className="px-2 py-1.5 font-semibold">Heures dim.</th>
                 <th className="px-2 py-1.5 font-semibold">Heures école</th>
                 <th className="px-2 py-1.5 font-semibold">Heures travail</th>
@@ -593,6 +618,8 @@ export function ExportComptableClient({
                   <td className="border-b border-slate-200 px-2 py-1.5">{l.type}</td>
                   <td className="border-b border-slate-200 px-2 py-1.5">{l.nbJoursPris}</td>
                   <td className="border-b border-slate-200 px-2 py-1.5">{l.datesJoursPris || '—'}</td>
+                  <td className="border-b border-slate-200 px-2 py-1.5">{l.nbJoursMaladie ?? 0}</td>
+                  <td className="border-b border-slate-200 px-2 py-1.5">{l.datesJoursMaladie || '—'}</td>
                   <td className="border-b border-slate-200 px-2 py-1.5">{l.heuresDimanche}</td>
                   <td className="border-b border-slate-200 px-2 py-1.5">{l.heuresEcole}</td>
                   <td className="border-b border-slate-200 px-2 py-1.5">{l.heuresTravail}</td>
@@ -739,6 +766,8 @@ export function ExportComptableClient({
                     <th className="px-4 py-3">Ne pas compter dim.</th>
                     <th className="px-4 py-3">Nb jours pris</th>
                     <th className="px-4 py-3">Dates jours pris</th>
+                    <th className="px-4 py-3">Jours maladie</th>
+                    <th className="px-4 py-3">Dates maladie</th>
                     <th className="px-4 py-3">Heures dimanche</th>
                     <th className="px-4 py-3">Heures école</th>
                     <th className="px-4 py-3">Heures travail</th>
@@ -787,6 +816,23 @@ export function ExportComptableClient({
                           onChange={(e) => modifier(l.id, { datesJoursPris: e.target.value })}
                           placeholder="—"
                           className="w-full min-w-[180px] rounded-lg border border-transparent bg-slate-50 px-2 py-1 text-sm focus:border-indigo-300 focus:bg-white focus:outline-none"
+                        />
+                      </td>
+                      <td className="px-4 py-2.5">
+                        <input
+                          type="number"
+                          step="1"
+                          value={l.nbJoursMaladie ?? 0}
+                          onChange={(e) => modifier(l.id, { nbJoursMaladie: Number(e.target.value) })}
+                          className="w-20 rounded-lg border border-transparent bg-slate-50 px-2 py-1 text-sm focus:border-indigo-300 focus:bg-white focus:outline-none"
+                        />
+                      </td>
+                      <td className="px-4 py-2.5">
+                        <input
+                          value={l.datesJoursMaladie ?? ''}
+                          onChange={(e) => modifier(l.id, { datesJoursMaladie: e.target.value })}
+                          placeholder="—"
+                          className="w-full min-w-[140px] rounded-lg border border-transparent bg-slate-50 px-2 py-1 text-sm focus:border-indigo-300 focus:bg-white focus:outline-none"
                         />
                       </td>
                       <td className="px-4 py-2.5">

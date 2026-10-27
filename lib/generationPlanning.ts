@@ -22,7 +22,7 @@ export interface Conge {
   date_fin: string;
   heure_debut: string | null;
   heure_fin: string | null;
-  type: 'conge' | 'indisponibilite' | 'absence' | 'repos';
+  type: 'conge' | 'indisponibilite' | 'absence' | 'repos' | 'maladie';
   statut: 'en_attente' | 'validee' | 'refusee';
 }
 

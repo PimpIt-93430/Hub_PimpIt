@@ -16,6 +16,7 @@ const COULEUR_CONGE: Record<Conge['type'], string> = {
   indisponibilite: '#DC2626',
   absence: '#DC2626',
   repos: '#64748B',
+  maladie: '#DC2626',
 };
 
 function prenom(p: Profile): string {

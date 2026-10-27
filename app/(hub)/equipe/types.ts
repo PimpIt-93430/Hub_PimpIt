@@ -4,7 +4,7 @@
 
 export type Role = 'admin' | 'employe';
 export type TypeContrat = 'manager' | 'employe' | 'alternant';
-export type TypeConge = 'conge' | 'indisponibilite' | 'absence' | 'repos';
+export type TypeConge = 'conge' | 'indisponibilite' | 'absence' | 'repos' | 'maladie';
 export type Fonctionnalite = 'calendrier' | 'equipe';
 export type SemaineReference = 'toutes' | 'premiere' | 'deuxieme';
 

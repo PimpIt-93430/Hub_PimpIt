@@ -129,6 +129,7 @@ export function PlanningClient({
     indisponibilite: "l'indisponibilité",
     absence: "l'absence",
     repos: 'le repos',
+    maladie: "l'absence maladie",
   };
 
   async function handlePressCelluleConge(conge: Conge, profilCible: Profile) {
