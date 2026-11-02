@@ -61,6 +61,7 @@ const CATEGORIES: CategorieNav[] = [
       { href: '/planning', label: 'Planning', icone: '📅' },
       { href: '/equipe', label: 'Équipe', icone: '👥' },
       { href: '/export-comptable', label: 'Export comptable', icone: '🧾' },
+      { href: '/pointage', label: 'Pointage (QR codes)', icone: '⏱️' },
     ],
   },
   {
