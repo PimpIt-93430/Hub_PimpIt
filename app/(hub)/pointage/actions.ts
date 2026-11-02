@@ -5,19 +5,6 @@ import { revalidatePath } from 'next/cache';
 import { exigerAdmin } from '@/lib/roles';
 import { creerClientSupabaseServeur } from '@/lib/supabase/server';
 
-export async function definirPointageActif(popUpId: string, valeur: boolean) {
-  await exigerAdmin();
-  const supabase = await creerClientSupabaseServeur();
-  const { data, error } = await supabase
-    .from('pop_ups')
-    .update({ pointage_actif: valeur })
-    .eq('id', popUpId)
-    .select('id');
-  if (error) throw new Error(error.message);
-  if (!data || data.length === 0) throw new Error('Modification bloquée (droits insuffisants ?)');
-  revalidatePath('/pointage');
-}
-
 /** Nouveau code secret pour ce pop-up : le QR déjà imprimé ne marche plus, il faut réimprimer. */
 export async function regenererCodePointage(popUpId: string) {
   await exigerAdmin();

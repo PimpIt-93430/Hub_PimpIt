@@ -2,28 +2,7 @@
 
 import { useTransition } from 'react';
 
-import { definirPointageActif, regenererCodePointage } from './actions';
-
-/** Case "faire pointer ce pop-up" (migration 0132) — décochée = pas de bouton Pointer dans l'appli
- * pour ce pop-up, QR refusé, chiffres du jour non bloqués pour les alternants. */
-export function CaseActiverPointage({ popUpId, actif }: { popUpId: string; actif: boolean }) {
-  const [enCours, demarrer] = useTransition();
-  return (
-    <label className="flex cursor-pointer items-center gap-2 text-sm font-semibold text-slate-700">
-      <input
-        type="checkbox"
-        checked={actif}
-        disabled={enCours}
-        onChange={(e) => {
-          const valeur = e.target.checked;
-          demarrer(() => definirPointageActif(popUpId, valeur));
-        }}
-        className="h-4 w-4 accent-indigo-600"
-      />
-      {enCours ? 'Enregistrement…' : 'Faire pointer ce pop-up'}
-    </label>
-  );
-}
+import { regenererCodePointage } from './actions';
 
 export function BoutonImprimer() {
   return (

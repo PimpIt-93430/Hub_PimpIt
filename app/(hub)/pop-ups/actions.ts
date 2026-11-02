@@ -151,3 +151,13 @@ export async function enregistrerHoraireOuverture(regle: {
   if (error) throw new Error(error.message);
   revalidatePath('/pop-ups');
 }
+
+/** Case "Pointage" : active le pointage QR + photo de la caisse pour ce pop-up (cf. migration
+ * 0132 de l'app) — décochée, pas de bouton Pointer dans l'app et le QR est refusé. */
+export async function modifierPointageActifPopUp(id: string, pointageActif: boolean) {
+  const supabase = await creerClientSupabaseServeur();
+  const { error } = await supabase.from('pop_ups').update({ pointage_actif: pointageActif }).eq('id', id);
+  if (error) throw new Error(error.message);
+  revalidatePath('/pop-ups');
+  revalidatePath('/pointage');
+}
