@@ -4,7 +4,7 @@ import { cache } from 'react';
 
 import { creerClientSupabaseServeur } from './supabase/server';
 
-export type RoleHub = 'admin' | 'local' | 'comptable' | 'inconnu';
+export type RoleHub = 'admin' | 'local' | 'comptable' | 'chiffres' | 'inconnu';
 
 export interface ProfilConnecte {
   id: string;
@@ -14,6 +14,7 @@ export interface ProfilConnecte {
   type_contrat: string;
   couleur: string | null;
   hub_role_comptable: boolean;
+  voir_chiffres_tous_popups: boolean;
 }
 
 export const COOKIE_APERCU_PROFIL = 'apercu_profil_id';
@@ -56,7 +57,7 @@ export const determinerRoleHub = cache(async (): Promise<{
 
   const { data: profilReel } = await supabase
     .from('profiles')
-    .select('id, nom_complet, email, role, type_contrat, couleur, hub_role_comptable')
+    .select('id, nom_complet, email, role, type_contrat, couleur, hub_role_comptable, voir_chiffres_tous_popups')
     .eq('id', user.id)
     .maybeSingle();
   if (!profilReel) return { role: 'inconnu', profil: null, enApercu: false, profilReel: null };
@@ -70,7 +71,7 @@ export const determinerRoleHub = cache(async (): Promise<{
     if (apercuId && apercuId !== profilReel.id) {
       const { data: profilApercu } = await supabase
         .from('profiles')
-        .select('id, nom_complet, email, role, type_contrat, couleur, hub_role_comptable')
+        .select('id, nom_complet, email, role, type_contrat, couleur, hub_role_comptable, voir_chiffres_tous_popups')
         .eq('id', apercuId)
         .maybeSingle();
       if (profilApercu) {
@@ -97,8 +98,19 @@ export const determinerRoleHub = cache(async (): Promise<{
     if (attribution) return { role: 'local', profil: profilEffectif, enApercu, profilReel };
   }
 
+  // Droit "voir les chiffres de tous les pop-ups" (migration 0128, retour utilisateur du
+  // 2026-11-02) : page Ventes uniquement, en lecture (bloqué aussi côté middleware).
+  if (profilEffectif.voir_chiffres_tous_popups) return { role: 'chiffres', profil: profilEffectif, enApercu, profilReel };
+
   return { role: 'inconnu', profil: profilEffectif, enApercu, profilReel };
 });
+
+/** Garde-fou de la page Ventes : admin, ou toute personne avec le droit "voir les chiffres de tous
+ * les pop-ups" (rôle 'chiffres', ou 'local' qui a aussi ce droit). */
+export async function exigerAccesVentes(): Promise<void> {
+  const { role, profil } = await determinerRoleHub();
+  if (role !== 'admin' && !profil?.voir_chiffres_tous_popups) redirect('/');
+}
 
 /** Garde-fou pour les 3 pages réservées aux admins (Finance/Ventes, Export comptable, Équipe) —
  * cf. discussion 2026-08-29 : le reste du Hub s'ouvre au rôle "local", mais ces trois-là restent

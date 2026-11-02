@@ -20,6 +20,7 @@ export interface Profile {
   /** Accès Hub restreint en lecture seule au Planning uniquement (cf. migration 0092, lib/roles.ts
    * côté Hub) — indépendant de role/type_contrat, réservé à un comptable externe (paie). */
   hub_role_comptable: boolean;
+  voir_chiffres_tous_popups: boolean;
 }
 
 export interface PopUp {

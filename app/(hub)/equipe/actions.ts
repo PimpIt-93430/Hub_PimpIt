@@ -195,6 +195,23 @@ export async function definirAccesComptableHub(profileId: string, valeur: boolea
   revalidatePath('/equipe');
 }
 
+// Droit "voir les chiffres de tous les pop-ups" (migration 0128, retour utilisateur du 2026-11-02) —
+// vaut pour l'app (onglet Ventes) ET le Hub (page Ventes). Modifiable par un admin uniquement
+// (trigger protect_profile_privileged_fields).
+export async function definirVoirChiffresTousPopups(profileId: string, valeur: boolean) {
+  const supabase = await creerClientSupabaseServeur();
+  const { data, error } = await supabase
+    .from('profiles')
+    .update({ voir_chiffres_tous_popups: valeur })
+    .eq('id', profileId)
+    .select('voir_chiffres_tous_popups');
+  if (error) throw new Error(error.message);
+  if (!data || data.length === 0 || data[0].voir_chiffres_tous_popups !== valeur) {
+    throw new Error('Modification bloquée (droits insuffisants ?)');
+  }
+  revalidatePath('/equipe');
+}
+
 // --- droits_employe (Calendrier / Équipe) ---
 
 export async function obtenirDroits(profileId: string): Promise<DroitEmploye[]> {

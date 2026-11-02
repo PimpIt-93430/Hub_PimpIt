@@ -6,6 +6,7 @@ import {
   ajouterDroit,
   ajouterLieuAttribue,
   definirAccesComptableHub,
+  definirVoirChiffresTousPopups,
   obtenirDroits,
   retirerLieuAttribue,
   supprimerDroit,
@@ -91,6 +92,17 @@ export function OngletDroits({ profil, popUps, lieuxAttribues }: { profil: Profi
       .finally(() => setEnregistrementComptable(false));
   };
 
+  const [voirChiffres, setVoirChiffres] = useState(profil.voir_chiffres_tous_popups);
+  const [enregistrementChiffres, setEnregistrementChiffres] = useState(false);
+
+  const toggleVoirChiffres = (valeur: boolean) => {
+    setVoirChiffres(valeur);
+    setEnregistrementChiffres(true);
+    definirVoirChiffresTousPopups(profil.id, valeur)
+      .catch(() => setVoirChiffres(!valeur))
+      .finally(() => setEnregistrementChiffres(false));
+  };
+
   const chargerDroits = () => {
     obtenirDroits(profil.id).then(setDroits);
   };
@@ -99,6 +111,7 @@ export function OngletDroits({ profil, popUps, lieuxAttribues }: { profil: Profi
     setDroits(null);
     chargerDroits();
     setAccesComptable(profil.hub_role_comptable);
+    setVoirChiffres(profil.voir_chiffres_tous_popups);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profil.id]);
 
@@ -168,6 +181,20 @@ export function OngletDroits({ profil, popUps, lieuxAttribues }: { profil: Profi
             label={enregistrementComptable ? 'Comptable (enregistrement...)' : 'Comptable (lecture seule, Planning uniquement)'}
             valeur={accesComptable}
             onChange={toggleAccesComptable}
+          />
+        </div>
+      </Section>
+
+      <Section titre="Chiffres de tous les pop-ups">
+        <div className="w-full">
+          <p className="mb-2 text-xs text-slate-400">
+            Voir les ventes de tous les pop-ups pour comparer (onglet Ventes de l&apos;appli, page Ventes du Hub), en
+            lecture seule — sans accès au stock, au planning ni à l&apos;équipe des autres pop-ups.
+          </p>
+          <ChampBool
+            label={enregistrementChiffres ? 'Voir les chiffres de tous les pop-ups (enregistrement...)' : 'Voir les chiffres de tous les pop-ups'}
+            valeur={voirChiffres}
+            onChange={toggleVoirChiffres}
           />
         </div>
       </Section>

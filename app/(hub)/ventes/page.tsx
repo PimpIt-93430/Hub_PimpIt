@@ -10,7 +10,7 @@ import {
   finSemaineFrance,
 } from '@/lib/dateFrance';
 import { creerClientSupabaseServeur } from '@/lib/supabase/server';
-import { exigerAdmin } from '@/lib/roles';
+import { determinerRoleHub, exigerAccesVentes } from '@/lib/roles';
 import { paginerToutesLesLignes } from '@/lib/supabase/pagination';
 import { PeriodeSelecteur } from './PeriodeSelecteur';
 import { SyncButton } from './SyncButton';
@@ -53,7 +53,8 @@ export default async function VentesPage({
 }: {
   searchParams: Promise<{ periode?: string; debut?: string; fin?: string }>;
 }) {
-  await exigerAdmin();
+  await exigerAccesVentes();
+  const { role } = await determinerRoleHub();
   const params = await searchParams;
   const aujourdhui = dateDuJourFrance();
   const periode: PeriodePreset =
@@ -111,7 +112,7 @@ export default async function VentesPage({
         Ventes SumUp synchronisées — même source que l&apos;écran Finance de l&apos;app Pimp It.
       </p>
 
-      <SyncButton />
+      {role === 'admin' && <SyncButton />}
 
       <PeriodeSelecteur periode={periode} debut={debutPerso} fin={finPerso} />
 

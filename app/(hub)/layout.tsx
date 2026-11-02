@@ -93,17 +93,28 @@ export default async function HubLayout({ children }: { children: React.ReactNod
 
   const estAdmin = role === 'admin';
   const estComptable = role === 'comptable';
+  const estChiffres = role === 'chiffres';
   const seulementPlanning = (liens: CategorieNav['liens']) => liens.filter((l) => l.href === '/planning');
+  // Droit "voir les chiffres de tous les pop-ups" (migration 0128) : Finance réduit à Ventes.
+  const financeVentes = CATEGORIES.filter((c) => c.titre === 'Finance').map((c) => ({
+    ...c,
+    liens: c.liens.filter((l) => l.href === '/ventes'),
+  }));
   const categories = estAdmin
     ? CATEGORIES
     : estComptable
       ? CATEGORIES.filter((c) => c.titre === 'Planning & RH').map((c) => ({ ...c, liens: seulementPlanning(c.liens) }))
-      : CATEGORIES.filter((c) => c.titre !== 'Finance').map((c) =>
-          c.titre === 'Planning & RH' ? { ...c, liens: seulementPlanning(c.liens) } : c,
-        );
-  // Pas de "Tableau de bord" ni "Commandes Shopify" pour un comptable : le middleware le renverrait
-  // de toute façon vers /planning, autant ne pas afficher des liens morts.
-  const epingles = estComptable ? [] : [ACCUEIL, COMMANDES_SHOPIFY];
+      : estChiffres
+        ? financeVentes
+        : [
+            ...CATEGORIES.filter((c) => c.titre !== 'Finance').map((c) =>
+              c.titre === 'Planning & RH' ? { ...c, liens: seulementPlanning(c.liens) } : c,
+            ),
+            ...(profil?.voir_chiffres_tous_popups ? financeVentes : []),
+          ];
+  // Pas de "Tableau de bord" ni "Commandes Shopify" pour un comptable (ni pour le rôle 'chiffres') :
+  // le middleware le renverrait de toute façon ailleurs, autant ne pas afficher des liens morts.
+  const epingles = estComptable || estChiffres ? [] : [ACCUEIL, COMMANDES_SHOPIFY];
 
   const nomAffiche = profil?.nom_complet ?? profil?.email ?? '';
   const initiale = (profil?.nom_complet || profil?.email || '?').slice(0, 1).toUpperCase();

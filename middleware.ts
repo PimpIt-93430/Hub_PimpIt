@@ -51,19 +51,43 @@ export async function middleware(request: NextRequest) {
   // plutôt que de rajouter un exigerAdmin-like sur chacune des ~15 autres routes du Hub. Une seule
   // requête profiles de plus, uniquement pour une personne connectée qui vise une page hors de
   // cette liste.
+  // Même principe pour le droit "voir les chiffres de tous les pop-ups" (migration 0128) : Ventes +
+  // Profil seulement — sauf si la personne est aussi de l'équipe du local (rôle 'local', qui garde
+  // ses pages habituelles, cf. lib/roles.ts).
   if (user && !surPageConnexion && !surPageRevendeurs) {
-    const autorise =
-      request.nextUrl.pathname.startsWith('/planning') || request.nextUrl.pathname.startsWith('/profil');
-    if (!autorise) {
+    const chemin = request.nextUrl.pathname;
+    if (!chemin.startsWith('/profil')) {
       const { data: profil } = await supabase
         .from('profiles')
-        .select('role, hub_role_comptable')
+        .select('role, hub_role_comptable, voir_chiffres_tous_popups')
         .eq('id', user.id)
         .maybeSingle();
-      if (profil && profil.role !== 'admin' && profil.hub_role_comptable) {
+      if (profil && profil.role !== 'admin' && profil.hub_role_comptable && !chemin.startsWith('/planning')) {
         const url = request.nextUrl.clone();
         url.pathname = '/planning';
         return NextResponse.redirect(url);
+      }
+      if (
+        profil &&
+        profil.role !== 'admin' &&
+        !profil.hub_role_comptable &&
+        profil.voir_chiffres_tous_popups &&
+        !chemin.startsWith('/ventes')
+      ) {
+        const { data: popUpLocal } = await supabase.from('pop_ups').select('id').eq('est_local', true).maybeSingle();
+        const { data: attributionLocal } = popUpLocal
+          ? await supabase
+              .from('profil_pop_ups')
+              .select('pop_up_id')
+              .eq('profile_id', user.id)
+              .eq('pop_up_id', popUpLocal.id)
+              .maybeSingle()
+          : { data: null };
+        if (!attributionLocal) {
+          const url = request.nextUrl.clone();
+          url.pathname = '/ventes';
+          return NextResponse.redirect(url);
+        }
       }
     }
   }
