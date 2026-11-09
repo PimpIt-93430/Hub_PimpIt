@@ -55,9 +55,9 @@ export function OngletPlanification({
       // j'enregistre ça change pas dans le planning") : ce bouton par jour n'enregistrait que
       // l'horaire récurrent (le modèle), jamais les créneaux déjà générés dans le planning —
       // seul le bouton "Enregistrer" en haut de la fiche (cf. FicheDetailMembre.tsx) déclenchait
-      // la génération. Les deux font maintenant la même chose. Reste additif (jamais destructeur,
-      // cf. genererPlanningPourProfil) : un créneau déjà généré avec d'anciennes heures n'est pas
-      // corrigé tout seul, seules les dates encore vides se remplissent.
+      // la génération. Les deux font maintenant la même chose. Depuis le 2026-11-09, les créneaux
+      // auto-générés à venir sont recalculés avec le nouvel horaire (cf. genererPlanningPourProfil),
+      // les créneaux modifiés à la main restent intacts.
       await genererPlanningPourProfil(profil.id);
       charger();
     } catch (e) {
@@ -68,6 +68,8 @@ export function OngletPlanification({
     setErreur(null);
     try {
       await supprimerHoraireRecurrent(id);
+      // Horaire supprimé : ses créneaux auto-générés à venir doivent disparaître du planning.
+      await genererPlanningPourProfil(profil.id);
       charger();
     } catch (e) {
       setErreur(e instanceof Error ? e.message : 'Échec de la suppression de cet horaire.');

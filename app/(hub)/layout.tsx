@@ -71,6 +71,7 @@ const CATEGORIES: CategorieNav[] = [
     liens: [
       { href: '/ventes', label: 'Ventes', icone: '💰' },
       { href: '/tresorerie', label: 'Trésorerie', icone: '🏦' },
+      { href: '/charges-recettes', label: 'Charges & recettes', icone: '⚖️' },
       { href: '/trou', label: 'Trou', icone: '🕳️' },
     ],
   },

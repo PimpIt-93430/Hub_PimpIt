@@ -208,6 +208,28 @@ export async function genererPlanningPourProfil(profileId: string): Promise<{ no
     return { date: isoDate(d), jour_semaine: (d.getDay() + 6) % 7 };
   });
 
+  // Horaire modifié ou désactivé (retour utilisateur du 2026-11-09 : "j'ai mis Tisko le matin le
+  // mardi mais ça se met pas à jour", "le dimanche Jade ne doit jamais y être") : en purement
+  // additif, les créneaux déjà générés avec l'ancien horaire restaient en place. On retire donc
+  // d'abord les brouillons AUTO-GÉNÉRÉS de cette personne à partir de demain, puis on régénère.
+  // Les créneaux touchés à la main (genere_automatiquement passe à false dès qu'on les modifie,
+  // côté Hub comme côté app) et les jours passés / aujourd'hui ne sont jamais supprimés.
+  const demain = new Date();
+  demain.setDate(demain.getDate() + 1);
+  const dateDemain = isoDate(demain);
+  const { error: eSuppression } = await supabase
+    .from('planning_shifts')
+    .delete()
+    .eq('profile_id', profileId)
+    .eq('genere_automatiquement', true)
+    .eq('statut', 'brouillon')
+    .gte('date', dateDemain)
+    .lte('date', dateFin);
+  if (eSuppression) throw new Error(eSuppression.message);
+  const shiftsConserves = (shiftsExistants ?? []).filter(
+    (s) => !(s.genere_automatiquement && s.statut === 'brouillon' && s.date >= dateDemain),
+  );
+
   const resultat = genererPlanning({
     jours,
     profiles: [profil],
@@ -215,7 +237,7 @@ export async function genererPlanningPourProfil(profileId: string): Promise<{ no
     horairesOuverture: [],
     conges: conges ?? [],
     joursEcole: joursEcole ?? [],
-    shiftsExistants: shiftsExistants ?? [],
+    shiftsExistants: shiftsConserves,
     mapAffectations,
     popUps: popUps ?? [],
     adminId,
