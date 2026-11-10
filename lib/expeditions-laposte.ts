@@ -81,19 +81,30 @@ export async function chargerEtiquettesLaPosteRecentes(depuisIso: string): Promi
  * callback `after()`, où le client lié aux cookies (creerClientSupabaseServeur) ne peut pas être
  * utilisé ("used cookies inside after()", Next.js). Optionnel pour ne rien changer aux autres
  * appelants (Server Components/Route Handlers classiques). */
+/** Incident du 2026-11-10 (Hub qui ne chargeait plus) : cette fonction faisait un `select('*')` sur
+ * TOUTES les étiquettes 'cree', PDF base64 compris (~195 Mo pour ~3000 lignes), à chaque synchro
+ * Shopify — timeout Postgres en boucle, base saturée, connexion au Hub bloquée. Seul le suivi de
+ * livraison l'utilise : colonnes légères uniquement, et seulement les étiquettes récentes (une
+ * lettre suivie plus vieille que ça est livrée depuis longtemps, inutile d'interroger La Poste). */
+const JOURS_SUIVI_LAPOSTE = 45;
+
 export async function chargerExpeditionsLaPoste(
   supabaseExistant?: SupabaseClient,
-): Promise<Map<number, ExpeditionLaPoste>> {
+): Promise<Map<number, { commandeShopifyId: number; laposteItemId: string }>> {
   const supabase = supabaseExistant ?? (await creerClientSupabaseServeur());
+  const depuis = new Date(Date.now() - JOURS_SUIVI_LAPOSTE * 864e5).toISOString();
   const { data, error } = await supabase
     .from('expeditions_laposte')
-    .select('*')
+    .select('commande_shopify_id, laposte_item_id')
     .eq('statut', 'cree')
+    .gte('cree_le', depuis)
     .order('cree_le', { ascending: true });
   if (error) throw new Error(error.message);
 
-  const map = new Map<number, ExpeditionLaPoste>();
-  for (const l of (data ?? []) as LigneBrute[]) map.set(l.commande_shopify_id, versExpeditionLaPoste(l));
+  const map = new Map<number, { commandeShopifyId: number; laposteItemId: string }>();
+  for (const l of (data ?? []) as { commande_shopify_id: number; laposte_item_id: string }[]) {
+    map.set(l.commande_shopify_id, { commandeShopifyId: l.commande_shopify_id, laposteItemId: l.laposte_item_id });
+  }
   return map;
 }
 
