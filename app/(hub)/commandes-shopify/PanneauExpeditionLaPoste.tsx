@@ -12,6 +12,7 @@ import {
   verifierCommandesEnSuspens,
   verifierExpeditionLaPosteExistante,
 } from './actions';
+import { envoyerCommandeWebUnique } from './actions-commandes-web';
 import {
   adresseLivraisonVersDestinataire,
   base64VersBlobUrl,
@@ -237,6 +238,10 @@ export function PanneauExpeditionLaPoste({
           href={etiquetteBlobUrl ?? undefined}
           target="_blank"
           rel="noreferrer"
+          // Envoi vers l'appli (Stock > Local > Commandes web), en arrière-plan.
+          onClick={() => {
+            if (!dejaExpediee) void envoyerCommandeWebUnique(commande, 'laposte', 'Lettre Suivie (La Poste)').catch(() => {});
+          }}
           className="inline-block rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700"
         >
           Ouvrir / imprimer l&apos;étiquette

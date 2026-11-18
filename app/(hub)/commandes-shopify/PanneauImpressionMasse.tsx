@@ -15,6 +15,7 @@ import {
   creerEtiquetteLaPoste,
   verifierCommandesEnSuspens,
 } from './actions';
+import { envoyerCommandesWeb, type CommandeWebAEnvoyer } from './actions-commandes-web';
 import {
   adresseLivraisonVersDestinataire,
   base64VersBlobUrl,
@@ -340,6 +341,37 @@ export function PanneauImpressionMasse({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [etape]);
 
+  // Cf. retour utilisateur du 2026-11-18 : les commandes imprimées partent dans l'appli Pimp It
+  // (Stock > Local > Commandes web) au clic sur "Ouvrir" — dans l'ordre du PDF, puis celles que le
+  // Hub n'a pas pu créer (à faire sur Sendcloud) en dernier. En arrière-plan : n'attend jamais la
+  // réponse pour ouvrir le PDF.
+  const [envoiApp, setEnvoiApp] = useState<'aucun' | 'en_cours' | 'ok' | 'echec'>('aucun');
+  const versCommandeWeb = (l: Ligne, source: CommandeWebAEnvoyer['source']): CommandeWebAEnvoyer => ({
+    shopifyOrderId: l.commande.id,
+    nom: l.commande.nom,
+    client: l.commande.client,
+    moyenExpedition: l.commande.moyenExpedition,
+    source,
+    transporteur: source === 'sendcloud_manuel' ? 'À faire sur Sendcloud' : libelleGroupe(l),
+    lignes: l.commande.lignes,
+  });
+  const envoyerVersApp = (lignesAEnvoyer: CommandeWebAEnvoyer[]) => {
+    if (lignesAEnvoyer.length === 0) return;
+    setEnvoiApp('en_cours');
+    envoyerCommandesWeb(lignesAEnvoyer)
+      .then(() => setEnvoiApp('ok'))
+      .catch(() => setEnvoiApp('echec'));
+  };
+  const envoyerLotVersApp = () => {
+    const imprimees = eligibles
+      .filter((l) => resultats.get(l.commande.id)?.statut === 'succes')
+      .map((l) => versCommandeWeb(l, l.methode === 'laposte' ? 'laposte' : 'sendcloud'));
+    const aFaireSurSendcloud = exclues
+      .filter((l) => !l.raisonExclusion?.includes('suspendue'))
+      .map((l) => versCommandeWeb(l, 'sendcloud_manuel'));
+    envoyerVersApp([...imprimees, ...aFaireSurSendcloud]);
+  };
+
   const nbSucces = [...resultats.values()].filter((r) => r.statut === 'succes').length;
   const nbEchecs = [...resultats.values()].filter((r) => r.statut === 'echec').length;
 
@@ -440,6 +472,7 @@ export function PanneauImpressionMasse({
                                 href={r.etiquetteUrl}
                                 target="_blank"
                                 rel="noreferrer"
+                                onClick={() => envoyerVersApp([versCommandeWeb(l, l.methode === 'laposte' ? 'laposte' : 'sendcloud')])}
                                 className="text-xs font-semibold text-emerald-600 hover:underline"
                               >
                                 Ouvrir
@@ -507,10 +540,24 @@ export function PanneauImpressionMasse({
                             {pdfFusionEchecs} non incluse{pdfFusionEchecs > 1 ? 's' : ''}
                           </span>
                         )}
+                        {envoiApp !== 'aucun' && (
+                          <span
+                            className={`text-xs font-semibold ${
+                              envoiApp === 'echec' ? 'text-red-600' : envoiApp === 'ok' ? 'text-emerald-600' : 'text-slate-400'
+                            }`}
+                          >
+                            {envoiApp === 'en_cours'
+                              ? "Envoi à l'appli…"
+                              : envoiApp === 'ok'
+                                ? "✓ Envoyées à l'appli"
+                                : "Échec de l'envoi à l'appli — reclique"}
+                          </span>
+                        )}
                         <a
                           href={pdfFusionUrl}
                           target="_blank"
                           rel="noreferrer"
+                          onClick={envoyerLotVersApp}
                           className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700"
                         >
                           Ouvrir le PDF ({pdfFusionPages} étiquette{pdfFusionPages > 1 ? 's' : ''})

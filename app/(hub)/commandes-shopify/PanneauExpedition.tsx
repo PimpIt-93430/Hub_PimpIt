@@ -17,6 +17,7 @@ import {
   verifierCommandesEnSuspens,
   verifierExpeditionExistante,
 } from './actions';
+import { envoyerCommandeWebUnique } from './actions-commandes-web';
 import {
   adresseLivraisonVersDestinataire,
   chargerExpediteur,
@@ -396,6 +397,10 @@ export function PanneauExpedition({
             href={resultat.etiquetteUrl}
             target="_blank"
             rel="noreferrer"
+            // Envoi vers l'appli (Stock > Local > Commandes web), en arrière-plan.
+            onClick={() => {
+              if (!dejaExpediee) void envoyerCommandeWebUnique(commande, 'sendcloud', 'Sendcloud').catch(() => {});
+            }}
             className="inline-block rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700"
           >
             Ouvrir / imprimer l&apos;étiquette
