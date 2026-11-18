@@ -32,7 +32,7 @@ const CATEGORIES: CategorieNav[] = [
       { href: '/packs', label: "Packs de pin's", icone: '🎁' },
       { href: '/profil-expedition', label: "Profil d'expédition", icone: '🚚' },
       { href: '/tiktok-shop', label: 'TikTok Shop', icone: '🎵' },
-      { href: '/ajouts-panier', label: 'Ajouts au panier', icone: '🛍️' },
+      { href: '/statistiques-site', label: 'Statistiques site', icone: '📈' },
     ],
   },
   {
