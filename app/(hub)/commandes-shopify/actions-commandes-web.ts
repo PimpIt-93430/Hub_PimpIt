@@ -63,3 +63,27 @@ export async function envoyerCommandesWeb(commandes: CommandeWebAEnvoyer[]): Pro
   if (error) throw new Error(error.message);
   return { envoyees: data?.length ?? 0 };
 }
+
+export interface PreparationCommandeWeb {
+  statut: 'a_faire' | 'faite';
+  faiteParNom: string | null;
+  faiteAt: string | null;
+}
+
+/** Statut de préparation dans l'appli (Stock > Local > Commandes web) de chaque commande déjà
+ * envoyée — affiché dans la liste du Hub : "Préparée par X" / "À préparer". */
+export async function chargerPreparationsCommandesWeb(): Promise<[number, PreparationCommandeWeb][]> {
+  const supabase = await creerClientSupabaseServeur();
+  const { data, error } = await supabase
+    .from('commandes_web')
+    .select('shopify_order_id, statut, faite_at, faite_par_profil:profiles!commandes_web_faite_par_fkey(nom_complet)');
+  if (error) return [];
+  return (
+    data as unknown as {
+      shopify_order_id: number;
+      statut: 'a_faire' | 'faite';
+      faite_at: string | null;
+      faite_par_profil: { nom_complet: string } | null;
+    }[]
+  ).map((l) => [Number(l.shopify_order_id), { statut: l.statut, faiteParNom: l.faite_par_profil?.nom_complet ?? null, faiteAt: l.faite_at }]);
+}

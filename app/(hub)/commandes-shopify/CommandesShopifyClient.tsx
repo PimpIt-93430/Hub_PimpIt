@@ -9,6 +9,7 @@ import { chargerReglesLivraisonLocales, type RegleLivraison } from '@/lib/regles
 import type { CommandeShopify, StatutExpeditionCommande } from '@/lib/shopify';
 import { enregistrerReglesLivraison, rafraichirSuivisLivraison, verifierCommandesEnSuspens } from './actions';
 import { chargerExpediteur, type Expediteur, POIDS_PAR_DEFAUT_KG, prixInconnu, resoudreExpedition, type ResultatRoutage } from './expedition-commun';
+import type { PreparationCommandeWeb } from './actions-commandes-web';
 import { PanneauCodesTransporteurs } from './PanneauCodesTransporteurs';
 import { PanneauExpedition } from './PanneauExpedition';
 import { PanneauExpeditionLaPoste } from './PanneauExpeditionLaPoste';
@@ -89,12 +90,38 @@ function formatPrix(prix: string, devise: string): string {
   return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: devise }).format(Number(prix));
 }
 
+function formatHeure(iso: string): string {
+  return new Date(iso).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+}
+
+/** Préparation dans l'appli : "✓ Préparée par X" ou "À préparer" (rien si jamais envoyée). */
+function BadgePreparation({ preparation }: { preparation: PreparationCommandeWeb | undefined }) {
+  if (!preparation) return null;
+  if (preparation.statut === 'faite') {
+    return (
+      <div className="mt-1 text-[11px] font-semibold text-emerald-600">
+        ✓ Préparée par {preparation.faiteParNom ?? '?'}
+        {preparation.faiteAt ? ` (${formatHeure(preparation.faiteAt)})` : ''}
+      </div>
+    );
+  }
+  return <div className="mt-1 text-[11px] font-semibold text-amber-600">⏳ À préparer dans l&apos;appli</div>;
+}
+
+const JOURS_URGENT = 4;
+const JOURS_ATTENTION = 2;
+
+function ageEnJours(iso: string): number {
+  return Math.floor((Date.now() - new Date(iso).getTime()) / (24 * 3600 * 1000));
+}
+
 export function CommandesShopifyClient({
   commandesInitiales,
   expeditionsInitiales,
   poidsInitiaux,
   classificationInitiale,
   reglesInitiales,
+  preparationsInitiales,
 }: {
   commandesInitiales: CommandeShopify[];
   expeditionsInitiales: [number, ExpeditionSendcloud][];
@@ -110,8 +137,11 @@ export function CommandesShopifyClient({
    * chargées côté serveur pour être les mêmes sur tous les profils/ordinateurs, plus un localStorage
    * propre à chaque navigateur. */
   reglesInitiales: RegleLivraison[];
+  /** Préparation dans l'appli Pimp It (Stock > Local > Commandes web) : qui a fait la commande. */
+  preparationsInitiales: [number, PreparationCommandeWeb][];
 }) {
   const poidsConnus = useMemo(() => new Map(poidsInitiaux), [poidsInitiaux]);
+  const preparations = useMemo(() => new Map(preparationsInitiales), [preparationsInitiales]);
   const classification = useMemo(() => new Map(classificationInitiale), [classificationInitiale]);
   const [recherche, setRecherche] = useState('');
   // Cf. retour utilisateur du 2026-09-05 : "je veux que ca arrive que sur les commandes pas encore
@@ -187,6 +217,20 @@ export function CommandesShopifyClient({
     return cmd.statutExpedition;
   };
 
+  // Tableau d'alertes (retour utilisateur du 2026-11-18) : commandes pas encore expédiées, urgentes
+  // à partir de 4 jours, et celles imprimées mais pas encore préparées dans l'appli.
+  const alertes = useMemo(() => {
+    const nonTraitees = commandesVisibles.filter(
+      (cmd) => (cmd.statutExpedition === 'a_creer' || cmd.statutExpedition === 'partielle') && !preparations.has(cmd.id),
+    );
+    return {
+      total: nonTraitees.length,
+      urgentes: nonTraitees.filter((c) => ageEnJours(c.creeLe) >= JOURS_URGENT),
+      enAttente: nonTraitees.filter((c) => ageEnJours(c.creeLe) >= JOURS_ATTENTION && ageEnJours(c.creeLe) < JOURS_URGENT),
+      aPreparer: [...preparations.values()].filter((p) => p.statut === 'a_faire').length,
+    };
+  }, [commandesVisibles, preparations]);
+
   const verifierLivraisons = async () => {
     setRafraichissementEnCours(true);
     try {
@@ -256,6 +300,32 @@ export function CommandesShopifyClient({
           </span>
         )}
       </p>
+
+      {alertes.total > 0 && (
+        <div className="mb-4 flex flex-wrap gap-2">
+          {alertes.urgentes.length > 0 && (
+            <div className="rounded-xl bg-red-600 px-4 py-2.5 text-sm font-bold text-white">
+              🚨 URGENT : {alertes.urgentes.length} commande{alertes.urgentes.length > 1 ? 's' : ''} non traitée
+              {alertes.urgentes.length > 1 ? 's' : ''} depuis {JOURS_URGENT} jours ou plus —{' '}
+              <span className="font-semibold">{alertes.urgentes.slice(0, 8).map((c) => c.nom).join(', ')}</span>
+            </div>
+          )}
+          {alertes.enAttente.length > 0 && (
+            <div className="rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-bold text-white">
+              ⚠ {alertes.enAttente.length} commande{alertes.enAttente.length > 1 ? 's' : ''} en attente depuis {JOURS_ATTENTION}-
+              {JOURS_URGENT - 1} jours
+            </div>
+          )}
+          <div className="rounded-xl bg-slate-800 px-4 py-2.5 text-sm font-bold text-white">
+            {alertes.total} commande{alertes.total > 1 ? 's' : ''} Shopify non traitée{alertes.total > 1 ? 's' : ''}
+          </div>
+          {alertes.aPreparer > 0 && (
+            <div className="rounded-xl bg-sky-600 px-4 py-2.5 text-sm font-bold text-white">
+              {alertes.aPreparer} imprimée{alertes.aPreparer > 1 ? 's' : ''}, pas encore préparée{alertes.aPreparer > 1 ? 's' : ''} dans l&apos;appli
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <input
@@ -354,6 +424,7 @@ export function CommandesShopifyClient({
                     <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${CLASSES_STATUT[statut]}`}>
                       {LIBELLE_STATUT[statut]}
                     </span>
+                    <BadgePreparation preparation={preparations.get(cmd.id)} />
                   </td>
                   <td className="px-4 py-3 text-slate-500">{cmd.moyenExpedition ?? '—'}</td>
                   <td className="px-4 py-3 text-slate-500">
@@ -419,6 +490,9 @@ export function CommandesShopifyClient({
             >
               {LIBELLE_STATUT[statutAffiche(commandeOuverte)]}
             </span>
+            <div className="-mt-3 mb-4">
+              <BadgePreparation preparation={preparations.get(commandeOuverte.id)} />
+            </div>
 
             <dl className="mb-4 grid grid-cols-2 gap-y-2 text-sm">
               <dt className="text-slate-400">Date</dt>
